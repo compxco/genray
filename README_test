@@ -1,3 +1,13 @@
 /home/bobh/cql3d/git_genray/README_test
 
 This is a test file for adding file to git working directory.
+
+git add README_test
+get status shows it is in staged state.
+Modify it further (now).
+git status ==> it is in Changes to be committed list,
+               and is modified. .#README_test is an untracked file.
+
+Got rid of  .#README_test (emacs releted) by saving it.
+Now git status ==> Changed but not updated:  modified:   README_test
+Do git add README_test ==> # Changes to be committed: modified:   README_test
