@@ -1,0 +1,105 @@
+README_genray_overview
+======================
+RWH, Dec/2012.
+
+
+GENRAY is an all frequencies ray tracing code incorporating
+a wide range of plasma dispersion functions.  The basic
+coordinate system is R,Phi,Z cylindrical coordinates and
+plasma parameters vary as a function of toroidal flux surface
+coordinates, although there are some facilities for
+non-axisymmetric density and temperatures.   It is open source,
+as described in the preamble of genray.f.
+
+Due to time available, developers can answer a very limited
+number of questions on the use of these codes.  In general,
+CompX obtains support funds for instructions, applications,
+additions to GENRAY (and other CompX codes).
+
+GENRAY is written in fortran, and is compiled with the open 
+software libraries for netCDF, and pgPLOT.  The developers
+use the gfortran compiler.
+
+Simple visualization is provided by xdraw (xdraw1 is name of 
+the executable produced by make, as with xdraw_081202.tar.gz.  We
+alias name xdraw to xdraw1).   xdraw should compile on any 
+Linux or UNIX machines, with c and X-windows.
+See tests file in the 00_Regression_Tests dir for tests.
+You will also need an MPI library, if you want a parallelized
+execution.
+RWH makes the genray executable using gmake 
+(make -f makefile_gfortran64) under Linux.
+SAP (and more recently, Yuri Petrov, CompX) uses a Microsoft
+environment.
+There is also a makefile_nowrite_gfortran64, which greatly
+reduces the debug data going to the screen.
+makefile_mpi.gfortran64 appears to be latest MPI version, but
+this might need a little work.
+The wide range of other makefiles indicate a past history 
+of compile and load with other compilers and computers,
+some of which may need their sources lists updated.
+Namelist input specifies the particular code runs.  The
+input namelist file must be named genray.dat (for a mixed
+physics units system) and genray.in (for an almost pure
+MKSA units, except temperatures are in keV).  The genray.in
+file is used, if the genray.dat file does not exist in the
+excution directory.  A description of the namelist inputs is
+maintained in the genray.dat_template_to_120401 and
+genray.in_template_MKSA_120401, or similarly named files, where
+the 120401 is the date of last update.  These *template*
+files are the main documentation of code input, and are 
+kept current.
+
+For most applications, genray also requires an "eqdsk"
+which specifies the 2D plasma flux surfaces in a 
+poloidal cross-section.
+
+Simple visualization is provided by xdraw (xdraw1 is name of 
+the executable produced by make, as with xdraw_081202.tar.gz.  We
+alias name xdraw to xdraw1).   xdraw should compile on any 
+Linux or UNIX machines, with c and X-windows.
+See tests file in the 00_Regression_Tests dir for tests.
+
+Most relevant ray data is output to the netCDF file genray.nc.
+This provides an additional means of visualization of the
+results, using, for example, matplotlib in the python language.
+Various netCDF file viewers are also available on the internet.
+
+You will also need an MPI library, if you want a parallelized
+execution.
+
+RWH makes the genray executable using gmake 
+(make -f makefile_gfortran64) under Linux (specifically, CentOS6).
+SAP (and more recently, Yuri Petrov, CompX) uses a Microsoft
+environment.
+There is also a makefile_nowrite_gfortran64, which greatly
+reduces the (often overwhelming amount of) debug data going
+to the screen.
+
+makefile_mpi.gfortran64 appears to be latest MPI makefile
+version, but this might need a little work.
+The wide range of other makefiles indicate a past history 
+of compile and load with other compilers and computers,
+some of which may need their sources lists updated.
+
+Some familiarity with the code can be developed by running
+the regression tests (in subdirectory 00_Genray_Regression_Tests).
+See README therein, and execute the statements in ./tests
+
+A brief description of the code is can also be found at 
+http://www.compxco.com/genray.html
+
+The main physics reference is Genray_manual-2001-1-V2_110416.pdf
+available at http://www.compxco.com/genray.html.
+Additional functionality has been added since the March 17, 2003
+document, as can be seen in the a_change.i file which keeps
+track of bug fixes and code additions.
+
+ls -lt make_archive/* gives a sort of history of the compilers and computers
+with which genray has been compiled, including dates.  The newer ones
+will work with the present distribution.
+
+See also Brief_genray_use_outline file.
+
+
+

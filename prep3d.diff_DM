@@ -1,0 +1,109 @@
+93,94c93,94
+<       double complex :: exde,eyde,ezde
+<       real*8 ::  rnpar,rnper,romega,romegpe,rvgrpdc,redenfac
+---
+>       complex exde,eyde,ezde
+>       real rnpar,rnper,romega,romegpe,rvgrpdc,redenfac
+4617,4623c4617,4618
+<       implicit NONE
+<       INTEGER, PARAMETER :: R8=SELECTED_REAL_KIND(12,100)
+<       double complex :: exde,eyde,ezde
+<       integer :: nsigma
+<       double complex :: rootm1,exd11,d12,d13,d22,d33,denom
+<       real*8 ::  omega, omegpe,vgrpdc, edenfac
+<       real*8 ::  npar,npar2,nper,nper2,n2,nperol
+---
+>       complex          rootm1,exde,eyde,ezde,d11,d12,d13,d22,d33,denom
+>       real             npar,npar2,nper,nper2,n2,nperol
+4626,4630c4621,4622
+<       real*8 :: dquad,rootqd 
+<       real*8 :: deps1,deps2,deps3,domega,domegpe,aquad,bquad,cquad
+<       real*8 :: eps1,eps2,eps3
+<       real*8 :: d11,dep1do,dep2do,dep3do,dddnpp,dddnpl,dddome
+<       real*8 :: bmod2,tens11,tens12,tens21,tens22,tens33,emod2
+---
+>       real             dquad
+>       real deps1,deps2,deps3,domega,domegpe,aquad,bquad,cquad
+4636c4628
+<       rootm1 = (0.0_r8, 1.0_r8)
+---
+>       rootm1 = (0.0, 1.0)
+4650,4652c4642,4644
+<       deps1   = 1.0_r8 - domegpe*domegpe/        (domega*domega-1.0_r8)
+<       deps2   =      -domegpe*domegpe/(domega*(domega*domega-1.0_r8))
+<       deps3   = 1.0_r8 - domegpe*domegpe/        (domega*domega)
+---
+>       deps1   = 1.0 - domegpe*domegpe/        (domega*domega-1.0)
+>       deps2   =      -domegpe*domegpe/(domega*(domega*domega-1.0))
+>       deps3   = 1.0 - domegpe*domegpe/        (domega*domega)
+4661c4653
+<       dquad = bquad*bquad - 4.0_r8*aquad*cquad
+---
+>       dquad = bquad*bquad - 4.0*aquad*cquad
+4663c4655
+<       if (dquad .gt. 0.0_r8) then
+---
+>       if (dquad .gt. 0.0) then
+4666c4658
+<         rootqd = 0.0_r8
+---
+>         rootqd = 0.0
+4668,4669c4660
+<       nper2=(-bquad+nsigma*SIGN (1.0_r8,omega-1.0_r8)*rootqd)/
+<      >     (2.0_r8*aquad)
+---
+>       nper2=(-bquad+nsigma*SIGN (1.0,omega-1.0)*rootqd)/(2.0*aquad)
+4674,4675c4665,4666
+<       if (nper2 .le. 0.0_r8) then
+<         if (nper2 .le. -1.0e-2_r8) then
+---
+>       if (nper2 .le. 0.0) then
+>         if (nper2 .le. -1.0e-2) then
+4678,4679c4669,4670
+<           nper2=1.0e-10_r8
+<           nper=1.0e-5_r8
+---
+>           nper2=1.0e-10
+>           nper=1.0e-5
+4696c4687
+<       denom = SQRT (exde*conjg(exde)+1.0_r8+ezde*conjg(ezde))
+---
+>       denom = SQRT (exde*conjg(exde)+1.0+ezde*conjg(ezde))
+4698c4689
+<       eyde=1.0_r8/denom
+---
+>       eyde=1.0/denom
+4705,4708c4696,4699
+<       dep1do=omegpe*omegpe*2.0_r8*omega/
+<      .        ((omega*omega-1.0_r8)*(omega*omega-1.0_r8))
+<       dep2do=-eps2/omega-eps2*2.0_r8*omega/(omega*omega-1.0_r8)
+<       dep3do=omegpe*omegpe*2.0_r8/(omega**3)
+---
+>       dep1do=omegpe*omegpe*2.0*omega/
+>      .        ((omega*omega-1.0)*(omega*omega-1.0))
+>       dep2do=-eps2/omega-eps2*2.0*omega/(omega*omega-1.0)
+>       dep3do=omegpe*omegpe*2.0/(omega**3)
+4712c4703
+<       dddnpp=-(2.0_r8*nper)*( (eps1-npar2)*(eps1-n2+eps3-nper2)
+---
+>       dddnpp=-(2.0*nper)*( (eps1-npar2)*(eps1-n2+eps3-nper2)
+4714c4705
+<       dddnpl=-(2.0_r8*npar)*( (eps3-nper2)*(eps1-npar2+eps1-n2)
+---
+>       dddnpl=-(2.0*npar)*( (eps3-nper2)*(eps1-npar2+eps1-n2)
+4719c4710
+<      .     + dep2do*( -2.0_r8*eps2*(eps3-nper2) )
+---
+>      .     + dep2do*( -2.0*eps2*(eps3-nper2) )
+4737c4728
+<       bmod2 = DBLE( n2*eyde*conjg(eyde)
+---
+>       bmod2 = REAL ( n2*eyde*conjg(eyde)
+4745c4736
+<       emod2 = DBLE (conjg(exde)*exde*tens11
+---
+>       emod2 = REAL (conjg(exde)*exde*tens11
+4752c4743
+<       edenfac=0.5_r8*(bmod2+emod2)
+---
+>       edenfac=0.5*(bmod2+emod2)

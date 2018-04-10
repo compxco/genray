@@ -1,0 +1,31 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+gr3d_1.bin
+
+graph title: GENRAY
+
+variable names
+0	 ws
+1	 seikon
+2	 spsi
+3	 r
+4	 phi
+5        z
+6	 npar
+7	 nper
+8	 delpwr
+9	 sdpwr
+
+ix	iy	title
+0	1       seikon
+0	2       spsi
+0	3       power
+0	4       phi
+0	5       z
+0	6       npar
+0	7       nper
+0	8	delpwr
+0	9       sdpwr
+
+

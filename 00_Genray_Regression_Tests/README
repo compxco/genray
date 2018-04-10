@@ -1,0 +1,195 @@
+00_TEST_SUITE/
+
+July 17, 2007
+=============
+
+This directory is for suite of short test input
+files.
+Adjust the script tests for the XGENRAY version to be tested.
+Execute the script:
+time ./tests 2>&1 |tee log_tests
+creates 7 test subdirectories and, with xdraw, plots
+results plus displays the same plots for a previous
+version of genray for comparison.
+Should take .le.10 minutes total for the 5 tests.
+
+
+Test 1:
+=======
+Shortened (nfreq=5) X-mode perp viewing ECE (G Taylor work).
+Inputs: genray.dat_SS_Xmode_180_emission Scen4_bn2.57_129x129
+bob5:/home/bobh/cql3d/iter_ECE_pppl_No2/SS/Xmode/180/genray_v6-0_test
+Takes 50 CPU seconds. [2.4 GHz Xeon]
+1m23s on bob8, with genray_v7-8_080801.
+1m32s on compx1, with genray_v7-11_081007
+
+View in test1/ with xdraw, and compare with xdraw*.ps in ./:
+xdraw genr   [check vs xdraw_genr_SS_Xmode_180_emission.ps]
+xdraw em     [check vs xdraw_em_SS_Xmode_180_emission.ps]
+These .ps files were generate from run with
+/home/bobh/cql3d/genray/genray_cvs/code/gr070121/xgenray
+
+You can also .run idl_emission_spectrum_colorbar.pro to get
+specrum of emission at the plasma edge vs energy of emitting
+electrons, assuming IDL paths set up OK.
+
+Test2:
+======
+Comparison of HPRT and GENRAY FW ray, originally working with
+Adam Rosenberg.
+Inputs:genray.dat_HPRT_test_case_061219, equilib.dat_HPRT_test_case_061219
+bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/NSTX_FW/one_ray_comp_HPRT
+Takes 5 CPU seconds.
+3.4s on bob8, with genray_v7-8_080801.
+View in test2:
+xdraw genr
+Compare with plot in idl_105830p193r1.bob_GR030417.4_gr061120.ps,
+which includes a poloidal plane projection of the HPRT ray trajectory.
+This run uses Chiu et al (corrected) polarizations and absorption (iabsorp=3).
+Very close results are also obtained with Stix hot plasma option (iabsorp=4).
+
+Test3:
+======
+NSTX EBW BXO emission test case, shortened to nfreq=3.
+Inputs: genray.dat_113544.00325_mod g113544.00325_mod
+bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/NSTX_BXO_emission/result_idiskf_0/tmp_051209
+
+Takes 6 minutes CPU time
+2m55s on bob8, with genray_v7-8_080801.
+
+View in test3:
+xdraw genr
+xdraw em
+and compare with xdraw output in files 
+emis.bin_113544.00325_mod and genray.bin_113544.00325_mod.
+
+Test4:
+======
+NSTX EBW OXB test case, calculated optimal O-mode launch angles
+for the OX mode conversion.  Frequency is 16.5 GHz.
+Inputs: genray.dat_GT_PoP2005_i_ox=1.1_updtd g113544.00325_mod
+bob5:
+/home/bobh/cql3d/nstx/genray_cql3d_BXO_051013/GTaylor_PoP_2005_ECE_case/run1/tmp_gr060421
+
+Takes 9 seconds CPU time.
+13.2s on bob8, with genray_v7-8_080801.
+
+Compare the ./ECcone_optimal.dat and test4/ECcone_optimal.dat files.
+
+Test4.1:
+========
+Uses optimal OX injection angles calculated in test4, and traces
+OXB ray into NSTX.
+Zooming in on xdraw freqelec plots, shows radii where frqncy=16.5 GHz is equal
+to fpe[curve 0, green], X-mode cutuff fx1[8, purple], and fuh[2, yellow]. 
+Takes 27 secs on bob8, with genray_v7-17_090527.
+
+
+Test5:
+======
+Canonical ITER EC Test case.  (with R. Prater).
+Inputs: genray.dat_CANONICAL_2004_ITER_TEST_one_ray g521022.01000
+bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/ITER_CANONICAL_EC/one_ray
+Takes 1.75 secs.
+1.71s on bob8, with genray_v7-8_080801.
+
+Compare 'xdraw genr' output files, using genray.bin_CANONICAL_2004_ITER_TEST_one_ray
+
+Test5.1 :
+======
+Canonical ITER EC Test case, but with id=10/iabsorp=1, i.e.,
+Westerhof-Tokman integration of ray trajectories plus 
+Mazzucato relativistic dispersion.
+Inputs: genray.dat_id10iabsorp1 g521022.01000
+bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/ITER_CANONICAL_EC/one_ray/tmp_id10.2/
+Takes 2m8sec.
+1m53s on bob8, with genray_v7-8_080801.
+
+Compare 'xdraw genr' output files, using genray.bin_id10iabsorp1
+
+
+
+Test6:
+======
+Multi-ray, multi-cone DIII-D ECH case.
+Inputs: genray.dat_shot106270_multi_ray_multi_cone g106270.02500
+bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/d3d_EC_MultiCone/multi_ray
+
+Takes 17.5 secs
+15.9s on bob8, with genray_v7-8_080801.
+
+Compare 'xdraw genr' output files, using genray.bin_shot106270.
+
+
+
+Test7:
+======
+Uses updated (Mar. 2, 2009) MKSA genray.in_CMod_LH_edge namelist file.
+Five ray LH test run for C-Mod.  Rays propagate beyond the
+LCFS into density and temperature specified by exponential
+fall-off distance beyond LCFS.  The fall-off distance for
+density varies with poloidal angle.  Rays reflect from the
+vacuum vessel.
+
+Takes 17.4 secs.
+
+Compare 'xdraw genr' output files, using genray.bin__CMod_LH_edge
+
+
+
+Test7_edge_dens_rz
+==================
+C-Mod LH test case using new i_edge_dens_rz_mesh=1 and 2 options,
+for which a first genray run creates a template file (=1) of plasma
+density/temperature based on namelist input.  File is called
+dens_temp_rz_out.dat.  This file can be modified to produce
+arbitrary toroidally symmetric density profiles beyond the LCFS,
+using external software.  Here we simply rename
+the file to dens_temp_rz_in.dat (through a soft link), and use it
+as input for i_edge_dens_rz_mesh=2.  Comparisons are made with the
+saved ray plots, and with test7 ray data which was produced without
+using the dens_temp_rz_out.dat/dens_temp_rz_in.dat files, giving
+slightly different rays.
+
+
+Test8:
+======
+Near central ECCD in ITER.  Test case to be compared with Fig. 12
+of R. Prater et al., Nucl. Fus. 48 (2008) 035006 (11pp), benchmarking
+paper.  The genray results here are obtained with the ADJ-QL code,
+adapted from the original ADJ analytic equilibria, model RF fluxes
+to apply here to numerical equilibria and using QL fluxes calculated
+from the ray data.  The calculation is momentum conserving, which
+increases current about  10-11 kA/MW to
+toroidal_cur_total = 25809.27080280 A for 1MW, versus cql3d finds 24.0 kA/MW
+CPU time =1.25910D+03 secs (=21.0 min).
+If the adj calculation is turned off (i_calculate_or_read_adj_function =0) 
+the ray and CD calculation takes 13.5 secs.  But the saved adjout/adjinp
+files for the adj calc total 181 MB, so the full test is carried out.
+CD data is compared with Prater et al results, and with previous code
+run.
+
+Nicola Bertelli (2014-07-16) added momentum conservation ieffic_mom_cons=1
+into ieffic=4 Lin_Liu (TorGA_curgap subroutine), according to
+Marushchenko et al, NF 48, 054002 (2008).  BH added to 00_Regression_Tests,
+test8.1-3, giving results as follows:
+
+test	   descrptn				Comp. time		Curr(kA)
+test8      i_adj=1 ADJ-bases self adjoint,	2m52s with adj calc	25.8
+           momentum conserving.	  		4s, existing adj calc
+test8.1	   ieffic=4, ieffic_mom_cons=1		0.60s			25.5
+test8.2	   ieffic=4, ieffic_mom_cons=0		0.60s			13.0
+test8.3	   ieffic=3, Curba (Cohen) subroutine 	0.59s			10.1
+	   (high vel approx, sq-well-B)
+Definitely, test8.1 setup is preferable for this type of run.	
+
+Test9:
+======
+
+Compare genray.bin_CMod_LH_edge_LSC with test7/genray.bin using xdraw.
+The single run produces plots of QL damping on Maxwellian as calculated
+with the LSC-like option (in xdraw genr op), and the result is very close to 
+linear damping in test7.  A second plot shows results of
+QL damping, for which an LH plateau reduces damping for all rays.
+
+

@@ -1,0 +1,271 @@
+CMPIINSERTPOSITION DECLARATION
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      include 'mpif.h' 
+      integer lc1,lc3,lr1,lr2,lr3,lr4,lr5,li0,li2
+      integer rank, rank_i, src, mpi_index, ierr
+      integer mpistatus(MPI_STATUS_SIZE)
+      double precision start_time, end_time
+      double precision mpi_stime, mpi_etime, comm_time 
+      integer any_comm
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION INITIALIZATION
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      call MPI_INIT(ierr) 
+      call MPI_COMM_SIZE(MPI_COMM_WORLD,qsize,ierr)
+      call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr)
+      myrank=rank !myrank is in common/mpimyrank/ (control of files' access)
+      if (myrank.eq.0) write(*,*)'MPI: qsize=',qsize
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION STARTTIME
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      start_time= MPI_WTIME()
+      comm_time= 0.0
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION BARRIER
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION DETERMINERANK
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      mpi_index= nfreq*(iray-1)+ifreq-1 ! 0...nfreq*nrays-1 (but not in same order as irayl)
+      if(qsize.gt.1)then
+         rank_i=MOD(mpi_index,qsize-1)+1 
+      else ! qsize=1 (a serial run, or MPI-1core run)
+         rank_i=0 
+      endif
+      if ((rank.ne.0).and.(rank.ne.rank_i)) goto 25 !next ifreq (next ray)
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION SENDDATA
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      if(qsize.gt.1) then
+         !--write(*,*)'BEFORE SENDDATA: iray,myrank=', iray,myrank
+         call senddata(mpi_index)
+         !--write(*,*)'AFTER  SENDDATA: iray,myrank=', iray,myrank
+         goto 25 ! next ifreq (next ray)
+      endif
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION RECVDATA
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      if(qsize.gt.1)then
+         ! Rank 0 case:
+         mpi_stime = MPI_WTIME()
+         call recvdata(src,mpi_index)
+         mpi_etime = MPI_WTIME()
+         comm_time = comm_time+(mpi_etime-mpi_stime)
+      endif
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION SENDCONFIRM
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      ! Send "notification" to src/tag=mpi_index, meaning: 
+      ! Data is recorded, proceed to next ray.
+      if(myrank.eq.0 .and. qsize.gt.1) then
+         any_comm=1000+iray ! can be any number
+         !--write(*,*)'Before sending any_comm 0-> src,tag=',src,mpi_index
+         call MPI_SEND(any_comm,1,MPI_INTEGER, src,
+     +                 mpi_index,MPI_COMM_WORLD,ierr)
+         !--write(*,*)'After sending any_comm  0-> src,tag=',src,mpi_index
+      endif
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION ENDTIME
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      if(myrank.eq.0) then
+         end_time = MPI_WTIME()
+         write(*,*) 'full time: ', end_time-start_time
+         write(*,*) 'comm time: ', comm_time
+      endif  !On myrank.eq.0 
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION ENDMPI
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+      call MPI_FINALIZE(ierr)
+      !-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI-MPI
+
+CMPIINSERTPOSITION SUBS
+      subroutine senddata(mpi_index)
+      include 'mpif.h'
+      include 'param.i'
+      include 'onetwo.i'  ! profiles of RF power and driven current
+      include 'one_nml.i' ! get nbulk from here
+      
+      integer ierr, tag, any_comm, src, mpi_index
+      integer mpistatus(MPI_STATUS_SIZE)
+      
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+     
+      parameter (li0=6) ! 6 scalar integers
+      parameter (li2=nrelta*(n_relt_harm2a-n_relt_harm1a+1)) ! 2D int
+      parameter (lc1=3*nrelta)  ! 1D complex*16
+      parameter (lc3=9*nrelta)  ! 3D complex*16
+      
+      parameter (lr1=39*nrelta)
+      parameter (lr2=nrelta*nbulka+1+19*nrelta+3*nraya*nfreqa
+     +               +15*nfreqa+20*nrelta+6)
+      parameter (lr3=4)
+      parameter (lr4=8*nrelta*(n_relt_harm2a-n_relt_harm1a+1))
+      parameter (lr5=1+2*nrelta)
+      
+      integer i02(li0+li2)
+      common/write_i02/ i02          !-------------------> integers
+      
+      complex*16 c13(lc1+lc3)
+      common/write_c13/ c13          !-------------------> complex*16
+                   !cwexde(nrelta),
+                   !cweyde(nrelta),
+                   !cwezde(nrelta)               ! 3*nrelta complex*16
+                   !w_ceps(3,3,nrelta)           ! 9*nrelta complex*16
+      
+      real*8 r1(lr1+lr2+lr3+lr4+lr5)
+      common/write/ r1
+      
+      real wk_pwr_cur(5+NR*(6+nbulk))
+
+      tag=mpi_index  ! Getting invitation: rank=0 is ready to receive 
+                     ! data for mpi_index:
+      !write(*,*)'SEND-0==========================myrank,tag=',myrank,tag
+
+      call MPI_SEND(i02,li0+li2, MPI_INTEGER,
+     +     0,tag,MPI_COMM_WORLD,ierr) 
+     
+      call MPI_SEND(c13(1),lc1+lc3, MPI_DOUBLE_COMPLEX,
+     +     0,tag,MPI_COMM_WORLD,ierr)
+
+      call MPI_SEND(r1(1),lr1+lr2+lr3+lr4+lr5, MPI_DOUBLE_PRECISION,
+     +     0,tag,MPI_COMM_WORLD,ierr) 
+     
+      !write(*,*)'SEND-r==========================myrank,tag=',myrank,tag
+      
+      ! Fill-in the buffer array:
+      wk_pwr_cur(1)= allpw_e
+      wk_pwr_cur(2)= allpw_i 
+      wk_pwr_cur(3)= allpw_cl 
+      wk_pwr_cur(4)= allpower
+      wk_pwr_cur(5)= allcur
+      ie=5 ! last element recorded
+      wk_pwr_cur(ie+1 : ie+NR)= cur_den_parallel(1:NR)
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= power(1:NR)
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= current(1:NR)          
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= power_e(1:NR)          
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= power_i(1:NR)           
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= power_cl(1:NR)  
+      do ibulk=1,nbulk       
+      ie=ie+NR   
+      wk_pwr_cur(ie+1 : ie+NR)= power_s(1:NR,ibulk)        !(NR,nbulk)
+      enddo
+
+      call MPI_SEND(wk_pwr_cur,5+NR*(6+nbulk), MPI_REAL,
+     +     0,tag,MPI_COMM_WORLD,ierr) 
+     
+      ! Receive "confirmation" from rank0 that it got data,
+      !   after rank0 recorded all data (after write3d)
+      call MPI_RECV(any_comm,1,MPI_INTEGER,
+     +     0,tag,MPI_COMM_WORLD,mpistatus,ierr)
+      ! Now this particular rank (core) is ready to proceed to other ray.
+          
+      !write(*,*)'SEND-end========================myrank,tag=',myrank,tag
+     
+      return 
+      end
+c
+c====================================================================
+
+      subroutine recvdata(src,mpi_index)
+      include 'mpif.h'
+      include 'param.i'
+      include 'onetwo.i'  ! profiles of RF power and driven current
+      include 'one_nml.i' ! get nbulk from here
+     
+      integer ierr, tag, any_comm, src, mpi_index
+      integer mpistatus(MPI_STATUS_SIZE)
+      
+      parameter (li0=6) ! 6 scalar integers
+      parameter (li2=nrelta*(n_relt_harm2a-n_relt_harm1a+1)) ! 2D int
+      parameter (lc1=3*nrelta)  ! 1D complex*16
+      parameter (lc3=9*nrelta)  ! 3D complex*16
+      
+      parameter (lr1=39*nrelta)
+      parameter (lr2=nrelta*nbulka+1+19*nrelta+3*nraya*nfreqa
+     +               +15*nfreqa+20*nrelta+6)
+      parameter (lr3=4)
+      parameter (lr4=8*nrelta*(n_relt_harm2a-n_relt_harm1a+1))
+      parameter (lr5=1+2*nrelta)
+      
+      integer i02(li0+li2) ! integers
+      common/write_i02/ i02          !-------------------> integers
+      
+      complex*16 c13(lc1+lc3)
+      common/write_c13/ c13          !-------------------> complex*16
+                   !cwexde(nrelta),
+                   !cweyde(nrelta),
+                   !cwezde(nrelta)               ! 3*nrelta complex*16
+                   !w_ceps(3,3,nrelta)           ! 9*nrelta complex*16
+      
+      real*8 r1(lr1+lr2+lr3+lr4+lr5)
+      common/write/ r1
+
+      !Work array for profiles of RF power and driven current (from each ray)
+      real wk_pwr_cur(5+NR*(6+nbulk))
+      
+      tag=mpi_index  
+      
+      !write(*,*) 'RECV-0~~~~~~~~~~~~~~~~~~~ src,tag=',MPI_ANY_SOURCE,tag
+      call MPI_RECV(i02,li0+li2, MPI_INTEGER,
+     +     MPI_ANY_SOURCE,tag, MPI_COMM_WORLD,mpistatus,ierr)
+      
+      src= mpistatus(MPI_SOURCE) ! determine which rank sent the data
+      !write(*,*) 'RECV-i~~~~~~~~~~~~~~~~~~~ src,tag=',src,tag
+      
+      call MPI_RECV(c13(1),lc1+lc3, MPI_DOUBLE_COMPLEX,
+     +     src,tag, MPI_COMM_WORLD,mpistatus,ierr)
+      !write(*,*) 'RECV-c~~~~~~~~~~~~~~~~~~~ src,tag=',src,tag
+
+      call MPI_RECV(r1(1),lr1+lr2+lr3+lr4+lr5, MPI_DOUBLE_PRECISION,
+     +     src,tag, MPI_COMM_WORLD,mpistatus,ierr)
+
+      ! Get RF power and curr. profiles (for one ray):
+      call MPI_RECV(wk_pwr_cur,5+NR*(6+nbulk), MPI_REAL,
+     +     src,tag, MPI_COMM_WORLD,mpistatus,ierr) 
+
+      ! Restore the power and current profiles from the buffer array,
+      ! add them to data from other rays:
+      allpw_e=  wk_pwr_cur(1)+ allpw_e
+      allpw_i=  wk_pwr_cur(2)+ allpw_i 
+      allpw_cl= wk_pwr_cur(3)+ allpw_cl 
+      allpower= wk_pwr_cur(4)+ allpower
+      allcur=   wk_pwr_cur(5)+ allcur
+      ie=5 ! last element recorded
+      cur_den_parallel(:)= wk_pwr_cur(ie+1 : ie+NR)+ cur_den_parallel(:)
+      ie=ie+NR   
+      power(:)=    wk_pwr_cur(ie+1 : ie+NR)+ power(:)
+      ie=ie+NR   
+      current(:)=  wk_pwr_cur(ie+1 : ie+NR)+ current(:)          
+      ie=ie+NR   
+      power_e(:)=  wk_pwr_cur(ie+1 : ie+NR)+ power_e(:)          
+      ie=ie+NR   
+      power_i(:)=  wk_pwr_cur(ie+1 : ie+NR)+ power_i(:)           
+      ie=ie+NR   
+      power_cl(:)= wk_pwr_cur(ie+1 : ie+NR)+ power_cl(:)  
+      do ibulk=1,nbulk       
+      ie=ie+NR   
+      power_s(:,ibulk)= wk_pwr_cur(ie+1 : ie+NR)+ power_s(:,ibulk) !(NR,nbulk)
+      enddo
+
+      !write(*,*) 'RECV-r-end~~~~~~~~~~~~~~~ src,tag=',src,tag
+      return 
+      end
+c=====================================================================
+c=====================================================================
+CMPIINSERTPOSITION

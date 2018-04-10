@@ -1,0 +1,208 @@
+CMPIINSERTPOSITION DECLARATION
+      include 'mpif.h' 
+      integer rank, rank_i, qsize, src, cur_rf 
+      integer ierr, tag 
+      integer status(MPI_STATUS_SIZE)
+      double precision start_time, end_time
+      double precision mpi_stime, mpi_etime, comm_time 
+      integer command 
+CMPIINSERTPOSITION INITIALIZATION
+      call MPI_INIT(ierr) 
+      call MPI_COMM_SIZE(MPI_COMM_WORLD,qsize,ierr)
+      call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr) 
+      tag=0
+      if (rank.eq.0) then
+        if (qsize.eq.1) then
+          stop 'number of processes should be greater than 1'
+	endif
+CMPIINSERTPOSITION STARTBARRIER
+      start_time = MPI_WTIME()
+      comm_time = 0.0
+      endif 
+      if (rank.ne.0) then 
+         call MPI_RECV(command,1,MPI_INTEGER,rank-1, 
+     +        tag,MPI_COMM_WORLD,status,ierr) 
+      endif 
+CMPIINSERTPOSITION ENDBARRIER
+      if( rank.ne.qsize-1 ) then 
+         call MPI_SEND(command,1,MPI_INTEGER,rank+1, 
+     +        tag,MPI_COMM_WORLD,ierr) 
+      endif 
+      if( rank.eq.0 ) then 
+CMPIINSERTPOSITION JUSTBEFORETHELOOP
+      endif
+CMPIINSERTPOSITION STARTTHELOOP
+      if( rank.eq.0 ) then
+         write(*,*) 'iray = ', iray
+CMPIINSERTPOSITION PRINTHEADER
+      endif
+CMPIINSERTPOSITION ALLOCATESENDRECV
+      call sendrecv_alloc(nrayelt,nray,nfreq,nbulk)
+CMPIINSERTPOSITION STARTEMISSION
+      cur_rf=nfreq*(iray-1)+ifreq-1
+      rank_i=MOD(cur_rf,qsize-1)+1 
+      if ((rank.ne.0).and.(rank.ne.rank_i)) goto 25
+      if( rank.eq.0 ) then
+	 write(*,*) '  ifreq = ', ifreq
+      endif
+CMPIINSERTPOSITION STARTRUNGEKUTTA
+      if( rank.eq.0 ) goto 23 
+CMPIINSERTPOSITION ENDRUNGEKUTTA
+      call senddata(nrayelt,nray,nfreq,nbulk)
+CVARCOMM
+      goto 25
+ 23   mpi_stime = MPI_WTIME()
+      call recvdata(nrayelt,nray,nfreq,nbulk,rank_i)
+      mpi_etime = MPI_WTIME()
+      comm_time = comm_time+(mpi_etime-mpi_stime)
+CMPIINSERTPOSITION ENDEMISSION
+      if( rank.ne.0 ) goto 25
+CMPIINSERTPOSITION SAVEDATA
+      if( rank.ne.0 ) then
+         goto 20
+      endif
+CMPIINSERTPOSITION JUSTAFTERTHELOOP
+      if( rank.ne.0 ) then 
+         goto 100
+      endif
+      end_time = MPI_WTIME()
+      write(*,*) 'full time: ', end_time-start_time
+      write(*,*) 'comm time: ', comm_time
+CMPIINSERTPOSITION ENDMPI
+ 100  call MPI_FINALIZE(ierr)
+CMPIINSERTPOSITION SUBS
+      subroutine sendrecv_alloc(nrayelt,nray,nfreq,nbulk)
+      integer nrayelt, nray, nfreq, nbulk
+c     Adjusted for dynamic dimensioning [BH111102].
+c
+      complex*16, pointer :: c1(:),c2(:)
+      real*8, pointer :: r1(:),r2(:),r3(:)
+      integer, pointer :: i1(:),i2(:)
+      common /write/ c1,c2,r1,r2,r3,i1,i2
+c
+      lc1=3*nrelt
+      lc2=9*nrelt
+      lr1=38*nrelt
+      lr2=nrelt*(25+nbulk)+nfreq*(3*nray+9)+7
+      lr3=4
+      li1=3
+      li2=1
+c
+      istat_tot=0
+      allocate(c1(1:lc1),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(c1,zero,SIZE(c1))
+      allocate(c2(1:lc2),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(c2,zero,SIZE(c2))
+      allocate(r1(1:lr1),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(r1,zero,SIZE(r1))
+      allocate(r2(1:lr2),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(r2,zero,SIZE(r2))
+      allocate(r3(1:lr3),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(r3,zero,SIZE(r3))
+      allocate(i1(1:li1),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(i1,zero,SIZE(i1))
+      allocate(i2(1:li2),STAT=istat)
+      istat_tot=istat_tot+istat
+      call bcast(i2,zero,SIZE(i2))
+c      
+c     Check that allocations were OK
+      if (istat_tot.ne.0) then
+         write(*,*)'ainalloc.f:  Problem with allocation'
+         write(*,*)'ainalloc.f:  Reduce param.h paramaters?'
+         write(*,*)'ainalloc.f:  Stopping'
+         STOP
+      endif
+c
+      return
+      end
+c      
+c      
+      subroutine senddata(nrayelt,nray,nfreq,nbulk)
+      integer nrayelt, nray, nfreq, nbulk, tag
+c
+c     Adjusted for dynamic dimensioning [BH111102].
+c
+      complex*16, pointer :: c1(:),c2(:)
+      real*8, pointer :: r1(:),r2(:),r3(:)
+      integer, pointer :: i1(:),i2(:)
+      common /write/ c1,c2,r1,r2,r3,i1,i2
+c
+      include 'mpif.h' 
+c
+      lc1=3*nrelt
+      lc2=9*nrelt
+      lr1=38*nrelt
+      lr2=nrelt*(25+nbulk)+nfreq*(3*nray+9)+7
+      lr3=4
+      li1=3
+      li2=1
+c
+      tag = 1
+      call MPI_RECV(command,1,MPI_INTEGER,0,
+     +     tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_SEND(nrayelt,1,MPI_INTEGER,0,
+     +     tag,MPI_COMM_WORLD,ierr)
+      call MPI_SEND(c1,lc1,MPI_DOUBLE_COMPLEX,0,
+     +     tag,MPI_COMM_WORLD,ierr)
+      call MPI_SEND(r1,lr1,MPI_DOUBLE_PRECISION,0,
+     +     tag,MPI_COMM_WORLD,ierr) 
+      call MPI_SEND(c2,lc2,MPI_DOUBLE_COMPLEX,0,
+     +     tag,MPI_COMM_WORLD,ierr)
+      call MPI_SEND(r2,lr2,MPI_DOUBLE_PRECISION,0,
+     +     tag,MPI_COMM_WORLD,ierr) 
+      call MPI_SEND(i1,li1,MPI_INTEGER,0,
+     +     tag,MPI_COMM_WORLD,ierr) 
+      call MPI_SEND(r3,lr3,MPI_DOUBLE_PRECISION,0,
+     +     tag,MPI_COMM_WORLD,ierr) 
+      call MPI_SEND(i2,li2,MPI_INTEGER,0,
+     +     tag,MPI_COMM_WORLD,ierr) 
+      return 
+      end
+c
+      subroutine recvdata(nrayelt,nray,nfreq,nbulk,src)
+      integer nrayelt, nray, nfreq, nbulk, src, tag
+c     Adjusted for dynamic dimensioning [BH111102].
+c
+      complex*16, pointer :: c1(:),c2(:)
+      real*8, pointer :: r1(:),r2(:),r3(:)
+      integer, pointer :: i1(:),i2(:)
+      common /write/ c1,c2,r1,r2,r3,i1,i2
+c     
+      include 'mpif.h'
+c
+      lc1=3*nrelt
+      lc2=9*nrelt
+      lr1=38*nrelt
+      lr2=nrelt*(25+nbulk)+nfreq*(3*nray+9)+7
+      lr3=4
+      li1=3
+      li2=1
+c
+      tag=1
+      call MPI_SEND(command,1,MPI_INTEGER,src,
+     +     tag,MPI_COMM_WORLD,ierr)
+      call MPI_RECV(nrayelt,1,MPI_INTEGER,src,
+     +     tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(c1,lc1,MPI_DOUBLE_COMPLEX,src,
+     +     tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(r1,lr1,MPI_DOUBLE_PRECISION,
+     +     src,tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(c2,lc2,MPI_DOUBLE_COMPLEX,src,
+     +     tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(r2,lr2,MPI_DOUBLE_PRECISION,
+     +     src,tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(i1,li1,MPI_INTEGER,
+     +     src,tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(r3,lr3,MPI_DOUBLE_PRECISION,
+     +     src,tag,MPI_COMM_WORLD,status,ierr)
+      call MPI_RECV(i2,li2,MPI_INTEGER,
+     +     src,tag,MPI_COMM_WORLD,status,ierr)
+      return 
+      end
+CMPIINSERTPOSITION

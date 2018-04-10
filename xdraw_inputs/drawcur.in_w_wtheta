@@ -1,0 +1,29 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+cd.bin
+
+graph title: GENRAY
+
+variable names
+0	 Poloidal dist.
+1	 R
+2	 rho
+3	 y_e
+4	 eff
+5        n_parallel
+6	 del_pow_e
+7	 del_cur_par
+8	 wtheta_pol
+
+ix	iy	title
+0	2       rho(poloidal dist.)
+0	4       eff(poloidal dist.)
+0	5       n_parallel(poloidal dist.)
+0	6       del_pow_e(polidal dist.)
+0	7       del_cur_par(polidal dist.)
+0	8       wtheta_pol(poloidal dist.)
+2	5       n_parallel(rho)
+2	6       del_pow_e(rho)
+2	7       del_cur_par(rho)
+

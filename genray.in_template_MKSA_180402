@@ -1,0 +1,3311 @@
+!
+!This file contains namelist input for the GENRAY ray tracing code.
+!GENRAY will read it as a file called genray.in in MKSA system
+!  (given that there is no genray.dat file).
+!  This file, genray.in, differs from genray.dat in that the
+!  latter uses mixed units.
+!  
+
+
+!Normalization constants:
+!-------------------------------------------------------------------------
+!/genr/ namelist
+!-------------------------------------------------------------------------
+! mnemonic, is the run designator...to help keep track of runs.
+!           It is used for naming the ray data output files:
+!              mnemonic.txt and mnemonic.nc 
+!              (Ray data o/p also depends on rayop nmlst variable.)
+!           mnemonic is character*128, default="genray"
+! rayop,    Specifies which of mnemonic.txt and mnemonic.nc files
+!           are to be output:
+!           "both", "text", "netcdf", or "none".  
+!           rayop is character*8, default="both".
+!           [Previous (related) iout3d nml no longer has functionality.]
+! dielectric_op="enabled", adds output of the 9 complex dielectric tensor
+!               elements to  .nc ray data file.
+!               "disabled", omit such data from the .nc data file.
+!               dielectric_op is character*8, default="disabled"
+!-------------------------------------------------------------------------
+!Normalization constants:
+! r0x [meter] characteristic length, can be used as scale factor
+! b0  characteristic magnetic field, can be used as scale factor
+!     [BH151018: Caution, b0 is not implemented uniformly throughout 
+!      the code.]
+!-------------------------------------------------------------------------
+!Parameters for output files
+!--------------------------------------------------------------------------
+! outdat*20     name of output file
+! stat*3        status of output file
+!--------------------------------------------------------------------------
+! partner  = 'disabled' to use input profiles from genray.dat or genray.in
+!          = 'genray_profs_in.nc'  to use plasma profile data from the netCDF
+!                       file: genray_profs_in.nc  created by transport code
+!                       or otherwise;
+!                  and to output power and current profiles on transport
+!                      code radial grid to file: genray_profs_out.nc
+!                      and genray_profs_out.txt (text file).
+!          = 'genray_profs_in.txt'  to use plasma profile data from the text
+!                      file: genray_profs_in.txt  created by transport code
+!                      or otherwise;
+!                  and to output power and current profiles on transport
+!                      code radial grid to file: genray_profs_out.nc
+!                      and genray_profs_out.txt (text file).
+!          = 'genray_profs_out.nc' to use only genray.in plasma profiles
+!                      [such as in coupling to Plasma State], but output
+!                      genray_profs_out.nc.
+!------------------------------------------------------------------------
+ &genr
+ mnemonic="genray"
+ rayop="both"
+ dielectric_op="enabled"
+ r0x=1.0d0
+ b0=1.0d0
+ outdat='zrn.dat'
+ stat='new'
+ partner="disabled"
+ &end
+!--------------------------------------------------------------------------
+!/tokamak/
+!-------------------------------------------------------------------------
+!Tokamak
+!--------------------------------------------------------------------------
+! eqdskin=Name (character*128) of eqdsk equilibrium input file
+!         "equilib.dat" (default)
+!--------------------------------------------------------------------------
+! Type of the (normalized) radial coordinates
+! indexrho [1 - sqrt(area), 2 - sqrt(torflux), 3 - sqrt(volume), 
+!           4 - sqrt(psi-psimag), 5 - (psi-psimag),
+!           6 - (r_max(psi)-rmin(psi))/(r_max(psi_lim)-rmin(psi_lim))
+!--------------------------------------------------------------------------
+! ipsi=1 calculation of contours psi(z,r)=const
+!     =0 -read in these contours from psi.bin file
+!--------------------------------------------------------------------------
+! ionetwo=1-calculation power and current radial
+!           profiles, to the file onetwo.bin
+!           0 - no calculations)
+!--------------------------------------------------------------------------
+! ieffic  choice of formula for the current drive efficiency
+!        =1 asymptotic simple formula (homogeneous, nonrelativistic)
+!        =2 asymptotic formula (East-Karney )
+!        =3 Curba (Ron Cohen) subroutine (high vel approx, sq-well-B)
+!        =4 Lin_Liu (TorGA_curgap subroutine)
+!        =5 using ADJ function for n_harmonic=0 case (e.g., LH wave)
+!           plus Stix fluxes. It works for i_adj=1 case only.
+!        =6 using ADJ function for all n_harmonics general case
+!           plus Stix fluxes. It works for i_adj=1 case only.
+! N.B., specify the resonant velocity harmonic used in the ECCD calc using
+!       jwave, as given below, v_res=(omega-n*omegac)/kpar.
+!     Alternatively, for ECCD using ieffic=3,4, set jwave=0 and then
+!       ECCD harmonic is picked locally along the ray to correspond
+!       to the harmonic of maximum EC power absorption (Bertelli
+!       and Harvey, 151018).
+!--------------------------------------------------------------------------
+! ieffic_mom_cons = 0 - NO momentum conservation in Lin-Liu subroutine (default)
+!                    (i.e., to be used with ieffic = 4)
+!                   1 - WITH momentum conservation in Lin-Liu subroutine 
+!                    (i.e., to be used with ieffic = 4)
+!--------------------------------------------------------------------------
+! psifactr (it should be 0 < psifactr =<1,  psifcatr ~1)
+!         is the parameter for the creation of the limiter points using 
+!         the closed flux surface: psilim=psimag+(psilim-psimag)*psifactr
+!         psifactr is a parameter (it must be .le.1) to avoid
+!         problems with the psi function near the separatrix.
+!--------------------------------------------------------------------------
+!deltripl is the relative amplitude of the ripple field at the
+!         last flux surface (at rho=1)
+!
+!nloop    is number of toroidal field coils 
+!
+!i_ripple is the index to choose the ripple model
+!         bripl_phi(z,r,phi)=(dF/dphi)/r=cos(N_loop*phi)*g(r,z)*N_loop/r
+!         bripl_z(z,r,phi) =(dF/dz)    =sin(N_loop*phi)*(dg/dz)
+!         bripl_r(z,r,phi) =(dF/dr)    =sin(N_loop*phi)*(dg/dr)
+!         models for function g:	 
+!         =1 the ripple model approximating the DIII-D field
+!            g=beqd*reqd*deltripl*(r/rmax)**N_loop/N_loop 
+!            beqd is the toroidal magnetic field at reqd (Tl)
+!            reqd is the nominal major radius of the torus.
+!            rmax is the max major radius at the last closed flux surface
+!            r    is the major radius
+!         =2 the ripple model using modified Bessel function I_0
+!            g=beqd*reqd*deltripl*I_0(N_loop*rho(z,r))/(N_loop*I_(N_loop))
+!--------------------------------------------------------------------------
+! NR is the number of bin boundaries in the small radius direction
+!    for the calculation of the power and current drive radial profiles.
+!    Power and current is tabulated at (NR-1) bin centers.
+!--------------------------------------------------------------------------
+! n_wall is a number of wall points
+!             if n_wall= 0 then
+!                no wall to be used, no reflection from the wall
+!
+!             if n_wall>0 then
+!                "wall coordinates"  are r_wall[1:n_wall], z_wall[1:n_wall],
+!                and reflect rays from straight line segments between
+!                the given points.  Count the number of coord pairs.
+!                The coords must begin and end at the same physical
+!                point.
+!             Units are meters.
+!             It should be (n_wall .le. n_wall_a)
+!             n_wall_a is a maximal value of n_wall, It is set in param.i file.
+!
+!             NOTE: the reflection model is not entirely physically correct
+!             in that the calculation of reflection is the same as is used
+!             at the the plasma LCFS which assumes the magnetic field lies
+!             in a flux surface.   At the wall, the magnetic field may not
+!             lie tangent to the wall surface.  A better model would keep the 
+!             refractive index component of the wave in the plane of 
+!             the vacuum chamber constant, and reverse the component
+!             perpendicular to the wall.   This could modify nparallel.
+!
+!
+! max_limiters is a number of limiters
+!             if max_limiters=0 then
+!                no limiter to be used, no reflection from the limiter
+!             if max_limiters>0 the the code will read limiters positions
+!
+!                to reflect the ray from the
+!                chamber wall consisting of the wall coordinates and
+!                those limiter coordinates to the plasma side of the
+!                wall.
+!             It should be (n_limiter .le. n_limiter_a)
+!             n_limiter_a is a maximal value of n_limiter.
+!             It is set in param.i file
+!
+!   r_wall(n_wall),z_wall(n_wall) wall coordinates [m]
+!   For each limiter with number 'i=1:max_limiters' limiter coordinates [m]
+!   will be set to the arrays
+!   r_limiter(n_limiter(i),max_limiters),
+!   z_limiter(n_limiter(i),max_limiters)
+!
+! phi_limiter(1:2,1:max_limiters) toroidal angles [degrees] of the limiter
+!                                  boundaries
+! 0 =< phi_limiter(1,i)<phi_limiter(2,i) =< 360   
+!
+! h_add_wall    [meter] the distance between wall points of the wall mesh
+!               with additional points: r_wall_add(j,m),z_wall_add(j,m).
+!               This distance should be smaller than 
+!               exponential density fall off poloidal distance
+!               sigma_wall_n set in the namelist /edge_prof_nml/ 
+!               Here
+!               m=0 for chamber wall
+!               m=1,...,max_limiters for limiters
+!               j is a number of mesh point along the boundary
+!               j=1,..,n_wall_add(m)
+!               n_wall_asdd(m) is a number of boundary points 
+!                              for chamber wall at (m=0)
+!                              for each limiter at m=1,max_limiter
+!               n_wall_asdd(m) is calculated inside the code adding additional
+!               points at the boundaries.
+!---------------------------------------------------------------------
+ &tokamak
+ eqdskin="equilib.dat"
+ indexrho=2
+ ipsi=1
+ ionetwo=1
+ ieffic=3
+ ieffic_mom_cons=0  !For backwards compatibility.  Turn on with =1, for ieffic=4.
+ psifactr=0.99d0
+ deltripl=0.00d0
+ nloop=24
+ i_ripple=1
+ NR=101
+ n_wall=0
+ max_limiters=0
+ r_wall= 1.0,2.0,2.5,1.0 
+ z_wall=-1.0,0.,0.0,1.0
+ n_limiter=0,0,0,0,0
+ r_limiter(1,1)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ r_limiter(1,2)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ r_limiter(1,3)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ r_limiter(1,4)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ z_limiter(1,5)= 0.0, 0.0, 0.0, 0.0, 0.0,
+
+ z_limiter(1,1)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ z_limiter(1,2)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ z_limiter(1,3)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ z_limiter(1,4)= 0.0, 0.0, 0.0, 0.0, 0.0,
+ z_limiter(1,5)= 0.0, 0.0, 0.0, 0.0, 0.0,
+
+ phi_limiter(1,1)= 0.0,  !degree
+ phi_limiter(2,1)= 360.0,
+ phi_limiter(1,2)= 0.0,  !degree
+ phi_limiter(2,2)= 360.0,
+ phi_limiter(1,3)= 0.0,  !degree
+ phi_limiter(2,3)= 360.0,
+ phi_limiter(1,4)= 0.0,  !degree
+ phi_limiter(2,4)= 360.0,
+ phi_limiter(1,5)= 0.0,  !degree
+ phi_limiter(2,5)= 360.0
+
+! n_wall=52   !C-Mod
+! r_wall=.4402,.4402,.4402,.6999,.6999,.7649,.7657,.9553,1.0616,1.0616,1.0616,.9553,.8235,.8208,.8192,.7605,.7578,.7572,.7564,.7553,.754,.7529,.751,.7494,.7477,.7461,.702022,.702022,.694147,.686952,.686952,.629376,.629376,.623269,.618246,.614472,.61207,.611122,.611657,.611657,.629501,.7029,.7029,.6022,.5729,.5699,.5699,.5607,.46835,.46835,.4604,.4402
+! z_wall=-.2157,0.,.4328,.4328,.403,.3855,.3886,.3378,.3378,0.,-.3378,-.3378,-.3732,-.3632,-.3571,-.3728,-.3627,-.3612,-.3597,-.3585,-.3574,-.3566,-.356,-.3557,-.3557,-.356,-.367794,-.367794,-.370719,-.375057,-.375057,-.417572,-.417572,-.423004,-.429451,-.4367,-.444512,-.452629,-.460784,-.460784,-.573903,-.5739,-.5959,-.5959,-.5794,-.5794,-.5121,-.5001,-.474675,-.29629,-.25106,-.2157
+
+! max_limiters=1   !C-Mod
+! r_limiter(1,1)=.81794,.81763,.8362,.84981,.86149,.87147,.87996,.88707,.89346,.89434,.89901,.90232,.90429,.90494,.90429,.90232,.89901,.89434,.89346,.88707,.87996,.87147,.86149,.84981,.8362,.81763,.81794
+! z_limiter(1,1)=.26399,.22821,.19177,.17399,.15621,.13843,.12065,.10287,.08321,.08117,.06096,.04064,.02032,0,-.02032,-.04064,-.06096,-.08117,-.08321,-.10287,-.12065,-.13843,-.15621,-.17399,-.19177,-.22821,-.26399
+
+ h_add_wall=1.d-3
+
+ &end
+
+!/wave/
+!-------------------------------------------------------------------------
+!Waves
+!-------------------------------------------------------------------------
+! frqncy [Hz] frequency f=w/2pi in Hz (1/sec), MKSA difference from genray.dat
+! 
+! ioxm ( 1 - om, -1  - xm )   ! Wave mode in the equation N=N(gam).
+!                             ! gam is the angle between the refractive vector
+! It works if ioxm_n_npar=0.  ! and the magnetic field.
+! For ioxm_n_npar=+1 or -1    ! dispersion equation: a*N**4+b*N*2+c=0 
+! the wave mode will be       ! roots: N**2=(-b+ioxm*sqrt(b**4-4a*c))/b 
+! specified by  ioxm_n_npar   ! Here coefficients (A,B,C) are the functions
+!                             ! of angle (gam)  
+!                             ! a=A/delta**3, b=B/delta**3, c=C/delta**3
+!                             ! delta=1-y_e for ib=1
+!                             ! delta=1-y_i for ib=1 > 1 
+!-----------------------------------------------------------------------
+! 
+! ioxm_n_npar - 
+!           =0 (as default)ioxm_n_par will not be used,
+!              the wave mode will be calculated using ioxm parameter          
+! 
+!           (=+1 or =-1) sign before square root in dispersion relation
+!           delta**2*f~*N**4+delta*g~*N**2+w~=0
+!           which gives N**2=N**2(N_parallel)
+! 
+!           f~=delta*eps_per
+!     
+!           g~=delta**2*N_par**2(eps_par-eps_per)+
+!              delta**2(g**2-eps_per**2-eps_per*eps_par)
+!
+!           w~=delta**3*N_par**2(-eps_per*eps_par+eps_per**2-g**2)+
+!              delta**3*eps_par(eps_per**2-g**2)
+!
+!           root=(-g+ioxm_n_npar*sqrt(g**2-4f*w))/2g
+!
+!           f=f~, g=g~/delta, w=w~/delta**2
+!           delta=1-y_e for ib=1
+!           delta=1-y_i for ib= > 1
+!
+!------------------------------------------------------------------------- 
+! ireflm  -max number of reflections =1 for EC
+!-------------------------------------------------------------------------
+! no_reflection !=1 switch off the artificial reflection from 
+!               !the last closed flux surface.  Gives natural reflection
+!               !from a density gradient outside the LCFS.
+!               !Not controlled by ireflm.
+!               !=0 (default) switch on the artificial reflection from 
+!               !the last closed flux surface.
+!-------------------------------------------------------------------------
+! jwave  (0 - LH wave, -1 AW, n - EC wave harmonic n, or 0 as described
+!        above), used in calc. of current drive efficiency (see ieffic).
+! -------------------------------------------------
+! istart  if start point outside the plasma=1 else=2 or 3.
+! if istart=1 use namelist &eccone below, =2 use &grill
+! if istart=3 it use &grill and the additional calculations in dinit
+! to launch the ECR ray inside the plasma in the O_X mode
+! conversion point (rhoconv,theta), Theta is a poloidal angle (degree)
+! for mode conversion point. It is given in dinit.f 
+!--------------------------------------------------------------------------
+! delpwrmn - Minimum power in each ray, as a fraction of
+!            starting power in the ray, after which ray is stopped.
+!            Ray also stops if initial power is zero [.lt.1.e-100].
+!--------------------------------------------------------------------------
+! ibw=0 it is not the direct launch of the Bernstein waves
+!    =1 the direct launch of electron Bernstein wave from dhot tensor
+!       The last case works only for istart=2 and grill_lh conditions 
+!--------------------------------------------------------------------------
+! i_vgr_ini =+1 the wave is directed into the plasma (in the initial point)
+!           =-1 the wave is directed out the plasma (in the initial point
+!---------------------------------------------------------------------------
+! poldist_mx [meter] is the maximal poloidal distance along the ray
+!            default=1.d+5
+!---------------------------------------------------------------------------
+! i_look_roots=0    !do not plot D(N_perp) and do not calculate all 
+!                   !hot roots
+!             =1    !plot D(N_perp) and calculate all 
+!                   !hot roots, but do not calculate the ray   
+!             =2    !calculate hot root, use the root with number k_root
+!                   !as the initial ray condition and calculate a ray
+!----------------------------------------------------------------------     
+! cnperp_plot_min,cnperp_plot_max !max and min Nperp to plot D(Nperp)      
+! n_nperp_plot,                   !number of Nperp points to plot D(Nperp)
+!-------------------------------------------------------------------------
+! N_perp_root_max                !max value of n_perp to
+!                                !find hot roots 
+! n_points_root                  !number of  N_perp mesh points
+!                                !to find hot plasma roots
+!-------------------------------------------------------------------------
+! k_hot_root   is the number of the hot plasma root
+!              N_perp_root_ar(k_hot_root)
+!              which will be used for ray initial condition
+!              It works for i_look_roots=2 case only
+!-------------------------------------------------------------------------
+! i_rho_find_hot_nperp_roots=1  find the small radius rho_ini 
+!             rho_ini > rho_min_find_hot_nperp_roots
+!             at the vector rho^ where
+!             hot plasma dispersion function D_hot(nper)=0
+!             has one,two or three roots.
+!             The vector rho^ is starting at the edge point 
+!             (r_edge,z_edge,phi_edge),and directed to the 
+!             magnetic axis O(xma,yma,phi_edge)
+!             Write roots and polarization to  find_hot_roots.dat
+!i_rho_find_hot_nperp_roots=0  do not find roots
+!
+! rho_step_find_hot_nperp_roots is the small radius step to find the hot
+!                               plasma dispersion relation D_hot(N_perp)=0
+!                               roots 
+!
+! rho_min_find_hot_nperp_roots  is the minimal rho
+!-----------------------------------------------------------------------
+!     For istart=1 case only
+!     shift_rho_geom 
+!                    It shifts the initial point of the ray from the plasma
+!                    bounday (LCFS) inside the plasma.
+!                    The ray initial coordinates at the LCFS are (r,z)
+!                    and the geometrical radius of this initial point
+!                    (the distance from the magnetic axis) is
+!                    rho_geom=sqrt((r_xma)**2+(z-yma)**2)
+!                    
+!                    The initial point will be shifted inside the plasma
+!                    rho_geom_shifted==rho_geom*shift_rho_geom
+!                    So,the shifted initial coordinates are  
+!                    r_shifted=xma + (r-xma)*shift_rho_geom
+!                    z_shifted=yma + (z-xma)*shift_rho_geom
+!
+!                    By default shift_rho_geom=1.0d - 1.d-7
+!
+!                    The PURPOSE is to shift the starting point to
+!                    to higher density, so that the O- and X-modes
+!                    are sufficiently separated to start the ray in the
+!                    correct mode.  This may be necessary for some
+!                    hot plasma or fully relativistic EC cases.
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+ &wave
+ frqncy=45.0d+9   !MKSA difference from genray.dat
+ ioxm=+1
+ ioxm_n_npar=0
+ ireflm=1
+ jwave=+1
+ istart=1
+ delpwrmn=1.d-16
+ ibw=0
+ i_vgr_ini=+1
+ poldist_mx=1.d+5  
+!&wave
+      frqncy=60.00d6 !HZ MKSA difference from genray.dat
+      ioxm=-1
+      ireflm=3
+      jwave=1
+      istart=2
+      delpwrmn=1.d-2
+      ibw=0
+      i_vgr_ini=+1
+      poldist_mx=1.d+5 ![meter]
+      ioxm_n_npar=0
+      i_look_roots=0   
+      cnperp_plot_min=0.d0
+      cnperp_plot_max=5.d0      
+      n_nperp_plot=50
+      cN_perp_root_max=5.d0 
+      n_points_root=50   
+      k_hot_root=1
+      i_rho_find_hot_nperp_roots=0
+      rho_step_find_hot_nperp_roots=1.d-2
+      rho_min_find_hot_nperp_roots=0.9d0
+      no_reflection=0
+      shift_rho_geom=1.d0
+!&end
+!---------------------------------------------------------------------
+
+!/scatnper/
+!-------------------------------------------------------------------------
+!N_perpendicular scattering
+!-------------------------------------------------------------------------
+! iscat it is the switch for the n_perp scattering
+!       iscat=1 the scattering switched on,
+!            =0 the scattering switched off
+!-------------------------------------------------
+! rhoscat(1:nscat_n) small radii for the scattering location
+!        The parameter nscat_n should be given in the param.i file
+!
+! The scattering of the polar angle deltheta will be
+!      deltheta=dsqrt(2.d0*scatd)*ranorm(fseed)
+! scatd(0) the mean square scattering angle (radians**2)
+!          for the plasma boundary reflection points
+!
+! scatd(1:nscat_n) the mean square scattering angles (radians**2)
+!          for the interior plasma boundary points
+!-------------------------------------------------------------------
+!iscat_lh_nicola=1 to use to use scattering procedure lh_scattering
+!                  written by Nicola Bertelli
+!               =0 do not use  lh_scattering
+!-----------------------------------------------------------------
+ &scatnper
+ iscat=0
+ scatd= 0.01, 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.01, 0.01
+ rhoscat=     0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.95, 0.97
+ iscat_lh_nicola=0
+ &end
+
+!/dispers/
+!Dispersion relation
+!-------------------------------------------------------------------------
+! ib<=nbulk cyclotron resonance sort(=1 for ecr)
+! the number in (1-y(ib)) for the multiplication of the
+! dispersion relation to delete the singularity
+! -------------------------------------------------
+! id gives form of the dispersion relation
+!            =1 AN**4+BN**2+C=0
+!            =2 N**2=(-B+ioxm*Sqrt(B**2-4AC))/2A;
+!	     =3 Appleton-Hartree;
+!            =4 electron relativistic plasma from Hermitian Mazzucato code
+!            =5 electron relativistic plasma from total Mazzucato code
+!            =6 hot non-relativistic plasma, Hermitian, Forest calc 
+!            =7 electron relativistic plasma from Shkarofsky code
+!            =8 Ono dispersion for fast waves
+!            =9 hot non-relativistic plasma, full tensor [Bernstein-Friedland]
+!            =10 Westerhof-Tokman dispersion with Mazzucato
+!                relativistic electron dielectric tensor
+!                Self-consistent absorption obtained with iabsorp=1.
+!            =11 Eric Nelson-Melby relativistic tensor
+!                Dispersion function = Re(Det)  [Good for |n_par|.lt.1]
+!		 calculated using Isaac Weiss' method
+!            =12 Westerhof-Tokman dispersion with 
+!                    Eric Nelson-Melby dielectric tensor
+!                Self-consistent absorption obtained with iabsorp=12.
+!            =13 Westerhof-Tokman dispersion with
+!                 hot non-relativistic plasma, full tensor
+!                Self-consistent absorption obtained with iabsorp=4.
+!            =14 Abhay Ram's dielectric tensor, using the Trubnikov integral
+!	     =15 Westerhof-Tokman dispersion with
+!	           Abhay Ram's dielectric tensor
+!                Self-consistent absorption obtained with iabsorp=12.
+!    **** NOTE: see notes around irkmeth if using id=11,12,14 or 15 *****
+!              **** NOTE: irkmeth=1 SHOULD BE used for id=14
+!
+!            =16 Paul T. Bonoli and Ronald C. Englade dispersion function
+!                for LH case: cold plasma plus thermal correction     
+!---------------------------------------------------------
+! For use with Abhay Ram's dispersion relation (id=14 or id=15) parameters to
+! control the integration routine for the Trubnikov integral.
+!
+! relres offers 4 choices for the resolution to use for the relativistic
+! dispersion relation using the Trubnikov integral:
+! relres=1 low resolution, errabs0=1.d-4, errrel0=1.d-4, navg=3, diff_err=0.1
+!       =2 medium res., errabs0=1.d-5, errrel0=1.d-5, navg=12, diff_err=1.d-3
+!       =3 high res., errabs0=1.d-6, errrel0=1.d-6, navg=25, diff_err=1.d-6
+!       =4 user-defined res., set the following parameters manually.
+! default: relres=2
+!
+! The Trubnikov one-dimensional (complex) integral is performed by splitting
+! up a region from 0 to 1.d8 into 10^6 pieces, and each piece is integrated
+! using the SLATEC adaptive quadrature routine dqag. errabs0 and errrel0 are
+! the absolute and relative error tolerances passed directly to dqaq.
+! Then the adjacent pieces are compared (it is an oscillatory integrand)
+! and using navg number of pieces, when the average difference between them
+! are less then diff_err, the integration is presumed finished (Thus it may
+! finish long before the upper limit of 1.d8).
+!
+! errabs0 - absolute error for dqag integration routine
+! errrel0 - relative error for dqag integration routine
+! navg - number of adjacent integration intervals to use in comparison
+! diff_err - error tolerance using navg pieces, when the average difference
+!         is less than diff_err, then the integration is done.
+!
+! To decide when one should use the low, medium, or high resolution 
+! integration, here are some suggestions based on the behavior of the
+! Trubnikov integrand: The integrand converges more slowly, and hence
+! the resolutions should be set higher, for low electron temperature,
+! low (i.e. near zero) magnitude of n_parallel, and for low (near or
+! below the fundamental cyclotron frequency) frequency. 
+! Examples: n_parallel = -0.05, Te=400 eV, omega/omega_ce=0.4 to 1.2, 
+!    it was necessary to use errabs0=1.d-5,errrel0=1.d-5,navg=20,diff_err=1.d-5
+!    to be completely converged.  By changing Te to 4000 eV, it was sufficient
+!    to use 1.d-4,1.d-4,15 and 1.d-4. 
+!   An easy case: n_parallel=0.3, Te=7 keV, omega/omega_ce=2.4 to 2.7, 
+!    complete convergence already at errabs0=1.d-4,errrel0=1.d-4,navg=2,
+!    diff_err=0.5
+!   An intermediate case: n_parallel=0.1, omega/omega_ce=1.0, Te=300 eV
+!    errabs0=1.d-5,errrel0=1.d-5,navg=12,diff_err=1.d-3 was OK.
+! *** NOTE: Sometimes with too small n_parallel, the Trubnikov method does
+!   not work well (id=14 or 15). Instead, use the Weiss method (id=11 or 12),
+!  which works well for small n_parallel (but does not work for n_parallel>1).
+!------------------------------------------------
+! For Mazzucato plasma dispersion tensor:
+! iherm =1 hermitian dielectric tensor, 2-full
+!------------------------------------------------------------------------
+!Absorption:
+!iabsorp -choice of Imag(N_perp) (N_perp is the perpendicular refractive index)
+!-------------------------------------------------------------------------
+! iabsorp=1 for EC waves with Mazzucato solver (ki/kr<<1)
+!        =2 for LH waves
+!        =3 for FW waves, Chiu et al themal corr., NF 1989, with corrections.
+!           At this time, this is only iabsorp value which provides power
+!           profiles to individual ions (via powden_s/powtot_s).
+!           Other models below (9, 91, 92, could be added).
+!        =4 for all frequencies with Forest code (ki/kr<<1)
+!           This is further specified by choice of i_im_nperp, see below.
+!        =5 for EC and EBW waves from Shkarofsky code
+!        =6 for EC and BW anti-hermitian part relativistic tensor+
+!                         hermitian_part (Forest code)
+!           Uses n_relt_harm,n_relt_harm1,  and distributions specified
+!           through i_diskf (see below).
+!        =7 for EC wave case. The complex electric field calculations
+!           using Cold plasma tensor + antihermitian relativistic tensor
+!           ---EC relativistic absorption 
+!           dielectric tensor=hermitian part(cold plasma)+
+!                             anti-hermitian part(full relativistic)
+!           Uses n_relt_harm,n_relt_harm1, and distributions specified
+!           through i_diskf (see below).
+!        =8 for id=10,12,13 and Westerhof-Tokman dispersion 
+!           function  [Projection method from real part of
+!           eigenvalue.]  Integration is with respect to distance.
+!        =9 The absorption is calculated for hot dispersion
+!           using the formula from Stix book p.74 (17,18,21)
+!           Im(k_perp)= 0.5*Power_abs/(P^+T^)
+!           It uses hot plasma dielectric tensor.
+!           It calculates hot plasma dielectric tensor reps() and 
+!           electric field polarization (cex,cey,cez) using this 
+!           hot plasma tensor.  See CompX report CompX-2005-1,
+!           as applied to FW in DIII-D (agrees well with iabsorp=3).
+!        =91 FW absorption is calculated by
+!            subroutine absorpfw_pinsker_1
+!            using formula:   
+!            formula from using formula:   	                            
+!            1) for ion absorption from                      
+!            R.i.Pinsker,M.Porkolab                          
+!            e-mail: pinsker@fusion.gat.com                  
+!            05/02/11                                         
+!            2) for electron absorption from                 
+!            S.C.Chiu,V.S.Chan,R.W.Harvey,M.Porkolab	 
+!            Theory of fast wave current drive for tokamak   
+!            plasma,Nuclear fusion,1989,vol.29,No.12, p.2175-2186
+!   
+!            electric field polarization will be for the cold plasma dielectric tensor
+!
+!        =92 FW absorption is calculated by
+!            subroutine absorpfw_pinsker_2 using formula:   
+!            for electron and ion absorption from                      
+!            R.i.Pinsker,M.Porkolab                          
+!            e-mail: pinsker@fusion.gat.com                  
+!            05/02/11                                         
+!          
+!            electric field polarization will be for the cold plasma dielectric tensor
+!
+!        =10 The absorption is calculated for relativistic tensor
+!           (A.Ram)
+!           using the formula from Stix book p.74 (17,18,21)
+!           Im(k_perp)= 0.5*Power_abs/(P^+T^)
+!           It uses relativistic dielectric tensor.
+!           It calculates relativistic dielectric tensor reps() and 
+!           electric field polarization (cex,cey,cez) using this 
+!           tensor.
+!        =11 The absorption Im(N_perpendicular) is calculated 
+!           for the relativistic dispersion function Determinant=0.
+!           The dispersion function uses the full Abhay Ram dielectric
+!           tensor (with the Trubnikov integral).
+!           The projection method is used to find Im(N_perpendicular).
+!           That is, Im(N_perp)=-Im(D)/(dD/dRe(N_perp)), evaluated 
+!           at give Real(N_perp) with Im(N_perp)=0.
+!           The real part Real(n_perp) is obtained from the trajectory
+!           solution for the given id value. 
+!           Then complex n_perp is used with full dielectric tensor
+!           to get the polarizations.  Good for arbitrary id value,
+!           like other iabsorp calcs.
+!	 =12 (For id = 11,12,14, or 15.)
+!            Find Im(N_perpendicular) by finding the exact solution to
+!            Det(Complex n_perp)=0. This returns Im(N_perp), like the
+!            projection method described above, but is more accurate,
+!            especially when Im(N_perp)/Re(N_perp) is not negligible.
+!            Uses Muller algorithm to solve for the complex root in
+!            the complex plane. See mullerfun2.f.
+!            For id.eq.11.or.id.eq.12, uses Eric Nelson-Melby tensor.
+!            For id.eq.14.or.id.eq.15, uses Abhay Ram tensor.
+!------------------------------------------------------------------------
+!iabsorp_ql =0  do not use QL flux for absorption calculations
+!           =1  to use QL flux for electron absorption calculations
+!               In this case QL flux will be calculated for harmonics
+!               numbers nharm in the following interval:
+!               n_harm_adj_min =< nharm   =< n_harm_adj_max 
+!               n_harm_adj_min   number of minimal and maximal harmonics
+!               n_harm_adj_max   for power and CD calculations  
+!               Electric field polarization will be calculated according to
+!               the value of the index: iabsorp 
+!               Energy flux "fluxn" will be calculated according to 
+!               the value of the index: iflux 
+!               BH180403,Doesn't work with iabsorp=6,7 (probably some others).
+!------------------------------------------------------------------------
+!                 To switch off ion absorption
+! ion_absorption ='enabled' to add ion absorption (by default)
+!                  It works at iabsorp=3,9,91,92
+!                ='disabled' do not add ion absorption
+!-------------------------------------------------------------------------
+! iabsorp_collisional =0 no additional collisional absorption
+!                     =1 collisional absorption  using formula
+!                        Im(N)=dabs(nu_ei/(gr_perp))*clight/omega)
+!                     [For LH, there is separate coll absorption included,
+!                      not switched by this flag and always on.]
+! coll_mult =1.d0(default), multiplies above coll absorp expression
+!--------------------------------------------------------------------------
+! The change of the dispersion relation and absorption
+! near the gyro-frequency points
+!-------------------------------------------------
+! iswitch=1   To use the change of the dispersion relation and
+!             absorption
+!        =0   Do not use the change of the dispersion relation and
+!             absorption 
+!     del_y   If the difference |1-nY(jy)|<del_y 
+!             (jy=1-nbulk ,n=...-2,-1,0, 1,2,3,...)
+!             then switch on the new 
+!             given type of the dispersion and absorption.
+!   jy_d      is the type of plasma species 1<=jy<=nbulk
+!   idswitch  is the type of the dispersion function near the 
+!             gyro-frequency points
+!             It can be equal 1,2,3,4,5,6
+!   iabswitch is the type of the absorption near the gyro-frequency point  
+!-----------------------------------------------------------------------
+!   n_relt_harm1 is the lowest, i.e., minimum harmonic used in the
+!               anti-hermitian dielectric tensor calculations.
+!               It man be positive of negative.
+!               Default value is +9999, in which case this input
+!               is ignored.
+!   n_relt_harm (.ge.1) gives the number of EC harmonics used 
+!               in anti-hermitian dielectric tensor calculations
+!               If n_relt_harm1=9999, then harmonics from 
+!                  -n_relt_harm to +n_relt_harm are used.
+!               If n_relt_harm1.ne.9999, then harmonics from
+!                  n_relt_harm1 to n_relt_harm1+(n_relt_harm-1) are used.
+!   It is necessary that the harmonics used in this calculation
+!     be within the range of parameters [n_relt_harm1a,n_relt_harm2a]
+!     set in the param.i file.s
+!     These conditions are checked in the code.
+!-------------------------------------------------------------------   
+!   n_relt_intgr is the number of points for integration along the
+!     resonance curve  (default=50).  Note, this variable is used
+!     below with namelist i_resonance_curve_integration_method (in
+!     numercl).
+!---------------------------------------------------------------------
+!  flux=B~.B+E~.d(omega*eps_herm)/(domega).E
+!   iflux=1 the flux will be calculated using the the group velocity from
+!           the chosen dispersion relation (with given id) and the electric
+!           field calculated for the chosen iabsorp
+!   iflux=2 the flux will be calculated using V_gr for the electron cold plasma
+!           dispersion and polarization (using subroutine  grpde2)  
+!-----------------------------------------------------------------------
+! i_im_nperp choice of the method to find Im_N_perp 
+!    for hot plasma(iabsorp=4):
+! i_im_nperp=1 Im_N_perp=abs(ImD_full/(dD_hermitian/dReN_perp))
+!              (This method has been found to give poor accuracy
+!               for FW in a DIII-D FW situation, see CompX
+!               report CompX-2005-1.) 
+! i_im_nperp=2 (Re_N_perp,Im_N_perp) is the complex root 
+!              (of the complex dispersion relation)
+!              calculated by Newton iterations with the numerical
+!              derivatives (the chord method)
+!------------------------------------------------------------------
+! i_geom_optic sets  the form of the ray equations
+!              =1  integration in time (default):
+!                  ray-tracing equations right hand side=
+!		   dr^/dt=-(dD/dN^)/(dD/domega)
+!                  dN^/dt=(dD/dr^)/(dD/domega)
+!                  In this case rside1 gives v_group
+!              =2  integration is space,
+!                  ray-tracing equations right hand side=
+!		   dr^/dl=- ray_direction * (dD/dN^)p
+!                  dN^/dl=  ray_direction * (dD/dr^)p
+!                  p=1.d0/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)=
+!                  deru(1)=dD/dN_z,deru(2)=dD/dN_r,deru(3)=dD/dCM,
+!                  N_phi=cm/r
+!----------------------------------------------------------------------
+! ray_direction =+1 as default 
+!            or =-1
+! It is a multiplier in right hand side of ray-tracing equations
+! It is used for i_geom_optic=2 case
+!----------------------------------------------------------------------
+! i_salphal(nbulka)  sets which damping will be in salphal_nc
+!                   for iabsorp=3 or for iabsorp=9 cases.
+!                   For other 'iabsorp' cases 'saplhal' contains 
+!                   the electron damping coefficients
+!
+!	     Default:i_salphal(1)=1,i_salphal(2:nbulk)=0 electron damping only  
+!            A particular species contribution to salphal_nc is added if
+!            i_salphal(species_number)=1. That is, damping coefficients
+!            for all species with i_salphal(k).ne.0 are summed into saplhal_nc 
+!------------------------------------------------------------------------------	
+! refl_loss fraction of power lost at each reflection (default=0.0)
+!----------------------------------------------------------------------------
+ &dispers
+ ib=1
+ id=14
+ iherm=1
+ iabsorp=4
+ iabsorp_ql =0  
+ iabsorp_collisional =0 
+ coll_mult =1.d0 
+ iswitch=0
+ del_y=1.d-3
+ jy_d=1
+ idswitch=2
+ iabswitch=1
+ n_relt_harm=5
+ n_relt_intgr=50
+ iflux=1
+ i_im_nperp=1
+ i_geom_optic=1
+ ray_direction=-1.d0   !Only for i_geom_optic=2
+ i_salphal(1)=1        !to put the electron damping coefficient in salphal_nc
+! i_salphal(2)=1       !these lines can be used for nbulk >1
+! i_salphal(3)=1       !for iabsorp=3 or =9 cases 
+! i_salphal(4)=1
+! i_salphal(5)=1
+ refl_loss=0.0d0
+ ion_absorption ='enabled'
+    
+ &end
+
+!/numercl/
+!------------------------------------------------------------------------
+!Numerical method
+!-------------------------------------------------------------------------
+! irkmeth (0-constant 1-variable step 5 order,2- variable step in RK 4 order)
+!  irkmeth=0: Poloidal distance of output is at intervals .ge.prmt6.
+!             Checks time step for passing outside plasma and reflects.
+!  irkmeth=1: Only poloidal distance for control of output point (prmt6,
+!             i_output has no effect). Output at distance.ge.prmt6,
+!             i.e, the first code step beyond prmt6 distance.
+!             No control for being outside the plasma and reducing
+!             the step.  Correction method specified by icorrect is
+!             operative.
+!             Time or length for integration according to i_geom_optic.
+!     *** NOTE: irkmeth=1 may not work well with fully relativistic dispersion
+!        relations (id=11,12,14,15), unless prmt4 is quite small (e.g. 2.0d-6) ***
+!  irkmeth=2: Most developed method of ray equation integration.
+!             Time or space step in the of the equations
+!             (according to setting of i_geom_optic) is controlled
+!             so that output is at intervals prmt6 (meters).
+!             As ray approaches the plasma edge, it is reflected
+!             at the last closed flux surface.
+!     *** NOTE: irkmeth=2 works best for fully relativistic dispersion
+!        relations (id=11,12,14,15). An example of what prmt parameters work
+!        well for relativistic EBW and irkmeth=2:
+!                prmt1=0.000d+00
+!                prmt2=9.999d+05
+!                prmt3=1.000d-04
+!                prmt4=5.000d-04
+!                prmt6=1.0d-03
+!--------------------------------------------------------------------------
+! ndim1 (number of used ray tracing equations)
+!        it should be ndim1=6 for isolv=1
+!                     ndim1=5 for isolv=2
+! isolv=1 correction,=2 expl. solution
+!
+!         At isolv=1 the code solves 6 ray-tracing equations
+!         and can use the Hamiltonian correction if icorrect=1
+!
+!         At isolv=2 the code solves the system which consists of
+!         1) five chosen equations from the system of six ray
+!            tracing equations
+!         2) and the dispersion relation
+!         The case isolve=2 was checked for not all dispersion relations
+!         (specified by id).
+! -------------------------------------------------
+! idif=1 analytic differentiation, =2 numerical
+! -------------------------------------------------
+! nrelt   Maximum number of ray elements per ray.
+!         Must be .le. nrelta (a parameter)
+!--------------------------------------------------------------------------
+! -------------------------------------------------
+! Runge-Kutta method parameters
+! -------------------------------------------------
+! prmt1=tau initial= prmt(1)
+! prmt2=tau final=prmt(2)
+! prmt3=initial tau step=prmt(3) non-dimensional
+! prmt4=required accuracy=prmt(4)
+! prmt6=hprint=prmt(6) [meter] poloidal or total distance for results output
+! prmt9 accuracy of Hamiltonian in the Runge-Kutta subroutine at irkmeth=2
+!       it will reduce Runge-Kutta time step if dabs(ham).ge.eps_ham)
+!       =1.d15 by default (for so big value the comparison
+!                         of the hamiltonian (hamilt<prmt9) in Runge-Kutta
+!                         practically does no change time step
+!                         and Runge-Kutta works like without this comparison)
+!--------------------------------------------------------------------------
+!icorrect= switch for Hamiltonian correction in subroutine outpt
+!          [See manual].
+!icorrect=0 switch off the correction
+!        =1 switch on the correction
+!-------------------------------------------------------------------------
+! iout3d [obsolete]   ='enable'  to write output 3d.dat file
+!           ='disable' do not write 3d.dat file
+!--------------------------------------------------------------------------
+! maxsteps_rk the maximal number of the time steps of the Runge-Kutta
+!             solver (in default =10000)
+!--------------------------------------------------------------------------
+! i_output is used for irkmeth=2 only
+! i_output=1 output is at the equal poloidal distance prmt6  [default]
+!         =2 output is at the equal total distance prmt6
+!--------------------------------------------------------------------------
+!
+! The following has been used for OXB in cases where the UH layer
+!   is very close to the plasma boundary.   Then, in the vicinity of
+!   the UH layer, switch the step size along the ray to a shorter
+!   value.
+! i_uh_switch=1    if uh=dsrt(xe+ye**2) < uh_switch then change 
+!                  the output step prmt(6) to prmt6_uh_switch 
+!            =0    do not change the output step prmt(6)
+!
+! prmt6_uh_switch  [meter] is the output step for i_uh_switch=1 case
+!
+! uh_switch       if uh < uh_switch then change the outout step for
+!                  i_uh_switch=1 case
+!----------------------------------------------------------------------
+! Measure error in the dispersion relation.
+! If  toll_hamilt <D/(N|gradD|) then stop ray calculation
+!--------------------------------------------------------------------------
+!    
+! i_power_switch_resonance   =1  to use  prmt6_power_switch_resonance
+!                            =0  do not change the output step prmt(6)
+!
+! prmt6_power_switch_resonance   [meter] is the output step for 
+!                                i_power_switch_resonance=1 case
+!                                in the resonace area 
+!
+! n_power_switch_resonance   is the number of different used EC resonance 
+!
+! y_power_switch_resonance(n_resonance_a) are used ratios omega_ce/omega
+!
+! del_y_power_switch_resonance determines the resonance area
+! The condition for resonance area 
+! abs(Ye-y_power_switch_resonance(k))< del_y_power_switch_resonance
+! k=1,...,n_power_switch_resonance 
+! n_power_switch_resonance_a is max of  n_power_switch_resonance
+!                            It is set in param.i
+!-------------------------------------------------------------------
+!       i_resonance_curve_integration_method=1 !rectangle integration
+!                                              !over angle,
+!                                              !for ellipse case only
+!       i_resonance_curve_integration_method=2 !rectangle formula,
+!                                              !p_perp integration
+!                                              !elliptic or hyperbolic case
+!       i_resonance_curve_integration_method=3 !trapezoidal formula,
+!                                              !p_perp integration
+!                                              !elliptic or hyperbolic case
+!       i_resonance_curve_integration_method=4 !adaptive Simpson integration 
+!                                              !p_perp integration
+!                                              !elliptic or hyperbolic case
+!                                              !(default, but prior to
+!					       ! 7/26/2007, def was =3.)
+!
+!       i_resonance_curve_integration_method is used in subroutine intgr_rl
+!       to choose the numerical integration method for 
+!       anti-hermitian relativistic dielectric tensor calculation.
+!       This applies for iabsorp=6,7 and for emission calculations.
+!       n_relt_intgr (from namelist &disper) is number of number of points 
+!         in integration for i_resonance_curve_integration_method=1,2,3.
+!-----------------------------------------------------------------------
+!       epsi is the accuracy used in integration by adaptive Simpson
+!-------------------------------------------------------------------------
+!       eps_delta_pow   ! If the power variation along a ray at one output step
+!                       ! bigger than eps_delta_pow:
+!                       ! (delpwr(is-1)-delpwr(is))/delpwr(is-1) > eps_delta_pow
+!                       ! and if the ray power is bigger than initial ray power
+!                       ! multiplied by eps_delta_pow:
+!                       ! delpwr(is-1)> delpwr(1)*eps_delta_pow 
+!                       ! then the code will reduce the output step prmt(6).
+!                       !
+!                       ! Then the code will return the output step prmt(6)
+!                       ! to the initial value prmt6 given in the input file.
+!                       !
+!                       ! eps_delta_pow is used in prep3d.f
+!--------------------------------------------------------------------------
+ &numercl
+ irkmeth=2
+ ndim1=6
+ isolv=1
+ idif=2
+ nrelt=500
+ prmt1=0.000d+00
+ prmt2=9.999d+05
+ prmt3=2.000d-2
+ prmt4=1.000d-3
+ prmt6=0.500d-3                             !meter
+ prmt9=1.d15
+ icorrect=0
+ iout3d='enable'
+ maxsteps_rk=50000
+ i_output=1
+ i_uh_switch=0
+ uh_switch=1.5d0 
+ prmt6_uh_switch=1.d-5
+ toll_hamilt=1.d-3
+ i_power_switch_resonance   =0 
+! prmt6_power_switch_resonance=prmt6*1.d-1 !meter
+ prmt6_power_switch_resonance=0.500e-4     !meter
+ n_power_switch_resonance=1
+ y_power_switch_resonance(1)=0.5d0
+ del_y_power_switch_resonance=1.d-2
+ i_resonance_curve_integration_method=4
+ epsi=1.d-5
+ eps_delta_pow=1.d+10
+ &end
+
+!/output/
+!----------------------------------------------------------------------
+! iwcntr =1 genray.f will calculate the contours of the 
+!           gyrofrequency omega_c=n at the poloidal cros-section (r,z) plane
+!        =0 genray.f will not do it
+! iwopen =1 mk_grapc will calculate open contours wb_c=n  (using contrb1)
+!         2 mk_grapc will calculate close contours wb_c=n (using contrb2)
+! iwj    1 <= iwj <= nbulk the number of plasma component
+!          mk_grapc will calculate contours wb_cj=n, j is a kind of the plasma
+!         component must be.le.nbulk, j=1 for the electron gyrofrequency
+!         j.ge.2  for the ion (j kind) gyrofrequency
+! itools =0 do not use mkgrtool
+!        =1 to use mkgrtool
+!----------------------------------------------------------------------
+!
+! i_plot_b =1 create figures for the magnetic field,density and temperature 
+!             profiles in plot.ps file using subroutine map_b based on PGplot.
+!             Also, plot characteristic frequencies to *.bin files.
+! i_plot_b =0 do not write the b,n,T figures to plot.ps file, or frequencies. 
+!
+!-----------------------------------------------------------------------
+!  to plot dispersion function contours D_cold(ReN_perp,ImN_perp) at given points
+!  for hot plasma absorption: iabsorp.eq.4 and iabsorp.eq.6 
+!-------------------------------------------------------------------------
+! i_plot_d =1 create the dispersion function contours d(ReNperp,ImN_perp)
+!             in plot.ps file using PGplot
+!             The code will plot these contours in all output points
+!             in prep3d.f specified by output step prmt6
+! i_plot_d =0 do not create the dispersion function contours in prep3d
+!
+!----------------------------------------------------------------------
+! for plotting dispersion function contours D(ImN_perp,ReN_perp) at specified
+! poloidal lengths or major radii in plot.ps file using PGplot
+!----------------------------------------------------------------------
+!
+! n_plot_disp=0 do not plot contours D(ReN_perp,Im_N_perp)
+! n_plot_disp>0 plot contours D in subroutine outpt along rays
+! n_plot_disp>0  and if ( point_plot_disp = 'rz_nparallel') plot D contours
+!                at given points
+!                r_plot_disp(1:n_plot_disp)
+!                z_plot_disp(1:n_plot_disp)
+!                n_parallel_plot_disp(1:n_plot_disp)
+!                and do not do any ray tracing
+!
+!          0< n_plot_disp=<n_plot_dispa is the number of major radius
+!          points where contours will be ploted
+! id_plot_disp  determines the dispersion function D type
+!          used for contours plots
+!          Dispersion function contours are plotted
+!          only at   id_plot_disp=6    - full hot plasma tensor
+!                    id_plot_disp=11   - relativistic dispersion function
+!                                        from Eric Nelson_Melby dielectric
+!                                        tensor
+!                    id_plot_disp=14   - relativistic dispersion function
+!                                       just the Ram tensor
+!
+! at id_plot_disp=8 and point_plot_disp = 'rz_nparallel' 
+!                   instead of D contours the code will plot Real part
+!                   of the Ono dispersion function D_Ono(N_perpendicular)
+!                   versur Real(N_perpendicular) at given N_parallel
+!                   In this case at each RZ_N_parallel points with number
+!                   i=1:n_plot_disp the code
+!                   will plot 1D curve Re(D(N_perp)) at the N_perp interval
+!                   [min_i_nperp_plot_disp(i)=<N_perp=<max_i_nperp_plot_disp(i)]
+!                   using uniform n_perp mesh 1:number_map_points_real_nperp.
+!                   About input variable number_map_points_real_nperp see bellow.
+!                   
+! r_plot_disp(n_plot_disp) major radiusl [meter] where contours will be plotted
+!                          for  point_plot_disp='rz_nparallel' or
+!                          for  point_plot_disp='major_radius'
+!
+! z_plot_disp(1:n_plot_disp) Z points [meter] where D contours will be plotted
+!                          for  point_plot_disp='rz_nparallel'
+!
+! n_parallel_plot_disp(1:n_plot_disp) for  point_plot_disp='rz_nparallel'
+!
+!    max_r_nperp_plot_disp(1:n_plot_disp), max ReN_perp boundary 
+!                                   for contours D(ImN_perp,ReN_perp) plot
+!    min_r_nperp_plot_disp(1:n_plot_disp), min ReN_perp boundary 
+!                                   for contours D(ImN_perp,ReN_perp) plot
+!    max_i_nperp_plot_disp(1:n_plot_disp), max ImN_perp boundary 
+!                                   for contours D(ImN_perp,ReN_perp) plot
+!    min_i_nperp_plot_disp(1:n_plot_disp), min ImN_perp boundary
+!                                   for comtours D(ImN_perp,ReN_perp) plot
+!
+! s_poloid_plot_disp(n_plot_disp)  [meter] poloidal distence where contours
+!                                 will be plotted
+!
+! point_plot_disp ='poloidl_dist' to create D contours at given
+!                   s_poloid_plot_disp() as default
+!                 ='major_radius'  to create D contours at given
+!                   r_plot_disp()
+!                 ='rz_nparallel' to create D contours at given
+!                   RZ points and N_parallel 
+!                   r_plot_disp(1:n_plot_disp) 
+!                   z_plot_disp(1:n_plot_disp) 
+!                   n_parallel_plot_disp(1:n_plot_disp) 
+!
+! number_map_points_real_nperp  is the number of map points
+!                               in Real(N_perp) direction
+!
+! number_map_points_image_nperp  is the number of map points
+!                                in Image(N_perp) direction
+!
+! ratio_min_r_nperp,ratio_max_r_nperp  set the ratio of
+!          minimal and maximal map boundaries in Real N_perp direction
+!          (min_r_nperp < Real(N_perp) < max_r_nperp) to the value of
+!          Real(N_perp_ray_=cnper along the ray:
+!          min_r_nperp= Real(N_perp_ray)*ratio_min_r_nperp
+!          max_r_nperp= Real(N_perp_ray)*ratio_max_r_nperp
+!          These parameters should be: 
+!           0 =< ratio_min_r_nperp < 1
+!           1 <  ratio_max_r_nperp 
+!
+! ratio_min_i_nperp,ratio_max_i_nperp  set the ratio of
+!          minimal and maximal map boundaries in Image N_perp direction
+!          (min_i_nperp < Image(N_perp) < max_i_nperp) to the value of
+!          Image(N_perp_ray)=cnprim along the ray:
+!          min_i_nperp= Image(N_perp_ray)*ratio_min_i_nperp
+!          max_i_nperp= Image(N_perp_ray)*ratio_max_i_nperp
+!          These parameters should be: 
+!           0 =< ratio_min_i_nperp < 1
+!           1 <  ratio_max_i_nperp 
+!
+!          If Image(N_perp_ray) < 1 then the code will set
+!          following map boundaries: min_i_nperp=0 and man_i_nperp=1. 
+!
+! n_contour_plot_disp is the number of contours for D(ReN_perp,Im_N_perp)
+!           It should be =< n_contour_plut_disp_a
+!-----------------------------------------------------------------------
+! to plot cold plasma dispersion function D_cold(N_perp) at specified
+! poloidal lengths or major radii to plot.ps file            
+!-------------------------------------------------------------------------
+! i_plot_disp_cold  It used only in grill_lh to plot D in initial point
+!                   =0 do not plot D_cold(N_perp)
+!                   =1 plot D(N_perp)
+!-----------------------------------------------------------------------
+! n_plot_disp_cold=0 do not plot D(ReN_perp)
+!          0< n_plot_disp_cold =< n_plot_disp_colda is the number of major radius
+!          points where D_cold(Re0N_perp) will be ploted
+!
+! r_plot_disp_cold(n_plot_disp) [meter] major radius where D_cold(N_perp)
+!                               will be plotted
+!
+! s_poloid_plot_disp_cold(n_plot_disp) [meter] poloidal distance where D_cold(N_perp)
+!                                      will be plotted
+!
+! point_plot_disp_cold ='poloidl_dist' to create D(ReN_perp) plots at given
+!                   s_poloid_plot_disp_cold() as default
+!                 ='major_radius'  to create D(ReN_prerp) plots at given
+!                   r_plot_disp_cold()
+!----------------------------------------------------------------------
+! i_plot_wave_normal_cold! for plotting cold wavenormal to plot.ps file
+!                        !  =1 to plot wavenormal at the initial point
+!                        !     and at output points, specified for cold plasma
+!                        !     dispersion function D_cold plotting, at
+!                        !     r_plot_disp_cold or s_poloid_plot_disp_cold
+!                        !  =0 do not plot (as default)
+!--------------------------------------------------------------
+!  For characteristic frequencies plotted along a straight line:
+!  It works for i_plot_b.eq.1
+!  Frequencies are electrons:  plasma, gyroharmonics, UH, f_R=0, f_L=0
+!                  ions:       ion plasma, gyroharmonic, LH
+!
+!  r_freq,z_freq [meter] cordinates of the line edge point (defaults=1.49d0,0.e0)
+!  alpha_freq  [degree] is the toroidal angle of the line 0 <alpha_freq<360
+!              =0  r coordinate of the line is directed along 
+!                  the major radius
+!              =180. directed inwards in major radius dirn. (default=180.)
+!  beta_freq   [degree] is the angle between the line and the verticle axis Z
+!              0 < beta_freq <180
+!              =0 the line is directed along Z axis  (default=90.d0)
+!  dist_freq   [meter] is the line length  (default=1.28d0)
+!
+!  nsteps_freq  is the number of points used for plot.
+!               It should be  nsteps_freq .le. 1000  (default=780)
+!  n_ec_harmonics_freq  is the number of plotted 
+!                       ec harmonics                 (default=6)
+!
+!  max_plot_freq [HZ] is the  maximal frequency at the plot  (default=200.d9 HZ),
+!                MKSA difference
+!  npar_freq   N_parallel to plot X mode cutoff.
+!              It works for i_plot_b.eq.1            (default=0.d0)
+!
+!  Plot with xdraw freqelec
+!            xdraw freqion
+!             Also, plot characteristic frequencies to *.bin files.
+!----------------------------------------------------------------------
+ &output
+ iwcntr=1
+ iwopen=1
+ iwj=1
+ itools=0
+ i_plot_b=0
+ i_plot_d=0
+ point_plot_disp ='major_radius' 
+!point_plot_disp = 'rz_nparallel'
+! n_plot_disp=4
+ n_plot_disp=0
+! id_plot_disp=6
+! id_plot_disp=11
+ id_plot_disp=14
+ r_plot_disp=0.960,0.970,0.980,0.980          !meter
+ z_plot_disp=0.53, 0.53, 0.53, 0.53           !meter
+ max_r_nperp_plot_disp=10.0, 10.0, 10.0, 10.0    
+ min_r_nperp_plot_disp=0.0, 0.0, 0.0, 0.0 
+ max_i_nperp_plot_disp=1.0, 1.0, 1.0, 1.0 
+ min_i_nperp_plot_disp=0.0, 0.0, 0.0, 0.0 
+ i_plot_disp_cold=1
+ point_plot_disp_cold ='poloidl_dist'
+ n_plot_disp_cold=3
+ s_poloid_plot_disp_cold=0.0001,0.0002,0.0003 !meter
+ r_plot_disp_cold=0.960,0.970,0.980           !meter
+ i_plot_wave_normal_cold=1
+ number_map_points_real_nperp=10
+ number_map_points_image_nperp=10  
+ ratio_min_r_nperp=0.5d0
+ ratio_max_r_nperp=1.5d0
+ ratio_min_i_nperp=0.d0
+ ratio_max_i_nperp=2.5d0  
+ n_contour_plot_disp=10
+ r_freq=1.d0                                 !meter
+ z_freq=0.d00                                !meter  
+ alpha_freq=180.d0                           !degree
+ beta_freq=90.d0                             !degree 
+ nsteps_freq=100
+ n_ec_harmonics_freq=6
+ max_plot_freq=200.d9                        !HZ MKSA difference
+ npar_freq=0.d0
+ &end
+
+!/plasma/
+!-------------------------------------------------------------------------
+!Plasma parameters
+!-------------------------------------------------------------------------
+! nbulk>=1 is a number of plasma components
+!        It should be nbulk.le.nbulka
+!        nbulka is a maximal number of plasma components
+!        nbulka is a parameter which is set in param.i file
+!----------------------------------------------------
+! izeff =0 zeff will be calculated using the given ions;
+!          electron density will be calculated using ions;
+!       =1 zeff, electron density and ion densities with(i), i=2,nbulk-2
+!          are given,
+!          ion densities(i) i=nbulk and i= nbulk-1 will be calculated 
+!          using Zeff, electron density and ion's densities(i), i=2,nbulk-2.
+!          In this case it should be nbulk.ge.3
+!       =2 zeff, electron and ion (if nbulk>1) densities are given,
+!          and zeff is not recalculated from the plasma components;
+!       =3 Use eqdsk pres (pressure). Let temperature T_E=T_i
+!          pres=dens1(k,1)*temp1(k,1)+
+!          Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!          In this case we will calculate Zeff(rho),
+!          dens_electron(rho) and T_e(rho)=T_i(rho)
+!          Need nbulk.ge.2.
+!       =4 Use eqdsk pres (pressure), the given temperature
+!          profiles T_i(rho) (i=1,nbulk) and the given Z_eff(rho).
+!          pres=dens1(k,1)*temp1(k,1)+
+!          Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!          In this case we will calculate dense(1)(rho),
+!          dense(nbulk)(rho) and dense(nbulk-1)(rho)
+!          For nbulk=1, sets zeff=1 and ne=p/(2*Te), accounting for
+!            ion pressure equal to electron pressure.  (Can adjust
+!            this with den_scale(1).)
+!          For nbulk=2, sets zeff=charge(2), and accounts for separate
+!            ion and electron pressures according to specified temperatures.
+! -----------------------------------------------------
+! idens (0 - analytic, 1 - spline) representation of
+! the density, temperature and zeff radial profiles
+! -----------------------------------------------------
+!   temp_scale(nbulka),den_scale(nbulka) are the parameters to multiply
+!   the given temperature and density profiles
+! -----------------------------------------------------
+! ndens is the number of points for the input radial density and 
+!       temperature profiles
+!------------------------------------------------------
+! nonuniform_profile_mesh= 'enabled' use nonuniform small radius mesh for input
+!                                spline profiles (works for idens=1 only)
+!                = 'disabled'    do not use nonuniform mesh (default)
+!--------------------------------------------------------
+ &plasma
+ ndens=21
+ nbulk=1
+ izeff=2
+ idens=1
+ temp_scale(1)=1.d0
+ den_scale(1)=1.d0
+ nonuniform_profile_mesh='disabled'
+ &end
+
+!/species/
+! plasma component charges charge(i)=mod(charge(i)/charge_electron)
+! -----------------------------------------------------
+! charge(1) =1 electrons
+! charge(i) i=1,nbulk   charge(i+1) must be ge.charge(i)
+! charge(i) i=1,nbulk
+! -----------------------------------------------------
+! plasma component mass dmas(i)=Mass(i)/Mass_electron
+! -----------------------------------------------------
+! dmas(1) 1 electrons
+! dmas(i)   i=1,nbulk
+! -----------------------------------------------------
+ &species
+ charge(1)=1.d0
+ charge(2)=1.d0
+ charge(3)=6.d0
+ dmas(1)=1.d0
+ dmas(2)=3674.d0
+ dmas(3)=22044.d0 
+ &end
+
+!/varden/
+! the density variation
+! -----------------------------------------------------
+!   var0 is an amplitude of the density variation (del_n_0)
+!        as a fraction of the given density
+!   (see Manual, 3.37...)
+!   denm is the number of the poloidal mode in the density variation(l_theta)
+!   denn is the number of the toroidal mode in the density variation(l_phi)
+!   an   is the radial localization of the variation (rho_0)
+!   sigman is the parameter that characterizes the radial thickness
+!          of the density fluctuation    
+! -----------------------------------------------------
+ &varden
+ var0=0.d0
+ denm=1.d0
+ denn=15.d0
+ an=0.5d0
+ sigman=0.1d0 
+ &end
+
+
+!/denprof/
+! -----------------------------------------------------
+!Analytic radial profiles (idens=0).  Splines (idens=1).
+!dense(i)=(dense0(i)-denseb(i))*(1-rho**rn1de(i))**rn2de(i)+denseb(i)
+!-----------------------------------------------------
+!        if(izeff.eq.0) then
+!           zeff will be calculated using the given ions;
+!	    nbulk1=nbulk
+!	 if(zeff.eq.1 ) then          
+!            zeff, the electron density and ion densities with(i) with i=2,nbulk-2
+!            are given,
+!            Ions components with i=nbulk and i= nbulk-1 will be
+!            calculated will be calculated using Zeff, the electron density and 
+!            ion's densities(i) with i=2,nbulk-2.
+!            In this case it should be nbulk.ge.3
+!
+!            if (nbulk.eq.1) nbulk1=1
+!            if (nbulk.eq.2) then
+!	         nbulk1=2
+!	     endif
+!            if (nbulk.gt.2) nbulk1=nbulk-2
+!	 endif
+! -----------------------------------------------------
+! dense0(i)   central density in meter**(-3) i=1,nbulk1, MKSA difference
+! -----------------------------------------------------
+! denseb(i)  edge density in meter**(-3) i=1,nbulk1, MKSA difference
+! -----------------------------------------------------
+! rn1de(i) i=1,nbulk1
+! -----------------------------------------------------
+! rn2de(i) i=1,nbulk1
+! -----------------------------------------------------
+ &denprof
+ dense0(1)=3.575d+19 !MKSA difference
+ denseb(1)=1.22d+19  !MKSA difference 
+ rn1de(1)=3.2d+0
+ rn2de(1)=1.2d+0
+ &end
+
+!/tpopprof/
+! Ratio tpop=T_perp/T_parallel
+! tpop(i)=(tp0(i)-tpb(i))*(1-rho**rn1tp(i))**rn2tp(i)+tpb(i)
+! -----------------------------------------------------
+! tp0(i) =           central T_perp/T_parallel i=1,nbulk
+! -----------------------------------------------------
+! tpb(i) =ateb(i)    boundary T_perp/T_parallel i=1,nbulk
+! -----------------------------------------------------
+! rn1tp(i) i=1,nbulk
+! -----------------------------------------------------
+! rn2tp(i)  i=1,nbulk
+! -----------------------------------------------------
+
+ &tpopprof
+ tp0(1)=1.0d0
+ tpb(1)=1.0d0
+ rn1tp(1)=2.0d0
+ rn2tp(1)=1.0d0
+ &end
+
+!/vflprof/
+! drift velocity || B (meter/sec)  
+! vflow(i)=(vfl0(i)-vflb(i))*(1-rho**rn1vfl(i))**rn2vfl(i)+vflb(i)
+! -----------------------------------------------------
+! vfl0(i)    [meter/sec]  central vflow  i=1,nbulk
+! -----------------------------------------------------
+! vflb(i)    [meter/sec]  boundary vflow i=1,nbulk
+! -----------------------------------------------------
+! rn1vfl(i) i=1,nbulk
+! -----------------------------------------------------
+! rn2vf(i)  i=1,nbulk
+! -----------------------------------------------------
+
+ &vflprof
+ vfl0(1)=0.0d+0
+ vflb(1)=0.0d+0
+ rn1vfl(1)=2.d0
+ rn2vfl(1)=1.0d0
+ &end
+
+
+!/zprof/
+! -----------------------------------------------------
+! zeff=(zeff0-zeffb)*(1-rho**rn1zeff)**rn2zeff+zeffb
+! -----------------------------------------------------
+! zeff0   central Z_eff
+! zeffb   boundary Z_eff
+! rn1zeff zeff=(zeff0-zeffb)*
+! rn2zeff      (1-rho**rn1zeff)**rn2zeff+zeffb
+!-----------------------------------------------------
+ &zprof
+ zeff0=1.50d0
+ zeffb=1.50d0
+ rn1zeff=2.d0
+ rn2zeff=1.d0
+ &end
+
+!/tprof/
+! Average temperature tempe=(T_parallel+2*T_perp)/3
+! tempe(i)=(te0(i)-teb(i))*(1-rho**rn1te(i))**rn2te(i)+teb(i)
+! -----------------------------------------------------
+! te0(i) =at0(i)  [KeV] central temperature i=1,nbulk
+! -----------------------------------------------------
+! teb(i) =ateb(i) [KeV] boundary temperature i=1,nbulk
+! -----------------------------------------------------
+! rn1te(i) i=1,nbulk
+! -----------------------------------------------------
+! rn2te(i)  i=1,nbulk
+! -----------------------------------------------------
+
+ &tprof
+ ate0(1)=1.555d0
+ ateb(1)=0.063d0
+ rn1te(1)=1.4d0
+ rn2te(1)=1.6d0
+ &end
+
+!/grill/
+!------------------LH/EBW-Starting-inside-plasma-----------------------
+!  Grill conditions  for istart=2 (start point inside the plasma)
+!----------------------------------------------------------------------
+! i_n_poloidal =1         The input parameter is N_parallel(from grill).
+!  (by default =1)        N_phi,N_theta are calculated from given N_parallel 
+!                         N_rho=N_perpendicular(N_parallel) is determined 
+!                         from the dispersion relation. It is directed
+!                         along +,- gradient(psi) 
+!
+! i_n_poloidal =2         The input parameters: N_parallel(from grill)
+!                         and  n_theta_pol. By default N_theta=0. 
+!                         N_perpendicular(N_parallel) is determined 
+!                         from the dispersion relation. 
+!                         N_phi is calculated from N_parallel and N_theta
+!                         N_rho is calculated form N_perpendicular, N_parallel
+!                         and N_theta. 
+!                         It is directed along +,- gradient(psi)
+!
+! i_n_poloidal=3          The given variables: N_parallel and the angle
+!                         0<ksi_nperp<180 between the vector N_perpendicular 
+!                         and gradient(psi). By default ksi_nperp=0.
+!                         N_perpendicular(N_parallel) is determined 
+!                         from the dispersion relation.
+!                         N_phi,N_theta and N_rho are calculated from
+!                         N_parallel,N_perpendicular and ksi_nperp.
+!
+! i_n_poloidal=4          The given variables:N_toroidal and
+!                         N_poloidal. This case uses i_vgr_ini set in /waves/
+!                         to choose the direction of the small radial N_rho
+!                         component. To launch the ray inside the plasma
+!                         i_vgr_ini=1 or to the plasma edge i_vgr_ini=-1 
+!---------------------------------------------------------------------
+! n_theta_pol            The poloidal refractive index component
+!                         It is used for i_n_poloidal =2     
+!                         By_default n_theta_pol=0.
+!----------------------------------------------------------------------
+! ksi_nperp               [degrees] the angle 0<ksi_nperp<180
+!                         between the vector N_perpendicular 
+!                         and gradient(psi). By default ksi_nperp=0.
+!---------------------------------------------------------------------
+!  Calculation of the small radius value near the plasma edge
+!  where LH or FW have cutoff:  
+!  i_rho_cutoff=0 (default) no calculations
+!              =1 use these calculations
+!--------------------------------------------------------------------
+!  rho_step_find_LHFW_cutoff  is the non dimensional small radius step
+!                            used in subroutine  rho_ini_LHFW
+!                            It is used at i_rho_cutoff=1
+!                            (default=1.d-3)
+!---------------------------------------------------------------------
+!  rho_initial_find_LHFW_cutoff  is the initial small radius point. 
+!                            As default rho=1- rho_step_find_LHFW_cutoff
+!                            It is used at i_rho_cutoff=1
+!                            (default=1.-1.d-3)
+!--------------------------------------------------------------------
+!  ngrill  is a number of the poloidal grill angles
+!          It is required that ngrill.le.ngrilla, 
+!          where ngrilla is parameter in param.i
+!----------------------------------------------------------------------
+!  igrillpw options specifying N_parallel power spectra
+!           =1 power=powers/nnkpar, =2 power=sin**2x/x**2,
+!           =3 power=exp-((npar-anmin)/anmax)**2    [default=1]
+!----------------------------------------------------------------------
+!  igrilltw specifies the form poloidal variation of power,
+!                    =1 uniform over height, =2 cos**2 variation.
+!----------------------------------------------------------------------
+!  rhopsi0(1:ngrill) initial small radius for wave front
+!                    (0<rhopsi0<1)
+!  rhopsi0(i)=...    i=1,ngrill
+!----------------------------------------------------------------------
+!  thgrill(1:ngrill)  [degree] poloidal  angle of grill, measured counter
+!                    clockwise from horizontal through the
+!                    magnetic axis.
+!  thgrill(i)=...     [degree] i=1,ngrill          [default=0.d0]
+!---------------------------------------------------------------------
+!  phigrill(1;ngrill) [degree] is a toroidal grill angle of grill
+!                              
+!  phigrill(i)=...  [degree] i=1,ngrill          [default=0.d0]
+!----------------------------------------------------------------------
+! height(1:ngrill) [meter] is a poloidal length of grill
+!                 (giving poloidal power distribution of each grill).
+! height(i)=...   i=1,ngrill                  [default=0.2d0]
+!----------------------------------------------------------------------
+! nthin(1:ngrill) is a number of rays near the each poloidal
+!                 center, simulating a grill
+! nthin(i)=...    i=1,ngrill       [default: nthin(1)=1]
+!----------------------------------------------------------------------
+!  anmin(1:ngrill)  position of the left bound
+!                   of power spectrum P(n_parallel) (Can be neg).
+!  anmin(i)=...     i=1,ngrill
+!----------------------------------------------------------------------
+!  anmax(1:ngrill)  position of the right bounds
+!                   of power spectrum P(n_parallel) (Can be neg).
+!  anmax(1)=...     i=1,ngrill
+!---------------------------------------------------------------------
+!  nnkpar(1:ngrill)  number of points  of power spectrum
+!                    P(n_parallel)
+!  nnkpar(i)=...     i=1,ngrill
+!----------------------------------------------------------------------
+!  powers(1:ngrill)  [Watt] power in one grill, MKSA difference
+!  (total power of grill(in MWatts) will be powtot=sum{powers}
+!  powers(i)=...     i=1,ngrill
+!-------------------------------------------------------------------
+!  below are for i_n_poloidal=4 case, set (N_toroidal, N_poloidal)
+----------------------------------------------------------------------
+!  antormin(1:ngrill)  position of the left bound
+!                   of power spectrum P(n_toroidal) (Can be neg).
+!  antormin(i)=...     i=1,ngrill
+!----------------------------------------------------------------------
+!  antormax(1:ngrill)  position of the right bounds
+!                   of power spectrum P(n_toroidal) (Can be neg).
+!  antormax(1)=...     i=1,ngrill
+!---------------------------------------------------------------------
+!  nnktor(1:ngrill)  number of points  of power spectrum
+!                    P(n_toroidal)
+!  nnktor(i)=...     i=1,ngrill
+!----------------------------------------------------------------------
+!  anpolmin(1:ngrill)  position of the left bound
+!                   of power spectrum P(n_poloidal) (Can be neg).
+!  anpolmin(i)=...     i=1,ngrill
+!----------------------------------------------------------------------
+!  anpolmax(1:ngrill)  position of the right bounds
+!                   of power spectrum P(n_poloidal) (Can be neg).
+!  anpolmax(1)=...     i=1,ngrill
+!---------------------------------------------------------------------
+!  nnkpol(1:ngrill)  number of points  of power spectrum
+!                    P(n_poloidal)
+!  nnkpol(i)=...     i=1,ngrill
+!---------------------------------------------------------------------
+!  ilaunch=0, no effect (the default)
+!
+!  ilaunch=1, to launch a single ray at r0launch,phi0launch,z0launch
+!             in the plasma (meters and degs)
+!      
+!  This option is added for comparison with other codes.
+!  r0launch is the major radius of the launch point [m]
+!  z0launch is the vertical position of the launch pimt [m]
+!  phi0launch is the toroidal angle of the launch point [degree] 
+!
+!  ilaunch=2, to launch rays at specified
+!             rlaunch(j,i),phigrill(i),zlaunch(j,i)
+!             in the plasma (meters and degs).
+!           
+!             i=1,ngrill
+!               j=1,nthin(i)
+!
+!             total power at each grill (i) is  powers(i)
+!             with weight_power_launch(j,i) non dimensional             
+!             sum{j=1,nthin(j)}(weight_power_launch(j,i))=1
+!               [renormalized in code, if necessary.]
+!             Normalization power at each ray with index (j,i) is 
+!                   powers(i)*weight_power_launch(j,i)
+! 
+!---------------------------------------------------------------------
+!       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+!                         near the central grill angle thgrill(i)
+!                         =1 equispaced mesh
+!                            wtheta(j)-wtheta(j-1)=zdth=Const(default)
+!                         =2 poloidal mesh will be chosen to get the equal
+!			     power fpwth(j) for all rays near the central
+!                            grill angle fpwth(j)=1/nthini
+!
+!------------------------------------------------------------------------
+!       i_grill_npar_ntor_npol_mesh: option specifying the refractive
+!                         index meshes.
+!
+!                         For i_n_poloidal=1,2,3 it specifies the
+!                         n_parallel mesh anzin(n) for the power
+!                         spectrum pwcpl(n) n=1,...,nnkpari
+!                         =1 equispaced mesh
+!                            anzin(n)-anzin(n-1)=hnpar=Const (default)
+!                         =2 n_parallel mesh will be chosen to get equal
+!			     power pwcpl(n) for all rays in the given power
+!                            spectrum  pwcpl(n)=1.d0/nnkpari
+!                            pwcpl(n)=power_spectrum(anzin(n))*
+!                                     delta_npar_bin(n)= 1.d0/nnkpari
+!
+!                         For i_n_poloidal=4 it specifies two meshes:
+!                            a) n_toroidal mesh anztorin(ntor) and
+!                            b) n_poloidal mesh anzpolin(npolmesh)
+!                            for the power spectrum
+!                            pwcpl_tp(1:nnktori,1:nnkpoli)=pwcpl_t*pwcpl_t
+!                         =1 equispaced meshs (default)
+!                            anztorin(ntor)- anztorin(ntor-1)=hntor=Const
+!                            anzpolin(npol)- anzpolin(npol-1)=hnpol=Const
+!                         =2 the meshes anztorin(1:nntori) anzpolin(1:nnkpoli)
+!                            will be chosen to get the equal
+!			     power pwcpl_tp(ntor,npol) for all rays in
+!                            the given power spectrum
+!                            pwcpl_tp(ntor,npol)=1.d0/(nnktori*nnkpoli)
+!
+!------------------------------------------------------------------------
+&grill
+ i_n_poloidal=1
+ n_theta_pol=0.d0
+ ksi_nperp=0.0d
+ i_rho_cutoff=0
+ rho_step_find_LHFW_cutoff=1.d-3
+ rho_initial_find_LHFW_cutoff=0.999d0
+ ngrill=1
+ igrillpw=1
+ igrilltw=1
+ rhopsi0(1)=0.95d+00,
+! thgrill(1)= 15.0d+0, 
+ thgrill(1)=13.8281250d0,
+ phigrill(1)=0.0d+0,
+ height(1)=0.10d+0,                !meter
+ nthin(1)=1
+ anmin(1)= -0.5d+0
+ anmax(1)= -0.6d+0
+ nnkpar(1)=1
+ powers(1)=1.0d6                   !Watt, MKSA difference
+ antormin(1)=0.1d0
+ antormax(1)=1.d0
+ nnktor(1)=1 
+ anpolmin(1)=0.1d0
+ anpolmax(1)=1.d0 
+ nnkpol(1)=1    
+ ilaunch=0
+ r0launch=1.6d+0
+ z0launch=0.d+0
+ phi0launch=0.d+0
+ i_grill_pol_mesh=1
+ i_grill_npar_ntor_npol_mesh=1
+ &end
+!-----------------------------------------------------------
+!     direct grill launch points from namelist /rz_launch_grill_tab/
+!     It is used at ilaunch=2 case only
+!--------------------------------------------------------------
+!     Set
+!     rlaunch(j,i),zlaunch(j,i) [meters]
+!     and weight_power_launch(j,i),[non dimentional]
+!
+!     Here
+!     i=1,ngrill
+!       j=1,nthin(i)     
+!     
+!     weight_power_launch(j,i) should be normalized using
+!     following formula:             
+!     sum{j=1,ntin(j)}(weight_power_launch(j,i))=1
+!
+!    The code will check the normalization condition.
+!    If the normalization sum.ne.1 then
+!    the code will renormalize weight_power_launch(j,i))
+!
+!     power at each ray witn index (j,i) is powers(i)*weight_power_launch(j,i)
+!---------------------------------------------------------
+!    Bellow are described used input data for rz launch
+!    which were set in namelist /grill/.
+!
+!     ngrill is a number of grills was set in namelist /grill/  
+!
+!     phigrill(i=1:ngrill) is a toroidal angle of grill, measured counter
+!                          clockwise from horizontal through the
+!                          magnetic axis (degrees).
+!                          They were set in namelist /grill/.
+!  
+!     nthin(i=1:ngrill)    numbers of poloidal points at each grill
+!                          They were set in namelist /grill/.
+!  
+!     total powers at each grill (i) is  powers(i=1,ngrill) .
+!                          It were set in namelist /grill/.
+!------------------------------------------------------------------  
+!  The example for ngrill=2, nthin(1)=3, nthin(2)=4
+!-------------------------------------------------------------- 
+!&rz_launch_grill_tab
+!for grill with i=1
+!
+!      prof_2d(1,1)=
+!      rlaunch(j=1,i=1), zlaunch(j=1,i=1), weight_power_launch(j=1,i=1),
+!      rlaunch(j=2,i=1), zlaunch(j=2,i=1), weight_power_launch(j=2,i=1),
+!      rlaunch(j=3,i=1), zlaunch(j=3,i=1), weight_power_launch(j=3,i=1)
+!
+!for grill with i=2
+!
+!      prof_2d(1,2)=
+!      rlaunch(j=1,i=2), zlaunch(j=1,i=2), weight_power_launch(j=1,i=2),
+!      rlaunch(j=2,i=2), zlaunch(j=2,i=2), weight_power_launch(j=2,i=2),
+!      rlaunch(j=3,i=2), zlaunch(j=3,i=2), weight_power_launch(j=3,i=2),
+!      rlaunch(j=4,i=2), zlaunch(j=4,i=2), weight_power_launch(j=4,i=2),
+!&end
+!-------------------------------------------------------------------------
+&rz_launch_grill_tab
+!for grill with i=1
+ prof_2d(1,1)=
+     1.6d0, 0.d0,  0.333333333333d0,
+     1.7d0, 0.d0,  0.333333333333d0,
+     1.8d0, 0.d0,  0.333333333333d0,
+!for grill with i=2
+ prof_2d(1,2)=
+     1.60d0,  0.d0, 0.25d0,
+     1.65d0,  0.d0, 0.25d0,
+     1.70d0,  0.d0, 0.25d0,
+     1.75d0,  0.d0, 0.25d0,     
+&end
+
+!---------------------------------------------------------
+!/eccone/
+!--------------------D3D--EC---------------------------------------------
+!     Use equilib.dat= g521022.01000, or equivalent.
+!    
+!
+!     This namelist section specifies ECR cones  for istart=1 
+!           (ray cones start outside the plasma).
+!
+!     Multiple source locations and launch conditions are implemented.
+!     ncone=number of source cones. [default=1] [Max is parameter nconea]. 
+!
+!     For multiple sources (ncone.gt.1), is is necessary to set
+!     ncone values for each of the the namelist variables given below:
+!     powtot,zst,rst,phist,alfast,betast,alpha1,alpha2(only for raypatt
+!     ="genray").  
+!     The specifications of number of rays per cone do not not vary 
+!     from cone to cone (i.e., na1,na2,gzone,mray(*), cr(*)) do not 
+!     vary with cone number.
+!
+!     The R,Phi,Z directions refer to a cylindrical coordinate
+!     system with Z aligned along the major axis of the machine.
+!    
+!     powtot=[MWatt] total power from antenna
+!
+!     Two systems for specification of the ECR cone are provided,
+!       chosen by raypatt:
+!
+!     raypatt='genray',  specify ray pattern per following
+!                        genray method:	
+!     zst [meter]   initial z of the cone vertex
+!     rst [meter]    initial r of the cone vertex
+!     phist[degree] initial toroidal angle phi of cone vertex,
+!                   measure from x-z plane.
+!     alfast[degree] toroidal angle about z-direction, measured at
+!                    the source from the R-vector through the source.
+!     betast[degree] elevation angle measured at the source from the
+!                    z=constant plane, positive above plane, negative below.
+!     alpha1[degree] cone width, half-width at half-power of the beam.
+!     alpha2[degree] starting angle along cone
+!     na1 number of cones in addition to single central ray (0 for central ray only)
+!     na2 number of rays in cone(for na1.ge.1, 0th cone has 1 central ray)
+!
+!     raypatt='toray',  specify ray pattern per the following
+!                       toray method:  [Defn of betast changed,
+!                       and there are additional namelist inputs.]
+!     zst (m)   initial z of the cone vertex
+!     rst(m)    initial r of the cone vertex
+!     phist(degree) initial toroidal angle phi of cone vertex,
+!                   measure from x-z plane.
+!     alfast[degree] toroidal angle about z-direction, measured at
+!                    the source from the R-vector through the source.
+!     betast[degree] polar angle measured at source from positive
+!                    z-axis. [DIFFERENT FROM RAYPATT='GENRAY'!]
+!     alpha1[degree] cone width, half-width at half-power of the beam.
+!     gzone:    if 0 then 48 ray case, as specified by mray() below
+!               if 1 then there can only be 1 ray, the central ray.
+!               if .gt.1 then describes number of elements in mray
+!     mray(*):  if gzone .gt.0, use gaussian formulation with this number
+!        of rays in corresponding annular zone, otherwise use the
+!        usual 1,5,12,12,18  (48 ray) arrangement.
+!        mray(1) is effectively 1.
+!     cr(*):    azimuthal phase of ray pattern for each zone, in radians;
+!       same size array as mray for gaussian formulation.
+!      Standard setting for gzone=0 is 0.0,0.1,0.05,-0.05,0.05.
+!
+! ----input data for disk to disk launching, raypatt='diskdisk':
+!     power distribution at the first disk has the gaussian variation
+!     w.r.t. disk radius rho:
+!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!
+!     The radius of the launching disk will be determine by the
+!     parameter : 0. < part_gauss_power =< 1.
+!     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
+!     (2/sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!
+!     input parameters for diskdisk case are
+!     sigma_launching_disk [meter] It works at 0.<part_gauss_power<1.
+!     d_disk [meter] is distance between the disks perpendicular to disks
+!     part_gauss_power  It is from 0. to 1.
+!                              if 0.<part_gauss_power<1.    
+!                              sigma_launching_disk will be calculated using:
+!                                sigma_launching_disk=rho_launching_disk/
+!                                dsqrt(dlog(1.d0/(1-part_gauss_power))))
+!                             
+!                              If part_gauss_power.ge.1 then
+!                              sigma_launching_disk will be taken from         
+!                              genray.dat and the code will recalculate
+!                              part_gauss_power using given
+!                              sigma_launching_disk
+!     rho_launching_disk  [meter] the first disk radius
+!     rho_focus_disk  [meter] the second disk radius
+!     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
+!                 of angle bins at each radius bin
+!     initial_azimuth_angle_degree((n_mesh_disk_radial_bin) are initial
+!                  angles on the first disk around the central ray
+!
+!     The central ray will be directed from the center of the first
+!     disk to the center of the second disk
+!     The other rays will be directed from the first disk
+!     to edge of the second disk
+!
+! ----the input data for diskbeam launching, raypatt='diskbeam'
+!     Rays will be launched from the launching disk parallel to
+!     the central ray
+!     power distribution at the launching disk has the gaussian form
+!     on disk radius: rho
+!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!
+!     The radius of the launching disk will be determine by the
+!     parameter : 0. < part_gauss_power =< 1.
+!     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
+!     (2/sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!
+!                               
+!     input parameters for diskdisk case are
+!     sigma_launching_disk [meter] It works for 0.<part_gauss_power<1.
+!     part_gauss_power  It is from 0. to 1.
+!                              if <part_gauss_power<1    
+!                              sigma_launching_disk will be calculated using:
+!                                sigma_launching_disk=rho_launching_disk/
+!                                dsqrt(dlog(1.d0/(1-part_gauss_power)))
+!                             
+!                              If part_gauss_power.ge.1 then
+!                              sigma_launching_disk will be taked from 
+!                              genray.dat.  Then the code will recalculate
+!                              part_gauss_power using given
+!                              sigma_launching_disk
+!
+!     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
+!                 of angle bins at each radius bin
+!                 It should be n_mesh_disk_angle_bin(1)=1.
+!
+!     initial_azimuth_angle_degree(n_mesh_disk_radial_bin) are initial
+!                  angles on the first disk around the central ray
+!
+!     The central ray will be directed from the center of the launching
+!     disk. The central ray direction is set by angles:
+!     alfast[degree] and betast[degree] 
+!-----------------------------------------------------------------
+ &eccone
+! ncone=1
+ ncone=2
+
+ raypatt='genray'
+! zst(1)=0.1571712110864337d0
+!!rst(1)=1.573955374170274d0 
+! phist(1)=4.147062324255599d0
+! betast(1)=-18.81722591231102d0
+! alfast(1)=199.0213150494316d0 
+ zst( 1 )=0.156478331368976D+00
+ rst( 1 )=0.157400845935811D+01
+ phist( 1 )=0.414628673197772D+01
+ betast( 1 )=-.188609626975446D+02
+ alfast( 1 )=0.199026350592679D+03
+!
+! zst(2)=0.2571712110864337d0
+! rst(2)=1.533955374170274d0 
+! phist(2)=4.147062324255599d0
+! betast(2)=-18.81722591231102d0
+! alfast(2)=199.0213150494316d0 
+ zst( 2 )=0.256798565288347D+00
+ rst( 2 )=0.153399818784218D+01
+ phist( 2 )=0.403642441405337D+01
+ betast( 2 )=-.244236994359805D+02
+ alfast( 2 )=0.200236912352825D+03
+!
+ alpha1(1)=4.6500d+00
+ alpha2(1)=+1.500d+1
+ alpha1(2)=4.6500d+00
+ alpha2(2)=+1.500d+1
+ na1=0
+ na2=6
+ powtot(1)=1.0d+5            !Watt, MKSA difference
+ powtot(2)=1.0d+5            !Watt, MKSA difference
+
+! raypatt='toray'
+! zst(1)=+0.712812d0
+! rst(1)=2.42352d0
+! phist(1)=+0.000d0
+! betast(1)=+118.521d0
+! alfast(1)=+196.2d0
+! alpha1(1)=1.7d0
+! gzone=5
+! mray=1,5,12,12,20
+! cr=0.0d0,0.1d0,0.0500d0,-0.0500d0,0.0500d0
+
+!     raypatt='diskdisk'
+! zst(1)=+4.11d+0
+! rst(1)=6.4848+00
+! phist(1)=+0.000d+0
+! betast(1)=-56.075d0  !Equals -(polar_angle-90.)
+! alfast(1)=+137.84d0
+! alpha1(1)=1.177d+00
+      d_disk=0.50d0 !meter
+      sigma_launching_disk=0.025d0 !meter
+      part_gauss_power=1.1d0 !in this case sigma_launching_disk
+!                             !will be taken from input genray.dat
+!                             !then the code will recalculate
+!                             !part_gauss_power using given
+!                             !sigma_launching_disk
+           
+      rho_launching_disk=0.1d0 !m
+      rho_focus_disk=0.015d0   !m
+      n_mesh_disk_radial_bin=1
+      n_mesh_disk_angle_bin(1)=1
+      n_mesh_disk_angle_bin(2)=1
+      n_mesh_disk_angle_bin(3)=1
+      n_mesh_disk_angle_bin(4)=1
+      n_mesh_disk_angle_bin(5)=1
+      initial_azimuth_angle_degree(1)=0.d0 !degree
+      initial_azimuth_angle_degree(2)=0.d0 !degree
+      initial_azimuth_angle_degree(3)=0.d0 !degree
+      initial_azimuth_angle_degree(4)=0.d0 !degree
+      initial_azimuth_angle_degree(5)=0.d0 !degree
+
+! raypatt='diskbeam'
+! zst(1)=+4.11d+0
+! rst(1)=6.4848+00
+! phist(1)=+0.000d+0
+! betast(1)=-56.075d0  !Equals -(polar_angle-90.)
+! alfast(1)=+137.84d0
+! alpha1(1)=1.177d+00
+! sigma_launching_disk=0.025d0 ![meter] wokrs at 0<part_gauss_power<1
+! part_gauss_power=1.1d0       !in this case sigma_launching_disk
+!                             !will be taken from input genray.dat
+!                             !then the code will recalculate
+!                             !part_gauss_power using given
+!                             !sigma_launching_disk   
+! rho_launching_disk=0.1d0 !meter
+!      
+!      n_mesh_disk_radial_bin=1
+!      n_mesh_disk_angle_bin(1)=1
+!      n_mesh_disk_angle_bin(2)=1
+!      n_mesh_disk_angle_bin(3)=1
+!      n_mesh_disk_angle_bin(4)=1
+!      n_mesh_disk_angle_bin(5)=1
+!      initial_azimuth_angle_degree(1)=0.d0 !degree
+!      initial_azimuth_angle_degree(2)=0.d0 !degree
+!      initial_azimuth_angle_degree(3)=0.d0 !degree
+!      initial_azimuth_angle_degree(4)=0.d0 !degree
+!      initial_azimuth_angle_degree(5)=0.d0 !degree
+
+ &end
+
+!/dentab/ at uniform grid rho(i)=(i-1)/(ndens-1) i=1,...,ndens
+!         for nonuniform_profile_mesh='disabled'
+!--------------------------------------------------------------------------
+! density profiles (table data, case: idens=1)	dens1(ndens,nbulk)
+!--------------------------------------------------------------------------
+! ndensa (a parameter in param.i) is max number of points in the 
+!   small radius direction.
+! nbulka (a parameter in param.i) is a maximal number of plasma components.
+! Input of profiles is set up so spline profiles can be input in tables
+! of size specified through namelist variables ndens and nbulk.
+! ndens (variable)    is  number of points in small radius direction
+!                     (set in namelist /plasma/). Must be .le. ndensa.   
+! nbulk (variable)    is number of plasma components, must have: 
+!                     nbulk.le.nbulka, and
+!                     first component is for electrons
+! nbulk1 is number of density components which must be specified.
+! nbulk1 is calculated in dinit_mr subroutine,
+! The fragment of dinit_mr is given here to understand the
+! nbulk1 value
+!
+! The number of columns in dentab should be equal to nbulk.
+! If nbulk1 < nbulk then we should put the density profiles
+!   for the first nbulk1 plasma components in the table.
+! The profiles for last (nbulk-nbulk1) plasma components can be arbitrary.
+!
+!--------------------------------------------------------------------------
+!c     calculation of nbulk1
+!      if(((izeff.eq.0).or.(izeff.eq.2)).or.(izeff.eq.3)) then
+!c        izeff=0, zeff will be calculated using the given ions;
+!c                 electron density will be calculated using ion's densities;
+!c        izeff=2, zeff will not coincide with the plasma components
+!c             =3  it uses eqdsk pres (pressure) and ion densities_i 
+!c                 for i=2,... nbulk
+!c                 Let temperature T_E=T_i
+!c                 pres=dens1(k,1)*temp1(k,1)+
+!c                      Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!c                 In this case we will calculate Zeff(rho),
+!c                 dens_electron(rho) and T_e(rho)=T_i(rho)
+!c                  This case works for nbulk >1 only.
+!c             =4  it uses eqdsk pres (pressure), zeff,ions densities
+!c                 for i=2,... nbulk-2 (nbulk>2) and T_e(rho),T_i(rho)
+!c                 pres=dens1(k,1)*temp1(k,1)+
+!c                      Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!c                 In this case we will calculate dens_electron(rho) and
+!c                 ion densities for i=nbulk and i=nbulk-1)
+!         nbulk1=nbulk
+!      else
+!c        (izeff=1 or izeff=4) ion densities(i) with i= nbulk and i=(nbulk-1) will
+!c                 be calculated  using given
+!c                 Zeff, the electron density and ion's densities(i), i=2,nbulk-2;
+!         if (nbulk.le.2) nbulk1=nbulk
+!         if (nbulk.eq.2) then
+!	    write(*,*)'nbulk=2, Zeff must be equal charge(2)'
+!           write(*,*)'Please check it or use the option izeff=0'
+!	    stop
+!	 endif
+!         if (nbulk.gt.2) nbulk1=nbulk-2
+!      endif !izeff
+!
+!      The case nbulk=1 is used often for ECR and EBW cases.
+!      In these cases only the electron component is essential.
+!
+!      For nbulk=1 and izeff=2 case only the electron density
+!      is used in dispersion relation.In this case  Z_effective
+!      is used for current drive efficiency calculations.   
+!------------------------------------------------------------------------
+! dens1(ndens,nbulk) (1/m**3), MKSA difference
+!------------------------------------------------------------------------
+! If  ((izeff.eq.0).or.(izeff.eq.3)) then the electron density
+! will be calculated from the charge neutrality.
+! In that case we can set the arbitrary values for the electron density
+! dens1(k,1), k=1:ndens and should set nbulk1-1 ion densities:
+! dens1(k,i), k=1:ndens, i=2:nbulk1.
+! A constant radial step is assumed, 
+! The first line (k=1, i=1:nbulk1) dens1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk1) dens1(ndens,i) is for rho=1
+! The example for  izeff=0, ndens=5, nbulk=3, nbulka=4
+!  nbulk is a number of plasma species
+!  nbulka is a maximal number of plasma species.
+!  nbulka is set in param.i file.
+!  It should be nbulka.ge.nbulk
+!       
+! column:    1       2      nbulk
+!         electron   ion    ion
+!         
+! prof=      0.,     1.2,   1.3,       
+!            0.,     2.2,   2.3,       
+!            0.,     3.2,   3.3,       
+!            0.,     4.2,   4.3,       
+!            0.,     5.2,   5.3, 
+!
+! prof in [1/m**3)], MKSA difference
+!
+!For izeff=1 case we should set the profiles of the electron density and 
+!ion densities(i) with i=1,nbulk-2      
+!The columns of ion densities(i) with i=nbulk-1 and i=nbulk should be
+!fill in by arbitrary numbers (they can be zeros). 
+!
+!The example for izeff=1, ndens=5, nbulk=4, nbulka=5
+!  nbulk is a number of plasma species
+!  nbulka is a maximal number of plasma species.
+!  nbulka is set in param.i file.
+!  It should be nbulka.ge.nbulk
+!
+!
+!colomn:      1       nbulk-2  nbulk-1  nbulk
+!         electron    ion      ion      ion   
+!         
+! prof=      1.1,     1.0,     0.0,     0.0,       
+!            0.9,     0.85,    0.0,     0.0,      
+!            0.6,     0.55,    0.0,     0.0,     
+!            0.4,     0.32,    0.0,     0.0,     
+!            0.2,     0.15,    0.0,     0.0,
+!
+! ------------------------------------------------------------------------
+! Here array prof(nbulk,ndens) was used for convenience in namelist.
+! dens1(k,i)=prof(i,k) k=1:ndens, i=1:nbulk
+! ------------------------------------------------------------------------
+! If (izeff.ne.0) and (izeff.ne.3) then we should set the electron density
+! dens1(k,1)  and ion densities dens1(k,i) i=2:nbulk1
+!------------------------------------------------------------------------
+! prof in [1/m**3)], MKSA difference
+ &dentab
+ prof    =   4.2000000d19,
+             4.1400000d19,
+             4.0500000d19,
+             3.9500000d19,
+             3.8900000d19,
+             3.8100000d19,
+             3.7400000d19,
+             3.6700000d19,
+             3.6100000d19,
+             3.5500000d19,
+             3.4900000d19,
+             3.3500000d19,
+             3.1900000d19,
+             3.0100000d19,
+             2.7600000d19,
+             2.4500000d19,
+             2.1400000d19,
+             1.8500000d19,
+             1.5100000d19,
+             1.2500000d19,
+             0.8500000d19,
+ &end
+!/dentab_nonuniform_line/ at non-uniform grid 
+!                         for  nonuniform_profile_mesh='enabled'
+!--------------------------------------------------------------------------
+! density profiles at arbitrary nonuniform radial mesh
+! given in row form (idens=1): dens1(ndens,nbulk),
+! i.e., density profile as rows of values, for each species, 1:nbulk.
+!  namelist /dentab_nonuniform_line/nj_tab,prof_2d,radii_2d
+!
+! integer nj_tab(nbulka): i=1,nbulk1 nj_tab(i) is the number of grid points
+!                         for 'i' specie density 
+!                         It should be nj_tab(i).le.ndensa
+!
+! real*8 prof_2d(ndensa,nbulka) : density profiles
+!
+! real*8 radii_2d(ndensa,nbulka): small radius meshes used for density profiles
+!--------------------------------------------------------------------------
+! ndensa (a parameter in param.i) is max number of points in the 
+!        small radius direction.
+! nbulka (a parameter in param.i) is a maximal number of plasma components.
+! Input of profiles is set up so spline profiles can be input in tables
+! of size specified through namelist variables ndens and nbulk.
+!
+! nbulk1           is a number of densities.
+!                  nbulk1 depends on nbulk and izeff model (nbulk1.le. nbulk)
+!                  See description of /dentab/ namelist
+! nbulk (variable)    is number of plasma components must be: nbulk.le.ncompa
+!                     (first component is for electrons)
+! nbulk1 is number of densities components which should be given
+! nbulk1 was calculated in dinit_mr subroutine ,
+! The fragment of dinit_mr is given here to understand the
+! nbulk1 value
+!--------------------------------------------------------------------
+!c     calculation of nbulk1
+!      if(((izeff.eq.0).or.(izeff.eq.2)).or.(izeff.eq.3)) then
+!c        izeff=0, zeff will be calculated using the given ions;
+!c                 electron density will be calculated using ion's densities;
+!c             =1  ion densities nbulk and nbulk-1 will be calculated  using
+!c                 Zeff, electon density and ion's densities(i), i=2,nbulk-1;
+!c        izeff=2, zeff will not coincide with the plasma components
+!c             =3  it uses eqdsk pres (pressure) and ions densities_i
+!c                 for i=2,... nbulk
+!c                 Let temperature T_E=T_i
+!c                 pres=dens1(k,1)*temp1(k,1)+
+!c                      Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!c                 In this case we will calculate Zeff(rho),
+!c                 dens_electron(rho) and T_e(rho)=T_i(rho)
+!c             =4  it uses eqdsk pres (pressure), zeff,ions densities
+!c                 for i=2,... nbulk-2 (nbulk>2) and T_e(rho),T_i(rho)
+!c                 pres=dens1(k,1)*temp1(k,1)+
+!c                      Sum(i=2,nbulk)(dens1(k,i)*temp1(k,i)
+!c                 In this case we will calculate dens_electron(rho) and
+!c                 ion densities for i=nbulk and i=nbulk-1)
+!         nbulk1=nbulk
+!      else
+!c        izeff=1, zeff is given, the ions component will be calculated
+!         if (nbulk.eq.1) nbulk1=1
+!         if (nbulk.eq.2) then
+!	    write(*,*)'nbulk=2 Zeff must be equal charge(2) control it'
+!	    write(*,!)'use the option izeff=0'
+!	    nbulk1=2
+!	    stop
+!	 endif
+!         if (nbulk.gt.2) nbulk1=nbulk-2
+!      endif !izeff
+!------------------------------------------------------------------------
+! densities given in prof_2d are in (1/cm**3), MKSA difference
+!---------------------------------------------------------------------------
+! If  ((izeff.eq.0).or.(izeff.eq.3)) then the electron density
+! will be calculated from the charge neutrality.
+! In that case we can set the arbitrary values for the electron density
+!------------------------------------------------------------------------
+!Example for nbulk1=3
+!---------------------------------------------------------------------------
+! prof_2d in (1/m**3), MKSA difference
+
+&dentab_nonuniform_line
+nj_tab(1)=3
+nj_tab(2)=5
+nj_tab(3)=7
+
+prof_2d(1,1)= 1.d19, 0.5d19, 0.001d19,
+prof_2d(1,2)= 1.d19, 0.7d19, 0.5d19,  0.25d19, 0.001d19,
+prof_2d(1,3)= 1.d19, 0.9d19, 0.7d19,  0.5dd19, 0.25d19,  0.12d19,  0.001d19,
+
+radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.5d0,  0.7d0,  1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.3d0,  0.5d0,  0.7d0,   0.9.d0,  1.d0
+
+&end
+
+!/temtab/ at uniform grid rho(i)=(i-1)/(ndens-1) i=1,...,ndens
+!         for nonuniform_profile_mesh='disabled'
+!--------------------------------------------------------------------------
+! temperature profiles (table data, case: idens=1)	temp1(ndens,nbulk)
+! Average temperature temp1=(T_parallel+2*T_perp)/3
+!--------------------------------------------------------------------------
+! It this namelist we must set electron temp1(ndens,1) and all ion
+! species temp1(ndens,i) temperature (keV) {i=2:nbulk}
+! Constant radial step is assumed.
+! The first line (k=1, i=1:nbulk) temp1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk) temp1(ndens,i) is for rho=1
+! The example for   ndens=5, nbulk=3, nbulka=4
+!                 
+!         electron-1 ion-2  ion-nbulk 
+! prof=      0.,     1.2,   1.3,       
+!            0.,     2.2,   2.3,       
+!            0.,     3.2,   3.3,       
+!            0.,     4.2,   4.3,       
+!            0.,     5.2,   5.3,
+!
+! In all cases temtab should have nbulk columns with the temperature
+! profiles for all nbulk plasma components.    
+! ------------------------------------------------------------------------
+! Here array prof(nbulk,ndens) was used for convenience in namelist.
+! temp1(k,i)=prof(i,k) k=1:ndens, i=1:nbulk
+! ------------------------------------------------------------------------
+! prof in [KeV]
+ &temtab
+ prof =        1.3000000,
+               1.3000000,
+               1.2700000,
+               1.2400000,
+               1.2200000,
+               1.1300000,
+               1.0500000,
+               0.9700000,
+               0.8700000,
+               0.7900000,
+               0.7300000,
+               0.6800000,
+               0.6100000,
+               0.5300000,
+               0.4500000,
+               0.3700000,
+               0.3000000,
+               0.2300000,
+               0.1600000,
+               0.1000000,
+               0.0400000,
+ &end
+
+!/temtab_nonuniform_line/ at non-uniform grid 
+!                         for nonuniform_profile_mesh='enabled'
+!--------------------------------------------------------------------------
+! temperature profiles at arbitrary nonuniform radial mesh
+! given in line form (idens=1): temp1(ndens,nbulk)
+!  namelist /temtab_nonuniform_line/nj_tab,prof_2d,radii_2d
+!
+! integer nj_tab(nbulka): i=1,nbulk nj_tab(i) is the number of grid points
+!                         for 'i' specie temperature
+!                         It should be nj_tab(i).le.ndensa
+!
+! real*8 prof_2d(ndensa,nbulka) : temperature profiles
+!
+! real*8 radii_2d(ndensa,nbulka): small radius meshes used for temperature profiles
+!--------------------------------------------------------------------------
+! ndensa (a parameter in param.i) is max number of points in the 
+!        small radius direction.
+! nbulka (a parameter in param.i) is a maximal number of plasma components.
+! Input of profiles is set up so spline profiles can be input in tables
+! of size specified through namelist variables ndens and nbulk.
+!
+!---------------------------------------------------------------------------
+! temperature (keV) will be in prof_2d
+!------------------------------------------------------
+! Example for nbulk=3
+!---------------------------------------------------------------------------
+! prof_2d in [KeV]
+&temtab_nonuniform_line
+nj_tab(1)=3
+nj_tab(2)=5       
+nj_tab(3)=7
+
+prof_2d(1,1)= 1.d0, 0.5d0, 0.001d0,
+prof_2d(1,2)= 1.d0, 0.7d0, 0.5d0,  0.25d0, 0.001d0,
+prof_2d(1,3)= 1.d0, 0.9d0, 0.7d0,  0.5d0,  0.25d0,  0.12d0,  0.001d0,
+
+radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.5d0,  0.7d0,  1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.3d0,  0.5d0,  0.7d0,   0.9d0,   1.d0
+&end
+
+!/tpoptab/ at uniform grid rho(i)=(i-1)/(ndens-1) i=1,...,ndens
+!          for nonuniform_profile_mesh='disabled'
+!--------------------------------------------------------------------------
+! Tpop=T_perp/T_parallel profiles (table data, case: idens=1) 
+!      tpop1(ndens,nbulk)
+!--------------------------------------------------------------------------
+! It this namelist we must set electron tpop1(ndens,1) and all ion
+! species tpop1(ndens,i)  {i=2:nbulk}
+! Constant radial step is assumed.
+! The first line (k=1, i=1:nbulk) tpop1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk) tpop1(ndens,i) is for rho=1
+! The example for   ndens=5, nbulk=3, nbulka=4
+!               
+!         electron-1 ion-2  ion-nbulk 
+! prof=      1.,     1.2,   1.3,       
+!            1.,     1.2,   2.3,       
+!            1.,     1.2,   3.3,       
+!            1.,     4.2,   4.3,       
+!            1.,     5.2,   5.3,       
+!
+! In all cases tpoptab should has nbulk columns with Tpop
+! profiles for all nbulk plasma components.
+! ------------------------------------------------------------------------
+! Here array prof(nbulk,ndens) was used for convenience in namelist.
+! tpop1(k,i)=prof(i,k) k=1:ndens, i=1:nbulk
+! ------------------------------------------------------------------------
+!  prof non-dimensional    
+ &tpoptab
+ prof=    1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+ &end
+
+!---------------------------------------------------------------------------
+!/tpoptab_nonuniform_line/ at non-uniform grid 
+!                       for nonuniform_profile_mesh='enabled'
+!--------------------------------------------------------------------------
+! Tpop=T_perp/T_parallel profiles
+!-----------------------------------------------------------------------
+! tpop profiles at arbitrary nonuniform radial mesh
+! given in line form (idens=1): tpop1(ndens,nbulk)
+!  namelist /tpoptab_nonuniform_line/nj_tab,prof_2d,radii_2d
+!
+! integer nj_tab(nbulka): i=1,nbulk nj_tab(i) is the number of grid points
+!                         for 'i' specie temperature
+!                         It should be nj_tab(i).le.ndensa
+!
+! real*8 prof_2d(ndensa,nbulka) : tpop profiles
+!
+! real*8 radii_2d(ndensa,nbulka): small radius meshes used for tpop profiles
+!--------------------------------------------------------------------------
+! It this namelist we must set electron tpop1(ndens,1) and all ion
+! species tpop1(ndens,i)  {i=2:nbulk}
+! 
+! The first line (k=1, i=1:nbulk) tpop1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk) tpop1(ndens,i) is for rho=1
+!---------------------------------------------------------------------------
+!Example for nbulk=3
+!---------------------------------------------------------------------------
+!prof_2d non-dimensional
+&tpoptab_nonuniform_line
+nj_tab(1)=3
+nj_tab(2)=5       
+nj_tab(3)=7
+
+prof_2d(1,1)=1.d0,  1.d0,  1.d0,
+prof_2d(1,2)=1.d0,  1.d0,  1.d0,  1.d0,  1.d0,
+prof_2d(1,3)=1.d0,  1.d0,  1.d0,  1.d0,  1.d0,  1.d0,  1.d0,
+
+radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.5d0, 0.7d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.3d0, 0.5d0, 0.7d0, 0.9d0, 1.d0
+&end
+
+!/vflowtab/ at uniform grid rho(i)=(i-1)/(ndens-1) i=1,...,ndens
+!           for nonuniform_profile_mesh='disabled'
+!--------------------------------------------------------------------------
+! vflow  profiles (table data, case: idens=1) 
+!      vdflow1(ndens,nbulk) is the drift velocity || B [m/sec]
+!--------------------------------------------------------------------------
+! It this namelist we must set drift velocity for electrons vflow1(ndens,1)
+| and all ion species vflow1(ndens,i)  {i=2:nbulk}
+! Constant radial step is assumed.
+! The first line (k=1, i=1:nbulk) vflow1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk) vflow1(ndens,i) is for rho=1
+! The example for   ndens=5, nbulk=3, nbulka=4
+!            
+!         electron-1 ion-2  ion-nbulk 
+! prof=      1.,     1.2,   1.3,       
+!            1.,     1.2,   2.3,       
+!            1.,     1.2,   3.3,       
+!            1.,     4.2,   4.3,       
+!            1.,     5.2,   5.3,       
+!
+! In all cases vflowtab should has nbulk columns with vflow
+! profiles for all nbulk plasma components.
+! ------------------------------------------------------------------------
+! Here array prof(nbulk,ndens) was used for convenience in namelist.
+! vflow1(k,i)=prof(i,k) k=1:ndens, i=1:nbulk
+! ------------------------------------------------------------------------
+! prof in [meter/sec]
+ &vflowtab
+ prof=    0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+ &end
+
+!/vflowtab_nonuniform_line/ at non-uniform grid 
+!                           for nonuniform_profile_mesh='enabled'
+!--------------------------------------------------------------------------
+! vflow  profiles at arbitrary nonuniform radial mesh
+! given in line form (idens=1): vflow11(ndens,nbulk)
+!  namelist /vflowtab_nonuniform_line/nj_tab,prof_2d,radii_2d
+!
+! integer nj_tab(nbulka): i=1,nbulk nj_tab(i) is the number of grid points
+!                         for 'i' specie vflow
+!                         It should be nj_tab(i).le.ndensa
+!
+! real*8 prof_2d(ndensa,nbulka) : vflow profiles
+!
+! real*8 radii_2d(ndensa,nbulka): small radius meshes used for vflow profiles
+!--------------------------------------------------------------------------
+! The first line (k=1, i=1:nbulk) vflow1(1,i) is for rho=0
+! The last line (k=ndens, i=1:nbulk) vflow1(ndens,i) is for rho=1
+!---------------------------------------------------------------------------
+! vflow is the drift velocity parallel magnetic field B [meter/sec]
+!-------------------------------------------------------------------
+!           prof_2d in [meter/sec]
+&vflowtab_nonuniform_line
+nj_tab(1)=3
+nj_tab(2)=5       
+nj_tab(3)=7
+
+prof_2d(1,1)=0.d0,  0.d0,  0.d0,
+prof_2d(1,2)=0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+prof_2d(1,3)=0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  1.d0,  1.d0,
+
+radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.5d0, 0.7d0, 1.d0,
+radii_2d(1,2)=0.d0, 0.2d0, 0.3d0, 0.5d0, 0.7d0, 0.9d0, 1.d0
+&end
+
+!/zeftab/  at uniform grid rho(i)=(i-1)/(ndens-1) i=1,...,ndens
+!         for nonuniform_profile_mesh='disabled'
+!--------------------------------------------------------------------------
+! Zeff profiles (table data, case: idens=1)	zeff1(ndens)
+!--------------------------------------------------------------------------
+! It this namelist we must set zeff1(ndens)
+! Constant radial step is assumed.
+! The first value  zeff1(1) is for rho=0
+! The last value zeff2(ndens) is for rho=1
+! The example for  ndens=5
+! zeff1= 1., 1., 1., 1. 1.
+!--------------------------------------------------------------------------
+ &zeftab
+ zeff1=21*1.5
+ &end
+
+!/zeftab_nonuniform_line/ at non-uniform grid 
+!                         for nonuniform_profile_mesh='enabled'
+!--------------------------------------------------------------------------
+! zeff profile at arbitrary nonuniform radial mesh
+! given in line form (idens=1): zeff1(ndens,1)
+!  namelist /temtab_nonuniform_line/nj_tab,prof_2d,radii_2d
+!
+! integer nj_tab(1): i=1,nbulk nj_tab(1) is the number of grid points
+!                         for zeff 
+!                         It should be nj_tab(1).le.ndensa
+!
+! real*8 prof_2d(ndensa,1) : zeff profile
+!
+! real*8 radii_2d(ndensa,1): small radius meshes used for zeff profile
+!-----------------------------------------------------------------------
+! It this namelist we must set zeff1(ndens)
+! The first value  zeff1(1) is for rho=0
+! The last value zeff1(ndens) is for rho=1
+! In the input namelist zeftab_nonuniform_line the second dimension 
+! is equal to 1.
+---------------------------------------------------------------------------
+!Example at 3 radial points
+!nj_tab(1)=3
+!prof_2d(1,1)= 1.d0, 1.d0,  1.d0,
+!radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+!------------------------------------------------------------------------
+&zeftab_nonuniform_line
+nj_tab(1)=3
+
+prof_2d(1,1)= 1.d0, 1.d0,  1.d0,
+
+radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
+&end
+
+!/read_diskf/
+!   To be used with iabsorp= 6,7 and can also use with iemission=1:
+!   i_diskf=0 usage analytic Maxwellian electron distribution 
+!   i_diskf=1 read in the file diskf
+!   i_diskf=2 read in the file netcdfnm.nc
+! 
+!   i_diskf=3 analytic calculation of the non-Maxwellian distribution:
+!             f(p,theta,rho)=ne(rho)*[(1-rtail-rhot-rbeam)*f_max(T(rho))
+!                                     +rtail*f_tail+rhot*f_hot+rbeam*f_beam]
+!   i_diskf=4 analytic +3D spline calculation of continuous non-Maxwellian
+!              distribution with three temperatures in  three energy ranges.
+!             Uses 3D spline calculation of distributions on a grid.
+!   i_diskf=5 Fully analytic velocity space  +1D  spline vs radois for
+!             density calculation of continuous non-Maxwellian distribution
+!             with three temperatures in  three energy ranges.
+!             Generally, much faster than i_diskf=4 approach.
+!------------------------------------------------------
+!   The data for analytic non-Maxwellian relativistic electron distribution.
+!   (See also http://www.compxco.com/Genray_manual.pdf , Section 5.2.3)
+!    
+!   jx   - the number of used normalized momentum/ mesh points
+!   lrz  - the number of used radial mesh points
+!   iym  - the number of used pitch-angle mesh points 
+!          (here the same at each radius)
+!   ngen - the number of plasma species (here we use only electron specie with 
+!          the number of specie k=1) 
+!   jxa,iya,lrza,ngena ! the max values for jx,iym,lrz,ngen set in param.i
+!   rtem0 - ratio tem0/electron_temperature(rho=0)
+!           tem0 is the max energy for the momentum normalization (KeV) 
+!-----tail parameters  (i_diskf=3)
+!     f_tail=H(rho,rt1,rt2)*f_rel_Maxw(ttail),
+!     H(x,x1,x2) is the box function. H=1 for x1<x<x2 otherwise H=0  
+!   r1t,r2t    small normalized radii for the tail localization  
+!   rtail      the relation the tail density to the total density
+!   ttail      [KeV] tail temperature
+!-----hot parameters  (i_diskf=3)
+!     f_hot=H(rho,rh1,rh2)*H(epar,hotmnpar,hotmxpar)*H(eper,hotmnper,hotmxper)*
+!     *(p_per/mc)**hotexp*exp{-mu(thoppar)(p_par/m_ec)**2-mu(thopper)(p_per/m_ec)**2}.
+!     Here mu(T)=m_e*c**2/T  
+!   r1h,r2h             - small normalized radii for the hot localization
+!   rhot                - the relation of hot hot density to the total density
+!   thotpar,thotper     - [KeV] parallel and perpendicular hot temperatures 
+!   hotmnpar,hotmxpar   - [KeV] boundaries of the parallel energy box
+!                         hotmnpar < epar < hotmxpar  (don't make them equal)
+!   hotmnper,hotmxper   - [KeV] boundaries of the perpendicular energy box
+!                         hotmnper < eper < hotmxper  (don't make them equal)
+!   hotexp              - the degree of the perpendicular momentum: (p_per/mc)**hotexp
+!-----beam parameters  (i_diskf=3)
+!     f_beam=H(rho,rb1,rb2)*exp{-0.5*mu(tbeam)*
+!              [(p_par-p_beam_par)**2+(p_per-p_beam_per)**2]/(m_e*c)**2}
+!     Here
+!          (p_beam /m_e*c)**2=ebeam**2/(m_e**2*c**4)-1
+!           p_beam_par=p_beam*cos(thbeam)
+!           p_beam_per=p_beam*sin(thbeam)
+!   r1b,r2b      - small normalized radii for the beam localization
+!   rbeam        - the relation of the beam density to the total density
+!   ebeam        - [KeV] beam energy 
+!   thbeam       - [degree] beam pitch angle (0=<degree=<180) 
+!   tbeam        - [KeV] beam temperature 
+!-----Three temperature case  (i_diskf=4)
+!   rvtovte1,rvtovte2 = ratio of momentum-per-mass (electrons) to on-axis
+!                       thermal velocity vte0= sqrt(Te/me), defining the
+!                       three velocity ranges for the temperatures.
+!                       defaults=1.e6,1.e6 [i.e., effectively infinity]
+!   rtemp1, rtemp2, rtemp3 = ratios of temperatures in each of the
+!                       three velocity (energy) bins to the radially
+!                       local temperature.
+!   In summary:  The three momentum-per-mass bins are [0.,rvtovte1*vte0],
+!                [rvtovte1*vte0,rvtovte2*vte0], and [rvtovte21*vte0,infinity].
+!                These bins are constant as a function of radius.
+!                The temperatures in each bin are given by rtemp[1-3]
+!                and vary as a function of radius as the bulk temperature.
+!--------------------------------------------------------------------
+ &read_diskf
+ i_diskf=0
+ netcdfnm='netcdfnm.nc'
+ jx=200
+ lrz=20
+ iym=100  
+ ngen=1  
+ rtem0=10.d0
+ r1t=1.d0
+ r2t=0.d0 
+ rtail=0.0d0
+ ttail=1.d0         !KeV
+ r1h=1.d0
+ r2h=0.d0    
+ rtail=0.0d0            
+ thotpar=1.d0       !KeV
+ thotper=1.d0       !KeV
+ hotmnpar=1.d0      !KeV 
+ hotmxpar=2.d0      !KeV 
+ hotmnper=1.d0      !KeV
+ hotmxper=2.d0      !KeV   
+ hotexp=0.d0    
+ r1b=1.d0
+ r2b=2.d0   
+ rbeam=0.d0
+ ebeam=1.d0         !KeV
+ thbeam=30.d0       !degree
+ tbeam=1.d0         !KeV
+!---for i_diskf=4
+  rvtovte1=1.d6
+  rvtovte2 =1.d6
+  rtemp1=1.d0
+  rtemp1=1.d0
+  rtemp1=1.d0
+ &end
+!--------------------------------------------------
+!/emission/ 
+!the data for emission calculations
+!   i_emission=0 no emission
+!             =1 emission calculations
+!
+!   0<tol_emis=<1 tolerance parameter to add the new mesh point s_n
+!                if in_0(n)>tol_emis*i_0 
+!   nharm1=< nharm =<nharm2 gives the used EC harmonics (Not work now)
+!   nfreq=<nfreqa (see param.i) is the number of frequencies
+!         nfreq=1 gives detailed plots of emission from a single ray     
+!         nfreq.gt.1 gives spectra covering the specified frequency
+!         range
+!   if nfreq=1 code will use the frequency determined by 
+!              frqncy(Hz) given in namelist wave, MKSA difference
+!   freq00=<freq01 are ratios of the minimal and maximal emission
+!         frequencies to electron gyro-frequency f_ce(rho=0) at the
+!         magnetic axis.  Search screen dump for "magnetic axis bmag"
+!         to value.  Gyrofrequency (GHz) is 28.0*<magnetic axis bmag>.
+!    wallr is the wall reflection coefficient, {0=< wallr =<1}
+!
+!    i_rrind chooses the subroutine to calculate N_ray (default =0)
+!      i_rrind=0  N_ray=N
+!      i_rrind =1 from cold electron plasma using rrind   
+!      i-rrind =2 from hot non-relativistic dispersion relation  
+!--------------------------------------------------
+!    i_r_2nd_harm=1 to calculate the major radius of the EC 2nd harmonic
+!                =0 do not calculate (default =0) 
+!              (to use drawemfr.in file i_r_2nd_harm=1)
+!              (to use drawemf1.in file i_r_2nd_harm=0)
+!---------------------------------------------------
+!    i_emission_spectrum =0  do not calculate emission spectrums
+!                         1  calculate emission spectrums
+!    jx_kin               The number of  kinetic energy grid points
+!                         for emission spectrum.
+!    max_kin_energy_kev   [KeV] maximal kinetic energy of the grid 
+!                         for emission spectra. 
+!---------------------------------------------------
+ &emission
+ i_emission=0
+ tol_emis=5.0d-3
+ nharm1=1
+ nharm2=1
+ nfreq=5
+ freq00=0.585d0
+ freq01=0.885d0
+ wallr=0.9d0
+ i_rrind=1
+ i_r_2nd_harm=0
+ i_emission_spectrum =0  
+ jx_kin=100  
+ max_kin_energy_kev=200.d0   
+ &end
+
+!/ox/
+!------------------------------------------------------------------------
+!namelist related to calculation of EC cone vertex coordinates
+!for the optimal OX mode  conversion (details on this calculation
+!will be given in the Genray manual)
+!------------------------------------------------------------------------
+! i_ox =0 /default/ do not use these calculations.
+!      =1 calculations of the optimal EC cone vertex for OX conversion. 
+!         The optimal direction will give optimal N_parallel
+!         in OX conversion point at Xe=1.
+!         In this case should have istart=1.  Wave frequency is from
+!         frqncy in &wave namelist section.
+!         Optimal launch angles are output to ECcone_optimal.dat.
+!      =2 launch the ray using EC cone vertex coordinates calculations
+!         and using OX transmission procedure.
+!------------------------------------------------------------------------
+! theta_bot(icone) < theta_top(icone) [degree]
+! are the poloidal angle boundaries (degree) at
+! Xe=1 surface. They are used in genray.f to find the optimal ray
+! direction at the given EC cone vertex icone=1,...,ncone
+!------------------------------------------------------------------------
+! i_ox_poloidal_max is the maximal number of the poloidal angles used
+!                   in the bisection method. This method calculates the
+!                   the poloidal angle theta_pol of the point M at the
+!                   flux surface Xe(rho=1) : M(poloidal_angle,rho).  
+!                   The ray launched from M to the plasma edge will
+!                   go to the EC cone vertex.
+!------------------------------------------------------------------------
+! eps_antenna       is the accuracy with which the ray launched from the
+!                   flux surface Xe(rho)=1 at the given poloidal angle
+!                   reaches the given cone vertex (i_ox=1).
+!                   This accuracy is calculated using the distance of 
+!                   the vertex radial coordinate from the specified:
+!                   antenna position, 
+!                   sqrt((rst_ox-rst)**2+(zst_ox-zst)**2)< eps_antenna
+!                                                          (meters)
+!------------------------------------------------------------------------
+!eps_xe   The parameter which sets the vicinity
+!         of the O-mode cutoff surface.
+!         If xe < (1-eps_xe) then this subroutine will 
+!         creates the ray jump in small radius direction
+!         and find the X mode.
+!         eps_xe=1.d-2 is seted as default in dinit.f
+!------------------------------------------------------------------------
+
+&ox
+i_ox=2
+theta_bot(1)=0.0d0
+theta_top(1)=30.d0
+theta_bot(2)=0.0d0
+theta_top(2)=30.d0
+i_ox_poloidal_max=20
+eps_antenna=1.d-4
+eps_xe=1.d-2
+&end
+
+!------------------------------------------------------------------------
+!/adj_nml/
+!------------------------------------------------------------------------
+! INTEGER
+! i_adj  =1 to use adj calculations
+!        =0 do not use adj_calculastions 
+! npsi0  is a number of radial points  
+! nthp0  is a number of polidal points for the integration
+!        along b filed line
+! nmax_chi   is the number of grid points in u_0 direction (for adj mesh)
+! imax_chi   is the number of grid points in pitch angle 
+! lmax_chi   is the maximal order of Legendre harmonic used.
+!        lmax_chi=0 corresponds to collision with a stationary Maxwellian.
+!        Usually lmax_chi=21, or at least 3.
+! tmax   is the maximal number of time steps
+!
+! n_harm_adj_min   Number of minimal and maximal cyclotron harmonics
+! n_harm_adj_max   for power and CD calculations   
+!                  It should be:  n_harm_adj_min.le.n_harm_adj_max
+! n_relt_intgr_adj Number of points for Power and CD integration
+!                  in p_perp direction along resonce curve
+! REAL*8
+! t      is the temperature in units of m*u_n**2
+!        If you want velocities normalized to sqrt(T/m), set t=1.
+! ze     is the electron charge state. It is usually =1, 
+!        but for Lorentz limit, ion charge Zi ==> infinity,
+!         set  ze=0 and zi=1
+! umax   is the maximal value of u_0. 
+!        The grid is spaced between 0 and umax.
+! dt     is time step in adj solver, usually =1
+! alpha  is a weighting factor in the time stepping algorithm.
+!        =0 for explicit algorithm
+! rho_   governs the treatment  of the boundary at u=umax
+!        for rho_=1 the second derivative from the adjoint function chi
+!        d^2(chi)/dx^**2(at u=umax)=0
+!        for rho_=0 the first derivative =0
+! aerrmx  is some error for subadj 
+! rerrmx  is some error for subadj 
+! epsi_adj  the accuracy used in integration by adaptive Simpson
+!           Works at i_resonance_curve_integration_method_adj=4 case only
+!------------------------------------------------------------------------
+!        choose the integration method for power and CD calulations 
+!       i_resonance_curve_integration_method_adj=1 !rectangle integration
+!                                              !over angle,
+!                                              !for ellipse case only
+!       i_resonance_curve_integration_method_adj=2 !rectangle formula,
+!                                              !p_perp0 integration
+!                                              !elliptic or hyperbolic case
+!       i_resonance_curve_integration_method_adj=3 !trapezoidal formula,
+!                                              !p_perp0 integration
+!                                              !elliptic or hyperbolic case
+!       i_resonance_curve_integration_method_adj=4 !adaptive Simpson integration 
+!                                              !p_perp0 integration
+!                                              !elliptic or hyperbolic case
+!
+!       i_resonance_curve_integration_method_adj is used 
+!       to choose the numerical integration method for 
+!       power and CD calculation.
+!
+!------------------------------------------------------------------------
+!  i_calculate_or_read_adj_function      =1 calculate chi function
+!                                           and save in file adjout.
+!                                        =0 read chi function from
+!                                           the file adjout.
+!  Since the adjoint function chi only depends on the plasma equilibrium,
+!  if it doesn't change then the same adj function can be used for
+!  all wave modes and frequencies.
+!------------------------------------------------------------------------
+! i_chi_interpolation            to choose interpolation method
+!                                for derivatives from chi function
+!                                =1 using spline [default value]
+!                                   [has given problem near t-p bndry]
+!                                =2 linear interpolation
+!                                   of numerical derivatives
+!------------------------------------------------------------------------
+&adj_nml
+i_adj=0
+npsi0=10                    !=< npsi0a
+nthp0=1000                  !=< nthp0_a
+nmax_chi=400 
+imax_chi=200
+lmax_chi=3
+tmax=300
+t=1.d0
+ze=1.d0
+umax=10.d0
+dt=1.d0  
+alpha=0.55d0
+rho_= 1  
+aerrmx=1.d-5  
+rerrmx=2.d-6
+n_harm_adj_min=0
+n_harm_adj_max=1
+n_relt_intgr_adj=200
+i_resonance_curve_integration_method_adj=4 
+epsi_adj=1.d-5 !works for i_resonance_curve_integration_method_adj=4 case only
+i_calculate_or_read_adj_function=1
+i_chi_interpolation=1
+&end
+
+
+!-------------------------------------------------------------
+!/edge_prof_nml/  to set density profile outside LCFS
+!     integer
+!     &i_edge_dens_anal,  ! =0 to use sigmedgn=constant
+!                         ! =1 the analytic formula for sigmedgn(theta_pol)
+!                         ! =2 table data for  sigmedgn(theta_pol)
+!                         ! [default = 0]
+!     &n_pol_edge_dens    ! number of poloidal points of
+!                         ! the poloidal mesh [See below.]
+!----------------------------------------------------------------------- 
+!   i_edge_dens_rz_mesh is used at n_wall.gt.0. 
+!                       It means that wall is used
+!
+!                       For n_wall=0 no wall to be used,
+!                       no reflection from the wall
+!                       and rz_mesh will not be used
+!--------------------------------------------------------------
+!    &i_edge_dens_rz_mesh, ! =0 No write (density_rz,temperature_rz, 
+!                          !    flux_rz, rho_rz)
+!                          !    and no other calculations related
+!                          !    i_edge_dens_rz_mesh
+!                          !
+!                          ! =1 Write to the file dens_temp_rz_out.txt:
+!                          !    density_r_z (i,j,k,0)  and temperature_r_z (i,j,k)
+!                          !    (1:nxeqd_add,1:nyeqd_add,1:nbulk)
+!                          !    on rz mesh for test or modification.
+!                          !    Format (as given in equilib.f) is:
+!                          !    write(i_unit,2) nxeqd_add,nyeqd_add,nbulk !mesh dimensions
+!                          !    write(i_unit,3)(((dens_r_z_in_MKS(i,j,k),
+!                          !   &                i=1,nxeqd_add),j=1,nyeqd_add),k=1,nbulk) !MKS
+!                          !    write(i_unit,3)(((temp_prof(i,j,k),
+!                          !   &                i=1,nxeqd_add),j=1,nyeqd_add),k=1,nbulk) !KeV
+!                          ! 2  format(52x,3i5) 
+!                          ! 3  format(5e16.9)
+!                          ! 4  format(52x,2i5)  
+!                          !
+!                          !    Write to the output file: psi_rho_rz_out.txt:
+!                          !    nxeqd_add,nyeqd_add, !dimensions of rz mesh
+!                          !    xdimeqd,ydimeqd,     !horizontal and vertical
+!                          !                         !  full-widths of the mesh [meters]
+!                          !    redeqd,              !major radius of the inner edge 
+!                          !                         !  of the rectangular grid.
+!                          !    ymideqd,             !vertical shift of the
+!                          !                         !  rectangular grid.
+!                          !    flux_rz, rho_rz (on the rz mesh).
+!                          !    Format is as in equilib.f:
+!                          !    write(i_unit,4) nxeqd_add,nyeqd_add  !mesh dimensions
+!                          !    write(i_unit,3) xdimeqd,ydimeqd,reqd,redeqd,ymideqd
+!                          !    write(i_unit,3)(rr_add(i),i=1,nxeqd_add)
+!                          !    write(i_unit,3)(zz_add(j),j=1,nyeqd_add)
+!                          !    write(i_unit,3)((rho_r_z(i,j),i=1,nxeqd_add),j=1,nyeqd_add)
+!                          !    write(i_unit,3)((psi_r_z(i,j),i=1,nxeqd_add),j=1,nyeqd_add)
+!                          !
+!                          !    Here density_rz profile are determined from
+!                          !    i_edge_dens_anal model.
+!                          !
+!                          ! =2 Use  the density and temperature data from the file
+!                          !      dens_temp_rz_in.txt.  NOTE:  _in.dat, 
+!                          !                                   NOT _out.dat, as above.
+!                          !      That is, read density_r_z and
+!                          !      temperature_r_z as in above dens_temp_rz_out.txt format.
+!                          !      i_edge_dens_anal value not used in this case.
+!                          !      Data file psi_rho_rz_out.txt is not needed.
+!                          !
+!                          ! The idea of writing dens_temp_rz_out.txt with =1 option,
+!                          ! is that it provides a template for modification to the file
+!                          ! dens_temp_rz_in.txt for the =2 option.  The file
+!                          ! psi_rho_rz_out.txt can provide help is making the density/
+!                          ! temperature modification, but is not required for the
+!                          ! i_edge_dens_rz_mesh=2 option.
+!                          !     
+!                          ! [default = 0]
+!
+!     The numbers of RZ mesh points are set by namelist (dynamic dimension is
+!     used, if n_wall >0)
+!       
+!     nxeqd_add= number of points at RZ mesh at  R-direction (default=1000)
+!     nyeqd_add= number of points at RZ mesh at  Z-direction (default=1000) 
+!
+!
+!-------------------------------------------------------------------------
+! For the temperature outside LCFS (rho>1) at no_reflection=1
+! the code will use following formula at all i_edge_dens_anal values:
+!
+! temperature(i,rho)=temperature(i,rho=1)*exp(-(rho-1)/sigmedgt)
+!
+! Here
+! i is a number of plasma specie i=1,..,nbulk,
+! sigmedgt=const is normalized to the plasma radius.
+! By default
+! sigmedgt=0.02
+!      
+! For densities outside LCFS (rho>1) at no_reflection=1 the code will use
+! different formula according to i_edge_dens_anal value.
+!.......................................................................
+! At i_edge_dens_anal=1 the code will use following formula
+!
+! density(i,rho)=density(i,rho=1)*exp(-(rho-1)/sigmedgn)
+! Here
+! i is a number of plasma specie i=1,..,nbulk,
+! sigmedgn=const is normalized to the plasma radius.
+! By default
+! sigmedgn=0.02
+!........................................................................
+! At i_edge_dens_anal=1  the code will use following formula
+!
+! density(i,rho,theta_pol)=density(i,rho=1)*exp(-(rho-1)/sigma_edge_n(theta_pol))
+!
+! The function  sigma_edg_n(theta_pol) is normalized to the plasma radius.
+!
+! sigma_edge_n(theta_pol_radian)=sigma_edgen_0+
+!                             +del1*exp1(theta_pol_radian)+del2*exp2(theta_pol_radian)
+!
+! exp1(theta_pol_radian)=exp(-((theta_pol_radian-theta_pol_edge_1_radian)/
+!                        sigma_theta_pol_edge_1_radian)**2)
+! exp2(theta_pol_radian)=exp(-((theta_pol_radian-theta_pol_edge_2_radian)/
+!                        sigma_theta_pol_edge_2_radian)**2)
+! del1=sigma_edgen_1-sigma_edgen_0
+! del2=sigma_edgen_2-sigma_edgen_0
+!
+! Input angles in the namelist should be set in degree.
+!
+! So, sigma_edge_n is equal to
+! 1) =sigma_edgen_0 at poloidal angles which are far from given poloidal angles
+!     theta_pol_edge_1 and theta_pol_edge_2
+! 2) =sigma_edgen_1  poloidal angles near theta_pol_edge_1
+! 3) =sigma_edgen_2  poloidal angles near theta_pol_edge_2
+!.........................................................................
+! At i_edge_dens_anal=2  the code will use following formula
+!
+! density(i,rho,theta_pol)=density(i,rho=1)*exp(-(rho-1)/sigma_edge_n(theta_pol))
+!
+! The function sigma_edg_n(theta_pol) is normalized to the plasma radius.
+! sigma_edg_n(theta_pol) is a spilne approximation at the given tables:
+!
+! theta_pol_edge_dens_ar_degree(1:n_pol_edge_dens) poloidal mesh 
+!
+! sigmedgn_ar(1:n_pol_edge_dens) normalized to small radius and
+!                               set in poloidal mesh points 
+!------------------------------------------------------------------------
+! Minimal values of density and temperature outside LCFS
+!
+! dens_min_edge                   !minimum edge density
+!                                 !10**13/cm**3 for all plasma species
+!                                 !Applies for all i_edge_dens_anal values
+! temp_min_edge,                  !minimal edge temperature
+!                                 ![KeV] for all plasma species
+!
+! Outside LCFS the code uses dens_min_edge to sets
+! 1) the minimal electron density equal to "dens_min_edge"
+! 2) for ions the minimal ion temperature will be different for each ion
+!    specie i=2,,....,nbulk to create the plasma charge equal to Z_eff 
+!    at LCFS (rho=1) 
+!    dens_min(i)=dens_min_edge*ratio(i)
+!    Here ratio(i)=ion density(i,rho=1)/electron density(rho=1) 
+!    is the ratio of the ion density(i) at rho=1
+!    to the electron density at rho=1
+!     
+!-------------------------------------------------------------------------
+!     Data to set 
+!     &n_pol_edge_dens    ! number of poloidal points (integer) of
+!                         ! the poloidal mesh for i_edge_dens_anal=2!
+!
+!     theta_pol_edge_dens_ar_degree, !poloidal angle mesh [0=<degree=<360]
+!     It is assumed that:
+!      theta_pol_edge_dens_ar_degree(1)=0
+!      theta_pol_edge_dens_ar_degree(i) < theta_pol_edge_dens_ar_degree(i+1)
+!      theta_pol_edge_dens_ar_degree(n_pol_edge_dens )= 360 degree
+!
+!    For example
+!     theta_pol =90 at the top of the poloidal cross-section
+!     theta_pol=270 at the bottom of the poloidal cross-section
+!
+!                                     !to set sigmedgn_ar
+!     sigmedgn_ar                     !exponential density fall-off distance
+!                                     !outside LCFS starting at rho=1 density
+!                                     !Normalized to plasma radius 
+!
+!     theta_pol_edge_1_degree         !for analytical formula of sigma_edge_n
+!     theta_pol_edge_2_degree            
+!     sigma_theta_pol_edge_1_degree,
+!     sigma_theta_pol_edge_2_degree
+!     sigma_edgen_0  !Normalized to plasma radius
+!     sigma_edgen_1  !Normalized to plasma radius
+!     sigma_edgen_2  !Normalized to plasma radius
+!
+!     The density profile outside LCFS has the form
+!
+!     dens_rho_theta=densedge*dexp(-(rho_small-1.d0)/sigma_edge_n)
+!
+
+!     [densedge is the density for the given plasma specie at LCFS (rho=1).
+!       Not namelist, but input with the plasma profiles within the LCFS.]
+!
+!     sigma_edge_n depends on the poloidal angle theta_pol.
+!      
+!     If i_edge_dens_anal=1 then the analytic formula for sigma_edge_n is used:
+!
+!     sigma_edge_n(theta_pol)=
+!     (sigma_edgen_1-sigma_edgen_0)*     
+!     exp(-((theta_pol_radian-theta_pol_edge_1_radian)/sigma_theta_pol_edge_1_radian)**2)+
+!     (sigma_edgen_2-sigma_edgen_0)* 
+!     exp(-((theta_pol_radian-theta_pol_edge_2_radian)/sigma_theta_pol_edge_2_radian)**2)
+!
+!     If i_edge_dens_anal=2 then the table will be used to set sigma_edge_n(i)
+!     at the poloidal mesh theta_pol_edge_dens_ar_degree(i) ,i=1,...,n_pol_edge_dens
+!
+!--------------------------------------------------------------------------------
+!
+!     The code can create exponential density fall outside LCFS near chamber
+!     wall and limiters.
+!     This density fall can be used for natural ray reflection
+!     from the chamber wall and limiters.
+!
+!     The chamber wall has the same poloidal crossection for all toroidal angles.
+!     So, the chamber wall is determined by its poloidal boundary.
+!
+!     The code can use several limiters. The number of limiters max_limiters
+!     is set in the namelist /tokamak/. Each limiter m=1:max_limiter has the poloidal boundary
+!     and it lokalised in the toroidal direction by toroidal angles :
+!     phi_limiter(1,m) < phi < phi_limiter(2,m)
+!     which are set in the namelist /tokamak/.
+!
+!     The poloidal limiter boundary consists from the line L_limiter which
+!     is close to LCFS and two horizontal lines. 
+!     The top horizontal line connects the top point of L_limiter line with
+!      the chamber wall. 
+!     The bottom horizontal line connects the bottom point of L_limiter line
+!      with the chamber wall. 
+!       
+!     So, each limiter has the poloidal boundary at RZ plane and vertical
+!     toroidal plane bounaris perpendicular to the toroidal direction.
+!                               
+!................density wall-limiters fall at the poloidal plane..............
+!
+!     The poloidal character length of the chamber wall and limiters density 
+!     fall at the poloidal plane is set by  the input variable:
+!     sigma_wall_n  -[meters] exponential density fall off polidal distance
+!                   near chamber wall outside LCFS  
+!
+!     To get the ray reflection close in to the wall or limiters sigma_wall_n
+!     should be small.
+!     By default sigma_wall_n=3.d-3 [meter].
+!
+!     The code uses spline at RZ poloidal mesh to create density with density
+!     fall near chamber wall and each limiters.
+!     This RZ mesh rr_add(nxeqd_add),zz_add(nyeqd_add) should have
+!     small steps in R and Z directions to resolve
+!     the density fall at the given character length sigma_wall_n
+!     It means that RZ mesh step should me smaller than sigma_wall_n.
+!                          
+!     The step of rr_add mesh is xdimeqd/(nxeqd_add-1)
+!     The step of zz_add mesh is ydimeqd/(nyeqd_add-1)
+!     Here xdimeqd, ydimeqd  are the horizontal(R-direction) and vertical
+!     (Z-direction) full-widths [meters] of the  rectangle given it the input
+!     equilib.dat eqdsk file
+!
+!     So, for the resolution of the wall-limiters density falls at the
+!     poloidal plane it needs
+!     xdimeqd/(nxeqd_add-1) =< sigma_wall_n
+!     ydimeqd/(nyeqd_add-1) =< sigma_wall_n
+!
+!     sigma_wall_n    [meter] exponential density fall off poloidal distance
+!                     near the chamber wall-limiters outside LCFS       
+!
+!-----The calculation of the poloidal wall-limiters density fall
+!
+!     For each RZ point of the poloidal mesh P(rr_add(i),zz_add(j)) the code
+!     calculates the minimal poloidal distance distance_to_wall(i,j,m)
+!     between mesh point P(i,j) and
+!     1) all chamber wall points  
+!        M(r_wall_add(k,m),z_wall_add(k,m)) for m=0
+!     2) all limiter points points
+!         M(r_wall_add(k,m),z_wall_add(k,m)) for each
+!        limiter m=1,...,max_limiters.
+!
+!
+!     Then the code at each point P(i,j) outside LCFS calculates factor 
+!     for the chamber wall m=0 
+!
+!     factor=1.d0-dexp(-(distance_to_wall(i,j,m=0)/sigma_wall_n)**2) 
+!
+!     which is equal to zero at the wall and it is equal to unit
+!     far from the wall.
+!     
+!     Then for each limiter m=1,max_limiters and each point P(i,j) outside
+!     LCFS the code calculates factor_limiter 
+!     factor_limiter=1.d0-
+!     &            dexp(-(distance_to_wall(i,j,m)/sigma_wall_n)**2)
+!
+!    Then for each limiter m=1,max_limiters 
+!    if (factor_limiter.lt.factor) factor=factor_limiter
+!
+!    The density in each P(i,j) point outside LCFS is
+!    density_r_z(i,j,k,m)= dens_loc(zz_add(i),rr_add(j), k)*factor
+!    Here 
+!    k=1,nbulk is a number of plasma specie           
+!    dens_loc(zz_add(i),rr_add(j), k) is a density value calculated
+!    at the point P(i,j) according to the given i_edge_dens_anal
+!    without chamber-limiter density fall
+!
+!    After that the code calculates spline coefficients for 2D approximation
+!    of the density at RZ mesh (zz_add,rr_add) using the found density with
+!    density wall-limiter fall dens_loc(zz_add(i),rr_add(j), k).
+!
+!    These spline coefficients will be used to find density with
+!     wall-limiters fall.
+!
+!    If the toroidal angle phi of the point Q is inside the given limiter
+!    vertical boundaries with number 1=< m =<max_limiters
+!    phi_limiter(1,m)< phi <phi_limiter(2,m) 
+!    In this case the density in this point will be calculated using 
+!    spline coefficients for found limiter m:   
+!    density_r_z(i,j,k,m),
+!    density_r_z_rr(i,j,k,m),density_r_z_zz(i,j,k,m),
+!    density_r_z_rrzz(i,j,k,m).
+!
+!    If the toroidal angle phi of the point Q is outside of any 
+!    given limiters then the density in this point will be calculated using 
+!    spline coefficients for m=0:   
+!    density_r_z(i,j,k,m=0),
+!    density_r_z_rr(i,j,k,m=0),density_r_z_zz(i,j,k,m=0),
+!    density_r_z_rrzz(i,j,k,m=0),
+!    In this case the density fall is near the chamber wall only.
+!
+!.....density limiters fall near the vertical plane limiter boundaries
+!      perpendicular to the toroidal direction........................... 
+!
+!     The toroidal character angle of limiters density fall at the vertical
+!     limiter boundaries is:
+!     sigma_lim_toroidal_degree [degree]  [degree] is the density fall
+!                                         off toroidal angle
+!                                         at the vertical limiter
+                                          boundaries
+!
+!     The code checks if the point P is inside one of limiter with number m
+!     then the code founds the vertical limiter boundary nearest to the given
+!     point P: nearest_lim_boundary=1 or =2. 
+!     Then the code calculates factor 
+!
+!     factor=dexp(-(phi-phi_limiter(nearest_lim_boundary,m)/
+!                   sigma_lim_toroidal_radian)**2)
+!
+!     Then the code calculates density at the point P according to
+!     the given i_edge_dens_anal without chamber-limiter
+!     density fall: dens=density_r_z_i_m(z,r,k,m)
+!
+!     After that the density with limiter fall is
+!     dens_lim=dens*factor
+!------------------------------------------------------------------------
+&edge_prof_nml
+ sigmedgt=0.02                     !normalized to small radius
+ i_edge_dens_rz_mesh=0
+!--------i_edge_dens_anal=0 case-------------------
+!i_edge_dens_anal=0  
+!sigmedgn=0.02                     !normalized to small radius
+!--------i_edge_dens_anal=1 case-------------------
+!i_edge_dens_anal=1
+!sigma_edgen_0=0.02d0              !Normalized to plasma radius
+!sigma_edgen_1=0.02d0              !Normalized to plasma radius
+!sigma_edgen_2=0.02d0              !Normalized to plasma radius
+!theta_pol_edge_1_degree =90.d0       !degree
+!theta_pol_edge_2_degree =270.d0      !degree  
+!sigma_theta_pol_edge_1_degree=90.d0  !degree
+!sigma_theta_pol_edge_2_degree=90.d0  !degree
+!--------i_edge_dens_anal=2  case-------------------
+ i_edge_dens_anal=2  
+ n_pol_edge_dens=11
+ theta_pol_edge_dens_ar_degree=0., 36.d0, 72.d0, 108.d0, 144.d0, 180.d0,
+216.d0, 252.d0, 288.d0, 324.d0, 360.d0  !poloidal mesh [1:n_pol_edge_dens] 
+                                        ![degree]
+                                        !for sigma_edge_n
+
+ sigmedgn_ar=11*0.02d0                  !array of sigmedge[1:n_pol_edge_dens]
+                                        ![normalized to small radius]
+                                        !at the given poloidal mesh
+!-------- minimal density and temperature outside LCFS------------------
+!SAP100909
+! dens_min_edge=1.d11  ! 1/m**3 MKSA
+ dens_min_edge=1.d13  ! 1/m**3 MKSA to coinside with genray.dat case
+                      ! which uses  1.d-6 1/cm*3 
+ temp_min_edge=1.d-3  ! keV 
+!---------density fall near the chamber wall and limiters---------------- 
+ sigma_wall_n=3.d-3  !exponential density fall off distance [meter]
+                     !near chamber wall and limiters outside LCFS 
+
+ nxeqd_add=1000      !=< nxeqd_add_a  number of points at RZ mesh
+                     ! at  R-direction
+ 
+ nyeqd_add=1000      !=< nyeqd_add_a  number of points at RZ mesh
+                     ! at Z-direction 
+
+ sigma_lim_toroidal_degree=1.d-3 ! [degree] the density fall off toroidal angle
+                                 ! at the vertical limiter boundaries
+
+&end
+
+!--------------------------------------------------------------------------
+!     data for namelist /lsc_approach_nml/  
+!     to calculate LH absorption and CD for nonmaxwellian
+!     electron distribution function
+!     and given DC electric field radial profile
+!-------------------------------------------------------------------------
+!     i_lsc_approach     !=0 do not use lsc_approach
+!                        !=1 to use lsc_approach
+!-------------------------------------------------------------------------
+!     nv_lsc_ql_lh      !number of the parallel velocity uniform mesh points 
+!                       !used for QL diffusion coefficient and
+!                       !electron distribution function
+!                       !v_par_mesh_lsc(-nv_lsc_ql_lh:nv_lsc_ql_lh)
+!---------------------------------------------------------------------
+!     v_par_lsc_dev_vte_max  !maximal of the parallel velocity mesh
+!                            !normalized to thermal electron velocity  
+!                            !v_par_mesh_lsc(nv_lsc_ql_lh)=
+!                            !                   v_par_lsc_dev_vte_max
+!---------------------------------------------------------------------
+!    n_psi_TSC               !number of central bin radial mesh points for TSC
+!---------------------------------------------------------------------- 
+!    EdcTSC_min              !minimal value of  abs(E_DC) [V/m] 
+!                            !if  abs(EdcTSC_1D(i)).lt.EdcTSC_min then
+!                            !EdcTSC_1D(i)=EdcTSC_min    
+!-----------------------------------------------------------------------
+!    icount_iter_max         ! max number of iterations to get QL diffusion
+!                            ! coefficients. 
+!                            ! It is used in subroutine LSC_power_iterations
+!------------------------------------------------------------------------
+!    eps_diff_d_ql           ! accuracy of iterations to get QL diffusion
+!                            ! coefficients:
+!                            ! diff_d_q < eps_diff_d_ql.   
+!                            ! diff_d_q=||d_ql_lsc_lh_ar_old- d_ql_lsc_lh_ar||
+!                            ! It is used in subroutine LSC_power_iterations
+!------------------------------------------------------------------------
+!   n_power_steps            !number of iterations in initial power.
+!                            !initial power at each ray will be
+!                            !(i_power_step*1.d0/n_power_steps)*powinilh(iray)
+!-----------------------------------------------------------------------------
+!  n_dim_radii_f_plots       ! number of radial points from TSC mesh
+!                            ! rho_bin_center(1:n_psi_TSC)
+!                            ! at which obtained distribution function 
+!                            ! ln(f_e(v_parallel)) will be plotted 
+!                            ! into the plot.ps file
+!                            ! It should be  n_dim_radii_f_plots.le.n_psi_TSC 
+!                            ! 
+!                            ! If n_dim_radii_f_plots=0 then
+!                            ! the codfe will not plot f_e
+!----------------------------------------------------------------------------
+! n_radii_f_plots_ar(1:n_dim_radii_f_plots) ! numbers of radial points
+!                                           ! in TSC mesh
+!                                           ! rho_bin_center(1:n_psi_TSC)
+!                                           ! at which obtained distribution
+!                                           ! function ln(f_e(v_parallel))
+!                                           ! will be plotted 
+!                                           ! into the plot.ps file
+!---------------------------------------------------------------------------
+& lsc_approach_nml
+      i_lsc_approach=0  !do not use lsc_approach!
+!      i_lsc_approach=1  !do use lsc_approach!
+      nv_lsc_ql_lh=100  
+      v_par_lsc_dev_vte_max=10
+      n_psi_TSC=200  ! For example, NR-1  
+      EdcTSC_min=1.d-5    ![V/m]
+      icount_iter_max=20 
+      eps_diff_d_ql=1.d-6
+      n_power_steps=1
+!      n_dim_radii_f_plots=1     !for one output point
+!      n_radii_f_plots_ar=100    
+      n_dim_radii_f_plots=2      !for two output points
+      n_radii_f_plots_ar=100, 150    
+&end
+
+!--------------------------------------------------------------------------
+! /EdcTSCtab/
+!    DC electrical field (along B field) profle at [v/m] 
+!    at uniform grid with points given at the centers of radial bins
+!    rho(i)=(i-0.5)/n_psi_TSC  i=1,..., n_psi_TSC
+!
+!    Example fo case  n_psi_TSC=200
+!
+&EdcTSCtab
+ prof=   200*0.d-2
+&end
+    
+!--------------------------------------------------------------------------
+! /JparTSCtab/ [A/m**2]
+!    Parallel total current (along B field) profile [A/m**2]
+!    at uniform grid with points given at the centers of radial bins
+!    rho(i)=(i-0.5)/n_psi_TSC  i=1,..., n_psi_TSC
+c
+c    Example fo case  n_psi_TSC=200
+&JparTSCtab
+ prof=   200.*0.d-2
+&end

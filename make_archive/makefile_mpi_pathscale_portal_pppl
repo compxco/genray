@@ -1,0 +1,157 @@
+# makefile for GENRAY MPI using gfortran compiler
+# MPI
+
+# N.Ershov 
+# 24 Jan, 2003,   BH updates.
+# USAGE: 
+# make 		- as usual make
+# make rebuild	- rebuild whole program
+# make clean	- remove all *.o files
+
+#On franklin.nersc.gov, for pathscale compiler and SWIM env need:
+# source ~/my_ips_trunk swim.bashrc.franklin
+#
+#module show netcdf-pathscale [will show pathscale netcdf env variables]
+#module show netcdf [will show pgi netcdf env variables]
+
+#130819:  Adjusted for bob9, Get executable using CentOS6 mpich2 MPI implementation.
+#130819:  Run mpi code with mpd &; mpiexec -np 4 xgenray_mpi.gfortran64
+#130819:  The mpd daemon takes care of some security issues.
+
+#140801:  With help from Jin Chen, PPPL:
+#         module load swim
+#         module load openmpi
+#         This successfully compiled and loaded, but 
+#         ./00_Genray_Regression_Tests/test7:mpirun -np 4 xgenray_mpi failed.
+#         The same test of mpi at CompX2, compiled with mpich2, works.
+
+
+SHELL=		/bin/sh
+NAME=		xgenray_mpi.pathscale
+COMPILER=	pathf90
+BUILDER=	$(COMPILER)
+INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
+		emissa.i five.i fourb.i gr.i grill.i ions.i\
+		limit.i  loopb.i nperpcom.i\
+		lsc_approach.i  lsc_approach_nml.i  lsc_approach_no_nml.i \
+		name_lsc_approach_nml.i \
+		name.i name_eccone.i name_genr.i name_grill.i \
+		name_non_uniform_mesh_profiles_line.i \
+		name_tokamak.i name_uniform_mesh_profiles.i \
+		output.i one.i \
+		onetwo.i oxb.i\
+		rho.i six.i spline_distrib.i three.i \
+		transport_prof.i \
+		write.i writencdf.i \
+		commons.i param.i  rrange.i n_parb.i rkutta.i \
+		globcd.h globcd1.h globcd2.h
+#		netcdf.inc
+SOURCES=	abc.f   absorpfw.f absorplh.f   arrays.f\
+		abhay_disp.f \
+		adj_sub.f adj_vmlibpr.f adj_orbit.f adj_control.f \
+		b.f  bcast.f besk.f besk2as.f bessel.f   bound.f \
+		bess_slatec.f besvec.f cn.f \
+		chamber_wall.f \
+		cninit.f   cnpermuz.f  coldm.f   complx.f  cone_ec.f \
+		contour.f croot.f  curba.f curba_GA.f \
+		combine_disp.f \
+		dcom16.f dddrz1.f dense.f dinit.f\
+		dmnf.f dskin.f dten16.f dxdphi.f   dxdr.f   dxdz.f \
+		dydphi.f   dydr.f   dydz.f   efield.f  efield1.f \
+		equilib.f emission.f emission_spectrum.f  eric_disp.f \
+		flown.f  forest.f fokker.f  gamma.f \
+		gr2new.f    gr3.f grill_lh.f   hamilmuz.f   hamilt1.f\
+		hamilt_lambda.f lh_bonoli_disp.f lh_scattering.f limiter.f \
+		lin_liu_curnt.f lh_ql_flux.f lsc_approach.f \
+		mathcurb.f   mk_graph.f mmdei.f  mullerfun2.f  ninit_ec.f \
+		netcdfr3d.f number1.f \
+		outinit.f   output.f  outputb1.f  ono_disp.f oxb.f \
+		partner.f plasmray.f \
+		prep3d.f  prepripl.f  rhospl.f   rk_new.f \
+		read_write_genray_input.f \
+		rkb1.f rside1.f  relat_tens.f scatperp.f shkarofs.f \
+		rsideb1.f   s.f   sdr1.f   se.f   spline.f spldens.f \
+		slatec_ram.f \
+		stop.f tensrcld.f \
+		uertst.f   ugetio.f   uspkd.f \
+		write3d.f x.f   y.f wconvini.f zcunix.f \
+		zfunc.f   zr_psith.f zfun_cur.f
+OBJECTS=	$(SOURCES:.f=.o)
+MPIOBJS=	$(SOURCES:.f=.mpio)
+F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90
+F90OBJS=	$(F90SRCS:.f90=.o)
+
+LOCATION=       -L$(NETCDFHOME)/lib -L$(PGPLOT_DIR) -L$(MPIHOME)/lib -L/usr/X11R6/lib64
+
+#!!! I have some problems with libpgplot.so file with lf95 compiler
+#!!! Try copy libpgplot.a to libpgplot_lf95.a in /usr/local/pgplot dir and
+#!!! uncomment next line (and comment previous one)
+
+#LIBRARIES=	$(LOCATION) -lX11 -lnetcdff -lnetcdf -lpgplot -lmpichf90
+#LIBRARIES=	$(LOCATION) -lX11 -lnetcdff -lnetcdf -lpgplot -lmpi_f90
+LIBRARIES=	$(LOCATION) -lX11 -lnetcdff -lnetcdf -lpgplot -lmpi_f77
+#Try explicit ref to mpich library, to see if that works....
+#LIBRARIES=	$(LOCATION) -lX11 -lnetcdff -lnetcdf -lpgplot -l/usr/pppl/pathscale/3.2-pkgs/mpich-1.2.7p1/lib/libmpichf90.a
+
+#Location of netcdf.inc:
+#Includes netcdf.inc and mpif.h(for mpi): Evidently need -I for each include.
+INCLUDE=        -I$(MPIHOME)/include -I$(NETCDFHOME)/include
+DEBUG=		
+CSPECIAL=
+BSPECIAL=	
+
+#COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE)
+COMPILE=	$(COMPILER) -c $(CSPECIAL) $(INCLUDE)
+#BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL) $(DEBUG)
+BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL)
+PROTECT=	chmod 755
+DELETE=		rm -f
+
+$(NAME):	$(F90OBJS) $(MPIOBJS) genray_par.mpio
+	mkdir TMP | echo -n
+	mv *.o TMP | echo -n
+	rename .mpio .o *.mpio  | echo -n
+	$(BUILDER) -o $(NAME) $(F90OBJS) $(OBJECTS) genray_par.o $(LIBRARIES)
+	chmod 755 $(NAME)
+	rename .o .mpio *.o | echo -n
+	mv TMP/* . | echo -n
+	rmdir TMP | echo -n
+
+$(SOURCES):        $(INCLUDES)
+
+$(F90OBJS): %.o: %.f90
+	$(COMPILER) $< -c
+#	$(COMPILER) $< -c $@
+
+$(MPIOBJS): %.mpio: %.f 
+	cp $< temp_mpi.f
+	mpi/cmm -a temp_mpi.f
+	mpi/cmm -p WRITE "write(*," temp_mpi.f
+	mpi/cmm -p PAUSE "pause" temp_mpi.f
+	mpi/cmm -p PRINT " print " temp_mpi.f
+	$(COMPILER) -c temp_mpi.f $(INCLUDE) -o temp_mpi.o
+	mv temp_mpi.o $@
+	rm -f temp_mpi.f
+
+genray_par.mpio:	genray.f mpi/mpi.ins
+	cp genray.f temp_mpi.f
+	mpi/cmm -a temp_mpi.f
+	mpi/cmm -p WRITE "write(*," temp_mpi.f
+	mpi/cmm -p PAUSE "pause" temp_mpi.f
+	mpi/cmm -p PRINT " print " temp_mpi.f
+	mpi/auto temp_mpi.f mpi/mpi.ins >genray_par.f
+	$(COMPILER) -c genray_par.f $(INCLUDE) -o temp_mpi.o
+	mv temp_mpi.o genray_par.mpio
+	rm -f temp_mpi.f
+	cp kind_spec.o kind_spec.mpio
+	cp const_and_precisions.o const_and_precisions.mpio
+	cp quanc8.o quanc8.mpio
+	cp config_ext.o config_ext.mpio
+	cp green_func_ext.o green_func_ext.mpio
+
+clean:	
+	rm -rf *.mpio temp_mpi* TMP kind_spec.o kind_spec.mod \
+	genray_par.f | echo -n
+
+#end
+

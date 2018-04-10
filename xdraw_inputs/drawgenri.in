@@ -1,0 +1,33 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+genray.bin
+
+graph title: GENRAY
+
+variable names
+0	 R
+1	 z
+2	 x
+3	 y
+4	 Poloidal dist.
+5        Power
+6	 Ez/E
+7	 rho
+8	 n_parallel
+9        n_perpendic.
+10       ki_poloidal
+11       y_e
+12       y_i
+
+ix	iy	title
+0	1       z(R)
+2	3       y(x)
+4	5       power(poloidal dist.)
+4	6       Ez/E(poloidal dist.)
+4	7       rho(poloidal dist.)
+4	8       n_parallel(poloidal dist)
+4	9       n_perpendic(poloidal dist)
+0	10      ki_poloidal(R)
+12      5       power(y_i)
+11      5       power(y_e)

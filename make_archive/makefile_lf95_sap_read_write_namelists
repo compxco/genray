@@ -1,0 +1,62 @@
+# makefile for test_read_write_namelists using Lahey Fortran compiler.
+# test_read_write_namelists is an executable which reads genray.dat
+#  using read_all_namelists (in read_write_genray_input.f),
+#  and writes new genray.dat using write_all_namelists.
+#  Source is read_write_genray_input.f.
+#  Used for coupling genray to SciDAC SWIM IPS.
+
+# make 		- as usual make
+# make rebuild	- rebuild whole program
+# make clean	- remove all *.o files
+
+SHELL=		/bin/sh
+NAME=		test_read_write_namelists
+COMPILER=	lf95
+BUILDER=	$(COMPILER)
+#Note:  Following INCLUDES not necessary since the makefile simply
+#       looks in ./, but this list identifies used include files.
+INCLUDES=	cone_nml.i \
+		emissa_nml.i grill_nml.i ions_nml.i\
+		name.i \
+		output_nml.i one_nml.i \
+		onetwo_nml.i\
+		six_nml.i  dinit_nml.i\
+		param.i rkutta.i transport_prof.i\
+		six.i scatnper.i name_uniform_mesh_profiles.i\
+		name_non_uniform_mesh_profiles_line.i
+SOURCES=	read_write_genray_input.f bcast.f partner.f \
+		zcunix.f test_read_write_namelists.f 
+OBJECTS=	$(SOURCES:.f=.o)
+LOCATION=	-L/usr/X11R6/lib -L/usr/local/netcdf-3.5.0/lib 
+#LOCATION  =  -L/usr/local/netcdf-3.5.0/lib -L/usr/X11R6/lib -L/usr/local/pgplot  -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
+#LIBRARIES=	-lX11 -lnetcdf -lpgplot
+
+#LIBRARIES=	-lX11 -lnetcdf
+LIBRARIES=	-lX11 -lnetcdf
+#LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
+DEBUG=		
+CSPECIAL=	
+BSPECIAL=	
+INCLUDE_DIR= ./
+COMPILE=	$(COMPILER) -c $(CSPECIAL) -I $(INCLUDE_DIR) $(DEBUG)
+BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL) $(DEBUG)
+PROTECT=	chmod 755
+DELETE=		rm -f
+
+$(NAME):	$(OBJECTS)
+	$(BUILD) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+	$(PROTECT) $(NAME)
+
+$(OBJECTS): %.o: %.f 
+	$(COMPILE) $< -o $@
+
+rebuild:
+	$(COMPILE) $(SOURCES)
+	$(BUILD) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+	$(PROTECT) $(NAME)
+
+clean:
+	$(DELETE) $(OBJECTS)
+
+#end
+

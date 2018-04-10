@@ -1,0 +1,48 @@
+a_change.i:c[33] others in /eccone/ ) obtaining OXB ray trajectories and
+cone_nml.i:c-----namelist /eccone/
+cone_nml.i:c------namelist /eccone/
+cone_nml.i:c------namelist /eccone/
+name_eccone.i:c     namelist /eccone/  
+name_eccone.i:      namelist /eccone/ ncone,zst,rst,phist,betast,alfast,alpha1,alpha2,
+name.i:      include 'name_eccone.i'               !namelist /eccone/
+netcdfr3d.f:     +     'Ray launch type: 1,eccone; 2,grill, 3,OX in plasma',istatus)
+netcdfr3d.f:     +     'Ray launch type: 1,eccone; 2,grill, 3,OX in plasma',istatus)
+read_write_genray_input.f:         read(i_unit,eccone,iostat=kode)
+read_write_genray_input.f:         call check_read(kode,'eccone')
+read_write_genray_input.f:           write(*,*)'ncone set =1 in read_write_genray_input eccone'
+read_write_genray_input.f:         write(i_unit,eccone,iostat=kode) 
+read_write_genray_input.f:         call check_read(kode,'eccone')
+read_write_genray_input.f:c     namelist /eccone/  NOT INCLUDED, but defaults set below.
+read_write_genray_input.f:c      integer gzone,nray_in,mray(gzonemax),cr(gzonemax) !in eccone.i
+read_write_genray_input.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input.f:!/eccone/
+read_write_genray_input.f:c &eccone
+read_write_genray_input.f:c--------transformation data /eccone/ from genray.in to genray.dat form 
+read_write_genray_input.f:c--------for namelist /eccone/ 
+read_write_genray_input.f:c        transformation data /eccone/ from genray.dat to genray.in MKSA form 
+read_write_genray_input_prep_090831.f:         read(i_unit,eccone,iostat=kode)
+read_write_genray_input_prep_090831.f:         call check_read(kode,'eccone')
+read_write_genray_input_prep_090831.f:           write(*,*)'ncone set =1 in read_write_genray_input eccone'
+read_write_genray_input_prep_090831.f:         write(i_unit,eccone,iostat=kode) 
+read_write_genray_input_prep_090831.f:         call check_read(kode,'eccone')
+read_write_genray_input_prep_090831.f:c     namelist /eccone/  NOT INCLUDED, but defaults set below.
+read_write_genray_input_prep_090831.f:c      integer gzone,nray_in,mray(gzonemax),cr(gzonemax) !in eccone.i
+read_write_genray_input_prep_090831.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input_prep_090831.f:!/eccone/
+read_write_genray_input_prep_090831.f:c &eccone
+read_write_genray_input_prep_090831.f:c--------transformation data /eccone/ from genray.in to genray.dat form 
+read_write_genray_input_prep_090831.f:c--------for namelist /eccone/ 
+read_write_genray_input_prep_090831.f:c        transformation data /eccone/ from genray.dat to genray.in MKSA form 
+read_write_genray_input_prep.f:         read(i_unit,eccone,iostat=kode)
+read_write_genray_input_prep.f:         call check_read(kode,'eccone')
+read_write_genray_input_prep.f:           write(*,*)'ncone set =1 in read_write_genray_input eccone'
+read_write_genray_input_prep.f:         write(i_unit,eccone,iostat=kode) 
+read_write_genray_input_prep.f:         call check_read(kode,'eccone')
+read_write_genray_input_prep.f:c     namelist /eccone/  NOT INCLUDED, but defaults set below.
+read_write_genray_input_prep.f:c      integer gzone,nray_in,mray(gzonemax),cr(gzonemax) !in eccone.i
+read_write_genray_input_prep.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input_prep.f:!/eccone/
+read_write_genray_input_prep.f:c &eccone
+read_write_genray_input_prep.f:c--------transformation data /eccone/ from genray.in to genray.dat form 
+read_write_genray_input_prep.f:c--------for namelist /eccone/ 
+read_write_genray_input_prep.f:c        transformation data /eccone/ from genray.dat to genray.in MKSA form 

@@ -1,0 +1,22 @@
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+test4: Compare output text files ECcone_optimal.dat
+test5: Compare genray.bin_CANONICAL_2004_ITER_TEST_one_ray with test5/genray.bin using xdraw
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+test5.1: Compare  genray.bin_id10iabsorp1 with test5.1/genray.bin using xdraw
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.
+test6: Compare genray.bin_shot106270 with test6/genray.bin using xdraw
+After finishing viewing results, can remove all subdirectories with a:
+rm -rf test1 test2 test3 test4 test5 test5.1 test6 emis.bin genray.bin
+Press <k> for Keystroke summary.
+Press <k> for Keystroke summary.

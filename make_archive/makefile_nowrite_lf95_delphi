@@ -1,0 +1,88 @@
+# makefile for GENRAY using Lahey Fortran compiler
+# write(*,*) writes turned off
+# N.Ershov 
+# 10 Sep, 2004
+# USAGE: 
+# 1) make     	- building xgenray_nowrite
+# 2) make clean	- removing all object files
+# make 		- as usual make
+
+SHELL=		/bin/sh
+NAME=		xgenray_nowrite
+COMPILER=	lf95
+BUILDER=	$(COMPILER)
+INCLUDES=	antenna.i bripplb.i  cefield.i cone.i dskin.i eps.i\
+		emissa.i five.i fourb.i gr.i grill.i ions.i\
+		limit.i  loopb.i nperpcom.i output.i one.i \
+		onetwo.i oxb.i\
+		transport_prof.i  \
+		rho.i six.i spline_distrib.i three.i \
+		write.i writencdf.i \
+		commons.i param.i  rrange.i n_parb.i rkutta.i\
+		globcd.h globcd1.h globcd2.h netcdf.inc
+SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
+		abhay_disp.f\
+		b.f  bcast.f besk.f besk2as.f bessel.f   bound.f\
+		bess_slatec.f  besvec.f cn.f\
+		chamber_wall.f \
+		cninit.f   cnpermuz.f  coldm.f   complx.f  cone_ec.f\
+		contour.f croot.f  curba.f curba_GA.f\
+		combine_disp.f \
+                dcom16.f dddrz1.f dense.f dinit.f\
+		dmnf.f dskin.f dten16.f dxdphi.f   dxdr.f   dxdz.f\
+		dydphi.f   dydr.f   dydz.f   efield.f  efield1.f\
+		equilib.f emission.f emission_spectrum.f eric_disp.f \
+		flown.f  forest.f fokker.f  gamma.f\
+		gr2new.f    gr3.f grill_lh.f   hamilmuz.f   hamilt1.f\
+		hamilt_lambda.f  lin_liu_curnt.f \
+		mathcurb.f   mk_graph.f mmdei.f  mullerfun2.f  ninit_ec.f \
+		netcdfr3d.f  number1.f\
+		outinit.f   output.f  outputb1.f  ono_disp.f oxb.f\
+		partner.f plasmray.f   \
+		prep3d.f  prepripl.f  rhospl.f   rk_new.f\
+		rkb1.f rside1.f  relat_tens.f scatperp.f shkarofs.f\
+		read_write_genray_input.f\
+		rsideb1.f   s.f   sdr1.f   se.f   spline.f spldens.f\
+		slatec_ram.f\
+		stop.f tensrcld.f\
+		uertst.f   ugetio.f   uspkd.f\
+		write3d.f x.f   y.f wconvini.f zcunix.f\
+		zfunc.f   zr_psith.f zfun_cur.f
+OBJECTS=	$(SOURCES:.f=.o)
+NOWOBJS=	$(SOURCES:.f=.nwo)
+
+#LOCATION=	-L/usr/X11R6/lib -L/usr/local/netcdf-3.5.0/lib -L/usr/local/pgplot
+LOCATION  =  -L/usr/local/lib -L/usr/X11R6/lib -L/u/harvey/lib -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/3.0.4
+#LIBRARIES=	-lX11 -lnetcdf -lpgplot
+
+#!!! I have some problems with libpgplot.so file with lf95 compiler
+#!!! Try copy libpgplot.a to libpgplot_lf95.a in /usr/local/pgplot dir and
+#!!! uncomment next line (and comment previous one)
+
+LIBRARIES=	-lX11 -lnetcdf -lpgplot_lf95
+#LIBRARIES=	-lX11 -lnetcdf -lpgplotlf95
+#LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
+
+$(NAME):	$(NOWOBJS) 
+	mkdir TMP | echo -n
+	mv *.o TMP | echo -n
+	rename .nwo .o *.nwo  | echo -n
+	$(BUILDER) -o $(NAME) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+	chmod 755 $(NAME)
+	rm -rf *.o | echo -n
+	mv TMP/* . | echo -n
+	rmdir TMP | echo -n
+
+$(NOWOBJS): %.nwo: %.f 
+	cp $< temp_nw.f
+	mpi/cmm -a temp_nw.f
+	mpi/cmm -p WRITE "write(*,*)" temp_nw.f
+	mpi/cmm -p PAUSE "pause" temp_nw.f
+	$(COMPILER) -c temp_nw.f -o temp_nw.o
+	mv temp_nw.o $@
+	rm -f temp_nw.f
+
+clean:	
+	rm -rf *.nwo $(NAME) temp_nw* TMP | echo -n
+
+#end

@@ -1,0 +1,808 @@
+May 8, 2008  (BH)
+===========
+Compiled latest genray at
+viz:/u/bharvey/genray_cvs/VIZ_genray_v7-2_080423/xgenray
+
+See viz:/u/bharvey/genray_cvs/Coupling_to_PS
+for README_onetwo-genray and some coding concerning
+previous coupling of genray to ONETWO transport code.
+
+GENRAY side of coupling is mainly in 
+viz:/u/bharvey/genray_cvs/VIZ_genray_v7-2_080423/partner.f
+We have, from genray.in namelist file:
+!--------------------------------------------------------------------------
+! partner  = 'disabled' to use input profiles from genray.dat or genray.in
+!          = 'genray_profs_in.nc'  to use plasma profile data from the netCDF
+!                       file: genray_profs_in.nc  created by transport code
+!                       or otherwise;
+!                  and to output power and current profiles on transport
+!                      code radial grid to file: genray_profs_out.nc
+!                      and genray_profs_out.txt (text file).
+!          = 'genray_profs_in.txt'  to use plasma profile data from the text
+!                      file: genray_profs_in.txt  created by transport code
+!                      or otherwise;
+!                  and to output power and current profiles on transport
+!                      code radial grid to file: genray_profs_out.nc
+!                      and genray_profs_out.txt (text file).
+!------------------------------------------------------------------------
+
+
+Start with partner='genray_profs_in.txt' for initial coupling
+to plasma state.
+
+prepare_genray_input.f90 will write genray_profs_in.txt/.nc using
+PS data.  
+process_genray_output.f90 will read genray_profs_out.txt/.nc [from
+genray], and put the power deposition and current drive in the PS.
+
+May 9, 2008
+===========
+
+For prepare_genray_input.f/process_genray_output.f start from
+/p/swim1/berryla/ips/trunk/components/fp/rfmin/cql3d/prepare_fp_rfmin_cql3d_input.f and  process_fp_rfmin_cql3d_output.f
+==>  prepare_genray_input.f/process_genray_output.f
+
+
+viz:/u/bharvey/genray_cvs/Coupling_to_PS/onetwo_genray_related.txt
+contains coding used  for coupling genray to onetwo [write of
+           genray_profs_in.txt/genray_profs_in.nc
+	   and reaad of genray_profs_out.txt/genray_profs_out.nc]
+
+read_write_genray_input.f: From genray
+partner.f: From genray, contains coding related to read
+           of genray_profs_in.txt/genray_profs_in.nc
+	   and write of genray_profs_out.txt/genray_profs_out.nc
+
+See Smirnov email, 03/10/07 07:17 am, re
+Latest genray with declaration of namelist variables
+
+
+May 16, 2008
+============
+Have compiled version of prepare_genray_input.f90, on viz.
+Accesses plasma state, and reads all genray namelist.
+Working with Doug McCune to interpolate electrons and alla
+ion species (abridged impurities, but complete) radial
+density and temperature profiles to bin
+boundaries, for passage to genray through genray_profs_in.txt and .nc
+files.  For cases where electron and Zeff profiles are sufficient
+(EC, EBW), don't need ion profiles.  For other cases (ICRF, HHFW, LH)
+need ions.   Use abridged impurities (up to two impurities).
+Will also have beam, RF minority, and fusion product nonthermal
+distributions.   Allowing for extreme cases, we compile genray
+for up to 11 ion species (12 species total, including electrons).
+
+
+
+
+May 20, 2008
+============
+
+Adapting coding by McCune for gathering all ion species into a single
+array of densities and temperatures, to transfer to genray_profs_in file.
+
+
+May 23, 2008
+============
+
+The main complication in application of the Plasma State to genray
+coupling is use of the abridged species set.  In general the plasma
+state may provide data for a much larger list of ions--- perhaps
+including multiple charge states of several impurities--- than is
+desireable to be treated in genray.   The abridged set of ions reduces
+the impurity species to .le.2 species, conserving Zeff and charge
+neutrality.
+See Abridged_Species_PS2.pdf, Abridged_PS2_ps_tha_summary.pdf,
+McCune_frm_080516.eml, McCune_frm_080523.eml.
+
+July 17, 2008
+=============
+Have working prepare_genray_input.f90.4 
+and          process_genray_output.f90.3,
+and
+three sets of tests:
+Cmod_LH/ ITER_EC_Budny/ NSTX_FW
+[Have not worked yet on the D3D_ECCD case].
+
+A new read_write_genray_input.f (old designated read_write_genray_input.f.0)
+will be incorporated into prepare_genray_input.f90(.5).
+The new read_write_genray_input.f simplifies (modularizes, i.e. separate
+subroutines) the treatment of switching from mixed units (genray.dat 
+conventions used in genray) to genray.in MKSA units.
+
+The codes will also be updated to genray version="genray_v7-6_080714".
+(The only change in the includes is the version parameter in param.i.)
+
+
+
+Updating read_write_genray_input.f from genray distribution
+===========================================================
+-Move present read_write_genray_input.f to read_write_genray_input.f_xxxxxx
+ where xxxxx is file date.
+-Copy read_write_genray_input.f from distn to pwd.
+-Compare new and old versions to check changes look OK. Don't forget to
+ comment out indicated region.
+-cd genray_includes, and diff with distn.   Update from distn.
+
+
+August 31, 2008
+===============
+Updated prepare_genray_input.f90/process_genray_output.f90.
+read_write_genray_input.f is from latest genray_v7-8_080801 (passes
+regression tests, and including propagation outside LCFS).
+[freqncy for EC case changed in PS from MHz to GHz.  Other small
+changes].
+
+Updated genray_includes/
+
+Update tests/ITER_EC_Budny/test_1src
+
+Other EC variables have been added to the PS Version_ID 2.011,
+as indicated by runtime messages.   
+Need an updated PS to apply these changes with, before modifying
+prepare_genray_input.f90.
+
+Other tests need re-checking.
+
+
+Oct. 8, 2008
+============
+
+Bugs fixed in genray, per a_change.i in the distribution
+in genray_v7-11_081007.tar.gz.
+
+Putting this distribution in 
+/p/swim1/bharvey/ips/trunk/components/rf/genray/genray
+[i.e., ../genray], and adding it to SWIM svn repository.
+
+Updating prepare_genray_input.f90 to frequencies in Hz,
+for EC/LH/IC components for Plasma State PSv2.014,
+per McCune Email, Oct. 9, 2008.
+
+
+
+Oct. 10, 2008
+=============
+Created svn subdirectories in the genray directory:
+trunk branches tags.  Also mpi subdirectory in trunk.
+The genray files should rather be in genray/trunk,
+per new SWIM convention (and standard svn convention).
+But, on viz.pppl.gov  could not "svn move" files from
+the svn genray subdirectory to genray/trunk/, 
+per email from Wael.
+
+Jan. 29, 2009
+=============
+With help from Wael, carried out "svn mv" on checked out
+genray version on franklin.nersc.gov [above Oct. 10,2008 
+problem persisted on viz;  maybe the svn version is too old/].
+
+In franklin:~u650
+svn co https://cswim.org/svn/cswim/genray
+[Using user bharvey and password] 
+cd genray
+svn move *.f trunk
+svn mv mpi/* trunk/mpi
+Etc., for other files, moves files in local area.
+svn commit   [moves the files in the svn repository]
+
+
+USEFUL SVN COMMANDS:
+====================
+bob8: doc_svn[primary reference] and doc_svn0[wiki overview]
+Checkout genray example: svn co https://cswim.org/svn/cswim/genray 
+Get contents of the current ips/trunk directory on the repository:
+  svn ls https://cswim.org/svn/cswim/ips/trunk
+  or, view https://cswim.org/svn/cswim/ips/trunk
+To open up empty ips directory [except .svn], and down the tree to genray:
+  svn --depth=empty co https://cswim.org/svn/cswim/ips/trunk my_ips_trunk
+     [the --depth=empty stops co of rest of tree]
+  cd my_ips_trunk
+  svn --depth=empty update components
+  cd components
+  svn --depth=empty update rf
+  cd rf
+  svn update genray
+When committing new material, useful commands are:
+  svn status -u
+  svn status -v
+
+
+
+Feb. 2, 2009
+============
+*Updated /u0/u/u650/genray/trunk to genray_v7-14_090130 from bob8.
+ Check a_change.i for latest code modifications/additions.
+*Compiled with pathscale compiler, with makefiles:
+ makefile_franklin_pathscale, or,
+ makefile_nowrite_franklin_pathscale  [Gives much less screen dump
+                                       version of genray: xgenray_nowrite]
+                                      [First need to do make in ./mpi/]
+*Added 00_Genray_Regression_Tests.tar.gz_081010 to trunk/.
+ tar xfvz 00_Genray_Regression_Tests.tar.gz_081010 
+ gives 00_Genray_Regression_Tests/ which contains a README
+ describing a set of regression tests.  The tests can be
+ executed using commands in script file tests, and use the
+ xdraw plotting program.
+
+*Added xdraw.tar.gz and xdraw_inputs.tar.gz to trunk.  
+ tar xfvz xdraw.tar.gz gives the ./xdraw subdirectory.
+ Compile with make -f makefile_franklin [Req'd change of lib/
+ to lib64/ library reference.]
+ Untarring xdraw_inputs.tar.gz gives ./xdraw_inputs.  These
+ input files in conjunction with xdraw give screen plotting of
+ binary output files from genray [in cwd of genray execution].
+ Additional commands to xdraw are output to screen when "k" is
+ typed in a xdraw viewport.
+
+*Checkout out version on bob8 passes the 7 regression tests.
+ 
+
+April 8, 2009
+=============
+Have added functionality for poloidal variation of density
+in the SOL, for propagation in the SOL, and reflection from
+the plasma vacuum chamber.  Also, the vacuum chamber wall is plotted
+in the plasma cross-section, when present.
+
+New version designated version="genray_v7-16_090406".  For additional
+changes, see a_change.i.   Updating in svn trunk/ and added tagged
+version.
+
+trunk at revision 1474.
+
+Tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v7-16_090406 \
+  -m 'Tagging genray_v7-16_090406: SOL LH/FW propagation and chamber wall'
+
+
+For SWIM:  Added to GENR_DISTN to my .bashrc file, to facilitate
+use of tagged xgenray_nowrite, and updating of prepare/process genray:
+#viz.pppl.gov:
+#export GENR_DISTN='/p/swim1/bharvey/cswim/genray/tags/genray_v7-16_090406'
+#franklin.nersc.gov
+#export GENR_DISTN='/u0/u/u650/genray/tags/genray_v7-16_090406'
+#jaguar.ccs.ornl.gov
+export GENR_DISTN='/ccs/home/bharvey/genray/tags/genray_v7-16_090406'
+ 
+
+April 28, 2009
+==============
+
+Bug fixes to April 8 version.  See a_change.i for changes.
+Also, new plots in plot.ps of cold plasma dispersion roots, as
+aid in starting LH in SOL.  Modification of minimum density in SOL
+applying to electron density and keeping Zeff constant by maintaining
+ion densities at ratio given at rho=1.
+Regression test2 and test7 updated, in line with recent bug fixes.
+
+trunk at SVN revision number 1606.
+
+Tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v7-17_090527 \
+  -m 'Tagging genray_v7-17_090527: SOL LH/FW propagation and chamber wall'
+
+
+July 20, 2009
+=============
+Adding new regression test4.1 (single EBW ray in NSTX) into
+00_Genray_Regression_Tests_090720.tar.gz and putting in svn repository.
+Removing 00_Genray_Regression_Tests_090527.tar.gz
+trunk at SVN revision number 1606.
+
+
+
+August 3, 2009
+=============
+Bug fixes.  Update of template file.  Check a_change.i.
+version="genray_v7-18_090731".
+trunk at SVN revision number 1765.
+
+Tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v7-18_090803 \
+  -m 'Tagging genray_v7_18_090803: Bug fixes.'
+
+
+
+Sept 1, 2009
+============
+version='genray_v8-1_090901'.
+A substantial portion of the code has been converted
+to dynamic dimensioning based directly on namelist input
+specified functionality and specific namelist derived array
+sizes.  For Regression test3, for example, required total
+memory is a test case was reduced from 1887 MB to 442 MB.
+For test8 (using adj memory hog) total memory was reduced 
+from 1892 MB to 775 MB.  the upper memory size was due to
+parameter=based oversized memory allocation.
+Fixed couple of small bugs.
+See a_change.i.
+Satisfies all test[1-8] regressions.
+Committed revision 1875.
+
+Tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v8-1_090901 \
+  -m 'Tagging genray_v8-1_090901: Conversion to much dynamic dimensioning, \
+   plus bug fixes.  See a_change.i.'
+==> Committed revision 1876.
+
+
+
+Sept 21, 2009
+=============
+version='genray_v8-1_090921'.
+Bug fixes related to previous change to dynamic dimensioning.
+SVN revision 1937 (and 1938 for this README_genray_devel file update).
+Also, adding tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v8-1_090921 \
+  -m 'Tagging genray_v8-1_090921: bug fixes related to netcdf output.  See a_change.i.'
+
+Sept 27, 2009
+=============
+More bug fixes, plus got prepare_genray_input/process_genray_output up to
+date and working.  
+Updated tags/genray_v8-1_090921.
+Updated ips phys_bin with updated makefile_swim:
+make -f makefile_swim
+
+
+
+Jan. 4, 2010
+============
+version='genray_v8-_20100104'.
+Improved detection of LCFS, so can get very
+close to the separatrix.   This slightly changed
+the regression tests.   There are visible differences
+in test7, the C-Mod LH test case, although no
+changes in the general results.
+SVN 2211
+Also, adding tagged Version:
+svn copy https://cswim.org/svn/cswim/genray/trunk \
+  https://cswim.org/svn/cswim/genray/tags/genray_v8-2_20100104 \
+  -m 'Tagging genray_v8-20100104: Improved LCFS treatment+bugs.  See a_change.i.'
+Committed revision 2212.
+
+
+Feb. 15, 2010
+=============
+GENRAY has been updated on pppl portal cluster, at
+/u/bharvey/genray_cvs/genray_cswim_svn/trunk/xgenray and xgenray_nowrite
+and for the SWIM project on viz.pppl.gov at
+/p/swim1/bharvey/cswim/genray/trunk/xgenray and xgenray_nowrite.
+At svn revision 2300.
+
+
+
+
+March 26, 2010
+==============
+Remade cql3d on franklin (after franklin OS updated) and did a:
+make -f makefile clean; make -f makefile; make -f makefile install 
+
+
+
+May 7, 2010
+===========
+Added defaults for all namelist, so can run with empty namelist
+input file.  Added screen printout of all parameters.
+version="genray_v8_3_20100507"
+
+Dec. 11, 2010
+=============
+Bug fix in limiter.f [SAP].
+
+
+
+Dec. 13, 2010
+=============
+GENRAY has been updated on pppl portal cluster, at
+/u/bharvey/genray_cvs/genray_cswim_svn/trunk/xgenray and xgenray_nowrite
+and for the SWIM project on viz.pppl.gov at
+/p/swim1/bharvey/cswim/genray/trunk/xgenray and xgenray_nowrite.
+At svn revision 2915.
+
+
+
+March 8, 2011
+=============
+version='genray_v8_4_20110308'
+Plotting changes/bug fixes, and change of real*4 cold plasma
+group vel to real*8 (causing problem in TRANSP system use of genray).
+Incorporates recent mods by Smirnov.  See a_change.i.
+Updated in cswim svn, revision: 3121
+
+
+Aug. 2, 2011
+============
+version='genray_v8_4_20110418'
+Fixed bug in cone_ec.f power pattern, following
+input from Tom Jenkins.  Narrowed power pattern somewhat.
+
+
+Sept. 20, 2011
+==============
+version='genray_v9.0_w_lsc-option_110801'
+Major additions to the code:
+  - LSC 1D-in-vpar FP determination of LHCD,
+    following the approach in D.W. Ignat, E.J. Valeo,
+    and S.C. Jardin, Nucl. Fusion 34, 837 (1994).
+  - Density and temperature outside the LCFS can now be entered
+    via an external file.  This data is bi-cubic-splined in genray
+    and used in the ray tracing.  A file can be output of density
+    and temperature throughout the RZ plane, this file can be
+    modified for use outside the LCFS, and read back in for further
+    See namelist variable i_edge_dens_rz_mesh.
+
+Bug fixes of little consequence. [See a_change.i]
+
+Added 00_Genray_Regression_Tests/, which will be updated
+from time to time.
+
+Two new tests are included: [see 00_Genray_Regression_Tests/README]
+test7_edge_dens_rz: tests of new method for modifying the
+    edge density outside the LCFS.
+test9: The genray run produces plots of QL damping on Maxwellian as calculated
+with the LSC-like option, and the result is very close to 
+linear damping in test7.  A second set of plots show results of
+QL damping, for which an LH plateau reduces damping for all rays.
+
+
+Remaking genray on franklin and did a:
+make -f makefile clean; make -f makefile; make -f makefile install 
+
+Ran several tests [test1 test2 test7_edge_dens_rz] on hopper
+with xgenray_pgi.hopper xgenray_pathscale.hopper.
+Linking xgenray to xgenray_pathscale.hopper.
+
+
+Sept. 29, 2011:
+Having problem with following, as
+read_write_genray_input_prep make has been complicated by
+addition of rz-mesh outside LCFS.
+Remading genray on hopper and did a:
+make -f makefile_swim clean; make -f makefile_swim; make -f makefile_swim
+install
+BUT, didn't complete, as additional non-namelist material has
+been included in read_write_genray_input_prep.f.  Need to clean
+it up.
+
+
+Nov. 1, 2011
+Code version="genray_v10.0_111101".
+Cleanup of read_write_genray_input_prep.f, so that it only
+(almost) includes namelist material.
+Also, have added option to write/read general density/
+temperature/zeff outside the LCFS on an R,Z mesh to/from
+an ascii file.
+
+Did a makefile_swim clean, makefile_swim, makefile_swim install.
+Code in
+/global/homes/u/u650/my_ips_trunk/components/rf/genray/src
+compiles with the make ips.
+
+
+Nov. 9, 2011
+Code version="genray_v10.0_111109".
+Fixed bug in read_write_genray_input.f:
+zeff1 incorrectly being written back into genray.in,
+relevant for partner.ne.'disabled'.  Can affect
+coupling to SWIM IPS.
+
+
+c---------------------------------------------------------------------
+June 29, 2012
+=============
+Code version="genray_v10.2_120629".
+Updated from
+version gr120629.tar.gz of genray which contains a few
+modifications of Smirnov latest genray, gr120605.tar.gz,
+sent out on June 5, 2012.
+
+Bugs and compiler issues which have been fixed can 
+be seen by comparison with your previous file set.
+Changes have been made in
+rside1.f:  comment on line cSAP111119 test removed
+emission_spectrum.f:  Some rewriting of memory allocation
+  to get code running with the Intel compiler, for test 5.
+lin_liu_curnt.f:  remove couple of f90 line continuation &
+    that confuse compiler in some cases.
+dinit.f:  subroutine arg list incompatibility
+forest.f  subroutine arg list incompatibility
+oxb.f  subroutine arg list incompatibility
+
+read_write_genray_input_prep.f has been made compatible
+with read_write_genray_input.f.
+
+The rside1.f problem shows that, interestingly enough,
+no one has run the regressions tests since at least
+111119.   The dinit.f/forest.f/oxb.f were previous fixed,
+but somehow didn't make it into your file set.
+
+This version also contains Nicola Bertelli version of
+Bonoli LH scattering. Some further additions from
+Bertelli are yet to be incorporated.
+
+This version properly executed all 00_Genray_Regression_Tests/.
+Several regression tests were run at stix.pppl.gov and
+portal.pppl.gov, including test5, ITER ECCD.
+
+c[168] version= "genray_v10.2_120629"
+c[169] Added Bonoli-type scattering of LH ray (lh_scattering.f),
+c[169]  controlled by new namelist variable iscat_lh_nicola
+c[169]  [Nicola Bertelli+SAP+BH, 120529].
+
+c[167] version="genray_v10.1_120424"
+c[167] Added collisional power absorption to the mnemonic.nc[BH].
+c[167] Fixed several bugs:cBH120421 in forest.f; 
+c[167]       cYuP+BH120424 in oxb.f and dinit.f.
+
+c[166] version="genray_v10.1_120308"
+c[166] Added plotting of dispersion D(ReN_perp,ImN_perp) contours
+c[166] At given RZ N_parallel points before and code stops 
+c[166] before ray calculations [SAP, 120308].
+
+c[165] Add LH dispersion relation including Bonoli/Englade warm plasma
+c[165] term, id=16 [SAP, 120114].
+
+c[164] Added collisional power absorption to the mnemonic.nc output
+c[164] file.  To be used with SWIM IPS.  [BH, 111212].
+
+c----------------------------------------------------------------------
+
+Sept 12, 2013
+=============
+Recent development:
+
+
+c[170] Added delim='apostrophe', in several open() of namelist files, 
+c[170] to ensure that any namelist writes include apostrophe delimiters in
+c[170] the character variables. Default for PGI and Intel compilers
+c[170] is delim='none'. [BH 130911].
+
+c[169] version="genray_v10.4_130726",  YuP+BH re-implemented MPI.
+c[169] The MPI feature had been broken during introduction of 
+c[169] dynamic dimensioning, item [162] and ongoing re-dimensioning.
+c[169] [YuP and BH, to July 27, 2013.]
+
+c[168] version= "genray_v10.2_120629"
+c[169] Added Bonoli-type scattering of LH ray (lh_scattering.f),
+c[169]  controlled by new namelist variable iscat_lh_nicola
+c[169]  [Nicola Bertelli+SAP+BH, 120529].
+
+c[167] version="genray_v10.1_120424"
+c[167] Added collisional power absorption to the mnemonic.nc[BH].
+c[167] Fixed several bugs:cBH120421 in forest.f; 
+c[167]       cYuP+BH120424 in oxb.f and dinit.f.
+
+c[166] version="genray_v10.1_120308"
+c[166] Added plotting of dispersion D(ReN_perp,ImN_perp) contours
+c[166] At given RZ N_parallel points before and code stops 
+c[166] before ray calculations [SAP, 120308].
+
+c[165] Add LH dispersion relation including Bonoli/Englade warm plasma
+c[165] term, id=16 [SAP, 120114].
+
+
+MPI run on laptop with mpich and CentOS6 Linux, 5 source Poli
+test case runs correctly  (30 rays in 16 secs, with 4 processors).
+
+Also, mpi version successfully tested on hopper.
+
+svn add xdraw/README_xdraw xdraw/makefile mpi/mpi.ins_hopper
+mpi/mpi.ins_notworking 
+xdraw_inputs.tar.gz README_genray_overview makefile_mpi_pathscale.hopper
+makefile_g95_czech_cql makefile_mpi.gfortran64.bob9.CentOS
+makefile_gfortran64_debug_BOUND_CHECK_read_write
+
+svn -u status ==> about 60 adds and modifications, against svn revision 4018
+svn commit  ==> commits version="genray_v10.4_130726", svn revision 4019.
+
+
+
+Oct. 25, 2013
+=============
+
+c[172] version="genray_v10.5_131024"
+c[172] Modified character length of 512 character variables down
+c[172] to 256, in response to a compiler limitation [BH131024].
+
+c[171] Fixed a bug in the outpt ray testing subroutine which enabled
+c[171] ray lengths to greatly exceed the nominal max, nrayelt
+c[171] [BH, 131024].
+
+Commited changes to svn:  revision 4045.
+
+Recompiled serial, nowrite and mpi versions on Hopper, using PGI compler.
+Ran serial version test in
+hopper09:/global/homes/u/u650/my_ips_trunk/components/rf/genray/src/\
+tests/PTB_cql_debug_10202013
+using a genray.in which adjusted from PTB's genray.in.eqdskin256.ptb.
+
+cp read_write_genray_input_prep.f /global/homes/u/u650/my_ips_trunk/components/rf/genray/src/
+cp a_change.i param.i /global/homes/u/u650/my_ips_trunk/components/rf/genray/src/genray_includes/
+
+Remake prep/proc genray, using swim environment; svn commit.
+
+Put the updated genray executables in
+/project/projectdirs/m876/phys-bin/phys/genray/bin
+
+
+
+July 30, 2014
+==============
+c[175] version="genray_v10.7_140801"
+c[175] Added momentum conservation in the Lin-Liu subroutine
+c[175] (lin-liu_curnt.f), controlled by new namelist variable 
+c[175] ieffic_mom_cons (which works with ieffic=4).
+c[175] The implementation is the same as the implementation done
+c[175] in the TORBEAM code. More specifically, the model is described
+c[175] in Marushchenko et al, PoP 18, 032501 (2011) and Marushchenko
+c[175] et al, NF 48, 054002 (2008). [Nicola Bertelli, 140716]
+
+c[174] Fixed write of lsc-approach, per Andre and F. Poli.
+c[174] Made adjustments to template file, for clarity.
+c[174] Added three test cases (test8.1-3) comparing various methods
+c[174] for calculation of O-mode ITER ECCD. New  ieffic=4,ieffic_mom_cons=1
+c[174] compares well with ieffic=6/i_adj ADJ calcs  and CQL3D calcs.
+c[174] Adjusted makefiles regarding new ieffic-mon-cons .f90 files.
+c[174] [BH140729]
+
+c[173] version="genray_v10.6_140421"
+c[173] Several small bugs which affected execution/use at PPPL were
+c[173] fixed according to Rob Andre presecriptions [BH140421].
+
+Also, added new regression tests (test8.1,test8.2,test8.3) comparing
+results ITER O-mode ECCD for different current drive calculations. [BH140730]
+
+==========================================================================
+
+From Nicola Bertelli, re momentum conservation in ieffic=4 Linliu
+EC current drive calculation:
+
+In this GENRAY's version I have included the momentum conservation in the 
+Lin-Liu subroutine (lin-liu_curnt.f) as it has been done in TORBEAM and 
+TRAVIS codes. More specifically, the model is described in Marushchenko 
+et al, PoP 18, 032501 (2011) and Marushchenko et al, NF 48, 054002 (2008).
+I have copied the modifications in the Lin-Liu subroutine done by E. Poli 
+(IPP) in TORBEAM code.
+
+Here below a list of modifications:
+
+1) copy 4 subroutines from TORBEAM:
+   - const_and_precisions.f90
+   - quanc8.f90
+   - config_ext.f90
+   - green_func_ext.f90
+
+2) Add in F90SRCS of makefile_pathscale_portal_pppl the following routines/modules:
+   - const_and_precisions.f90
+   - quanc8.f90
+   - config_ext.f90
+   - green_func_ext.f90
+
+3) modified lin_liu_curnt.f subroutine (see !N Bertelli) including changes from
+   TORBEAM code (more specifically, from subroutine TorGA_curgap.f90 of TORBEAM)
+   - In the end of the original lin_liu_curnt.f I have added a new subroutine (green_func_emp) 
+     from TORBEAM and I commented 3 lines where there was INCLUDE 
+
+4) commented one line in green_func_ext.f90 (see ! N Bertelli)
+
+5) I have included "ieffic_mom_cons = 0" in read_write_genray_input.f together with 
+   its definition in the comments 
+
+6) I have included "ieffic_mom_cons = 0" in read_write_genray_input_prep.f together with 
+   its definition in the comments
+
+7) I have added "ieffic_mom_cons" in name_tokamak.i
+
+8) I have added "ieffic_mom_cons" in one_nml.i
+
+9) I have created a new input template file "genray.in_template_MKSA_111031_nb"
+   where I have added the new flag "ieffic_mom_cons" together with its definition
+
+==========================================================================
+
+
+
+Nicola Bertelli (2014-07-16) added momentum conservation ieffic_mom_cons=1
+into ieffic=4 Lin_Liu (TorGA_curgap subroutine), according to
+Marushchenko et al, NF 48, 054002 (2008).  BH added to 00_Regression_Tests,
+test8.1-3, giving results as follows:
+
+test	   descrptn				Comp. time		Curr(kA)
+test8      i_adj=1 ADJ-bases self adjoint,	2m52s with adj calc	25.8
+           momentum conserving.	  		4s, existing adj calc
+test8.1	   ieffic=4, ieffic_mom_cons=1		0.60s			25.5
+test8.2	   ieffic=4, ieffic_mom_cons=0		0.60s			13.0
+test8.3	   ieffic=3, Curba (Cohen) subroutine 	0.59s			10.1
+	   (high vel approx, sq-well-B)
+Definitely, test8.1 setup is preferable for this type of run.	
+
+
+
+
+July 30, 2014
+=============
+CompX3: svn commit
+Substantial number of files added and modified.
+Committed revision 4087.
+
+
+
+Aug 1, 2014
+===========
+makefile_nowrite_pathscale_portal_pppl
+makefile_pathscale_portal_pppl
+both work on portal at pppl.
+Get mpi executable with makefile_mpi_pathscale_portal_pppl and openmpi,
+but doesn't properly exectute (00_Genray_Regression_Tests/test7).
+Same fileset gives proper execution at CompX2, with gfortran and mpich2.
+
+
+Sept 10, 2014
+=============
+c[176] version="genray_v10.8_140909"
+c[176] Added immediate stopping of a ray, if initial power is zero
+c[176] [.lt.1.e-100], to save compute time. iray_status_nc=14. 
+c[176] [BH140909].
+
+Ray data is still inserted in the genray.nc for these zero-power rays,
+but all delpwr are 0, nrayelt() is set to 1 for each ray, starting
+density/temperature, etc. at first ray element is given.
+Prior to this mod, the ray trajectories were computed for all rays,
+including the zero power rays.
+
+Put into svn as revision 4100.
+
+
+October 24, 2014  
+================
+Code version="genray_v10.8_141024"
+MPI is revised and now is in good working condition.
+Added momentum conservation in the Lin-Liu subroutine.
+Added immediate stopping of a ray, if initial power is zero [<1.e-100].
+More details - see a_change.i records[170-178]
+
+
+June 2015
+=========
+Bug fixes by YuP (see a_change.1).
+
+Oct. 18, 2015
+=============
+Augmentation of ECCD calc for multiple harmonic cases added
+(with Bertelli).   Bug fix of temperature outside the LCFS
+(with Syunichi Shiraiwa).
+version="genray_v10.10_151018"
+
+
+
+170720
+======
+genray_cswim_svn/trunk/ brought up to date with
+genray_170301_updtd170720.zip
+
+
+
+180125
+======
+Using version="genray_v10.11_170725": The 13 regression tests
+ran OK on linux machine[BH].  Installing on nersc edison in
+/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725.
+Adjusted edison makefiles and compiled and loaded.
+Tested the serial version with couple of regression tests
+(not the mpi version).
+Made backup of ../trunk in ../trunk_to_180125, and copied all
+genray_v10.11_170725/ files to ../trunk (i.e., updated trunk).
+
+Apr 10, 2018
+============
+Put in to git version control on CompX2:~/cql3d/git_genray
+========================================
+version="genray_v10.11_180410"  
+Otherwise, little changed from "genray_v10.11_170725".

@@ -1,0 +1,31 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+emfr.bin
+
+graph title: GENRAY
+
+variable names
+0	 omega/omegace0
+1	 rad_temperature
+2 	 flux
+3	 temperature wall refl.
+4	 plasma temp
+5	 r of max emission
+6	 z of max emission
+7	 rho of max emission
+8	 r of 2nd harmonic
+9	 temperature at EC 2nd harmonic  
+
+ix	iy	title
+0	1	rad_temperature(keV)
+0	3	temperature with wall reflection 
+0	4	plasma temperature(keV)
+0	5	r of max emission
+0	6	z of max emission
+8	1	rad temperature(R)
+8	9	plasma temperature(R)
+8	3	temperature with wall reflection
+7	4	plasma temperature(rho)
+
+

@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+freqelec.bin
+
+graph title: GENRAY
+
+variable names
+0	 R[m]
+1	 freqncy[GHz]
+2	 rho
+3	 dens_e 10^13/cm^3
+
+ix	iy	title
+0	1       fpe[0],fce[1],fuh[2],2-6*fce[3-7],fx1[8],fx2[9]
+0	2	rho(R)
+0	3	dens_e(R)

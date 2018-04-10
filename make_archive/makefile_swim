@@ -1,0 +1,47 @@
+INSTALL=/usr/bin/install
+LIB=libgenray_input.a
+APP=genray
+BIN=xgenray_pathscale.hopper
+
+#BH090924, N.B. re updating,:
+#First: update ips/trunk/components/rf/genray/src from the 
+#       latest genray svn distribution, using update_prep-proc_genr_distn.sh, and
+#       make in that directory (check tail of README_genray_prep-proc_devel).
+#Then: copy read_write_genray_input_prep.o and bcast.o from
+#      your components/rf/genray/src directory to here, after
+#      compiling there (read_write_genray_input_prep
+#      gives verbose output, including write(*,*) output).
+#Finally: make -f makefile_swim clean
+#         make -f makefile_swim
+#         make -f makefile_swim install
+# 
+OBJS=read_write_genray_input_prep.o bcast.o
+#BH090924: Discuss whether relevant .f files preferably also stored?
+INCLUDES= \
+adj_nml.i           grill_nml.i           name_grill.i                           onetwo_nml.i \
+cone_nml.i          ions_nml.i            name.i                                 output_nml.i \
+dinit_nml.i         lsc_approach_nml.i    name_lsc_approach_nml.i                param.i      \
+edge_prof.i         name_adj.i            name_non_uniform_mesh_profiles_line.i  rkutta.i     \
+edge_prof_nml.i     name_eccone.i         name_tokamak.i                         scatnper_nml.i  \
+edge_prof_no_nml.i  name_edge_prof_nml.i  name_uniform_mesh_profiles.i           six_nml.i    \
+emissa_nml.i        name_genr.i           one_nml.i
+#BH090924  SHARE=grfont.dat  #grfont.dat is from the PGPLOT_DIR which
+#BH09092                     #presently needs to be set in user's login script.
+
+all:  $(OBJS) $(INCLUDES)
+	ar rv $(LIB) $(OBJS)
+
+#BH090924  install:  $(BIN) $(LIB) $(INCLUDES) $(SHARE)
+install:  $(BIN) $(LIB) $(INCLUDES)
+	-$(INSTALL) $(BIN) $(IPS_PHYS_ROOT)/$(APP)/bin/xgenray
+	-$(INSTALL) $(LIB) $(IPS_PHYS_ROOT)/$(APP)/lib
+	-$(INSTALL) $(INCLUDES) $(IPS_PHYS_ROOT)/$(APP)/include
+#BH090924  	-$(INSTALL) $(SHARE) $(IPS_PHYS_ROOT)/$(APP)/share
+clean:
+	rm $(IPS_PHYS_ROOT)/$(APP)/lib/*
+	rm $(IPS_PHYS_ROOT)/$(APP)/bin/*
+	rm $(IPS_PHYS_ROOT)/$(APP)/include/*
+#BH090924	rm $(IPS_PHYS_ROOT)/$(APP)/share/*
+	
+	
+	

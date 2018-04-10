@@ -1,0 +1,31 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+gr3d_2.bin
+
+graph title: GENRAY
+
+variable names
+0	 ws
+1	 wdnpar
+2	 ex
+3	 ey
+4	 ez
+5        fluxn
+6	 btot
+7	 sene
+8	 salphac
+9	 salphal
+
+ix	iy	title
+0	1       wdnpar
+0	2       ex
+0	3       ey
+0	4       ez
+0	5       fluxn
+0	6       btot
+0	7       sene
+0	8	salphac
+0	9       salphal
+
+

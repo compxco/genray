@@ -1,0 +1,6 @@
+Tests read_write_namelists.f.
+
+Copy a test genray.in (e.g. genray.in_test7)
+to genray.in.  The test reads genray.in and
+re-writes over it using namelist writes.
+

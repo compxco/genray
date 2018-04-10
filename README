@@ -1,0 +1,70 @@
+
+See README_genray_devel, README_genray_overview
+
+/home/bobh/cql3d/genray/genray_cvs/code/genray_frm_YuP_hopper130726
+
+Aug. 19, 2013
+=============
+Adjusted makefile_mpi.gfortran64.bob9.CentOS for mpich2.
+On bob9 installation, with mpich2, version 2.1, had to start
+the mpd demon, then run with mppiexec:
+mpd &   This starts a deamon, which handles the some security issues.
+mpiexec -np 4
+/home/bobh/cql3d/genray/genray_cvs/code/genray_frm_YuP_hopper130726/xgenray_mpi.gfortran64
+|tee log_-np4
+
+
+
+Sept. 11, 2013
+==============
+Removed the cntrl-M line endings from about 20 .f and .i files, which
+come in when Yuri editted from mpi with windows.
+
+Updated read_write_genray_input_prep.f from read_write_genray_input.f.
+Will need to add
+     common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+     data myrank/0/  !In serial run: myrank=0; In MPI run: myrank=rank
+when invoking read_write_genray_input_prep.f from prepare_genray_input.f90.
+This will be serial code, so set myrank=0 as default.
+
+Added
+delim='apostrophe',
+in several open() of namelist files, to ensure that
+any namelist writes include apostrophe delimiters in
+the character variables.
+This also solves a problem with long namelist character
+variables when writing and reading namelists using the
+INTEL and PGI compilers.
+
+
+July 16, 2014
+=============
+Added momentum conservation in the Lin-Liu subroutine
+c[175] (lin-liu_curnt.f), controlled by new namelist variable 
+c[175] ieffic_mom_cons (which works with ieffic=4).  Same as
+done in TORBEAM, per Marushchenko et al, PoP 18, 032501 (2011).
+
+
+Mar 1, 2017
+===========
+This version, "genray_v10.10_170301", from CompX2 trunk/.
+Ran the 00_Genray_Regression_Tests test suite (15 tests).
+All looked OK.
+
+
+Jul 25, 2017
+============
+version="genray_v10.11_170725"
+Adjustment of ioxm procedure for picking roots of the cold
+plasma dispersion.   Also, adjustment of meaning of ib namelist.
+See a_change.i.
+NOTE:   ioxm_n_par was previously introduced as an alternative to ioxm,
+        to help resolve ambiguity in the effects of ioxm.
+
+
+Apr 10, 2018
+============
+Put in to git version control on CompX2.
+========================================
+version="genray_v10.11_180410"  
+Otherwise, little changed from "genray_v10.11_170725".

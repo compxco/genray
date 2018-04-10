@@ -1,0 +1,26 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+efield.bin
+
+graph title: GENRAY
+
+variable names
+0	 Poloidal dist
+1	 ReEx
+2	 ImEx
+3	 ReEy
+4	 ImEy
+5        ReEz
+6	 ImEz
+7	 fluxn
+
+ix	iy	title
+0	1       ReEx(s)
+0	2       'ImEx(s)
+0	3       ReEy(s)
+0	4       'ImEy(s)
+0	5       ReEz(s)
+0	6       'ImEz(s)
+0	7       fluxn(s)
+

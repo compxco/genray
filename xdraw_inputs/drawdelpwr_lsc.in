@@ -1,0 +1,13 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+delpwr.bin
+
+graph title: GENRAY
+
+variable names
+0	 power lsc
+1	 poloidal dist
+
+ix	iy	title
+1	0       power(s)

@@ -1,0 +1,39 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+emis.bin
+
+graph title: GENRAY
+
+variable names
+0	 R
+1	 Z
+2	 Phi
+3	 distance
+4	 al
+5        j
+6	 N_ray
+7	 I_n(s=sn)/ds 
+8	 I_n(s=0)/ds
+9	 Temperature 
+10       rad temperature
+11	 I_0sn
+12	 tau_n
+13	 I_n(0)
+14	 j*exp(-tau_n)
+
+ix	iy	title
+0	7	"I_n(s=sn)/ds
+3	8       "I_n(s=0)/ds
+3	11      "I_0sn
+0	4       al
+0	5       j
+0	6	N_ray
+0	12      tau_n  
+0       9       Temperature
+3       14      "j exp(-taun)
+
+
+
+
+

@@ -1,0 +1,14 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+ebw_root.bin
+
+graph title: EBW
+
+variable names
+0	 k_perp_R_Larm
+1	 1/Y
+
+ix	iy	title
+0	1       1/Y(k)
+

@@ -1,0 +1,37 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+onetwo1.bin
+
+graph title: GENRAY
+
+variable names
+0        rho
+1        power density	(egr/s*cm**3)
+2        power	 (egr/s)
+3        power_e density  (egr/s*cm**3)
+4        power_i density (erg/s*cm**3)
+5        power_cl density (egr/s*cm**3)
+6        current density parallel (A/cm**2)
+7        current density onetwo  (A/cm**2)
+8        current density toroidal (A/cm**2)
+9        current density poloidal (A/cm**2)
+10	 current density toroidal_LL (A/sm**2)
+
+ix       iy     title
+0        1      power density erg/(s*cm**3)(rho)
+0        3      power density(electron damping)
+0        4      power density(ion damping)
+0        5      power density(collisional damping)
+0        6      parallel current density A/cm**2(rho)
+0        7      onetwo current density A/cm**2(rho)
+0        8      toroidal current density A/cm**2(rho)
+0        9      poloidal current density A/cm**2(rho)
+0	10	toroidal LL current density A/cm**2 (rho)
+
+
+
+
+
+
+

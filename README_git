@@ -1,0 +1,10 @@
+/home/bobh/cql3d/git_genray/
+
+180410
+======
+Puting genray under git version control, starting
+from files in genray_v10.11_180410.zip.
+
+git init
+git add *
+git commit -m 'Committing genray_v10.11_180410'

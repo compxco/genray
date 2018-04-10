@@ -1,0 +1,24 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+dcon.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psifac
+1	f
+2	mu0 p
+3	q
+4	ArcSinh DI
+5	ArcSinh DR
+6	ArcSinh H
+7	ArcSinh ca1
+
+ix	iy	title
+0	1	f = R BT
+0	2	Plasma Pressure
+0	3	Safety Factor
+0	6	Toroidal Asymmetry Factor H
+0	4 5	Mercier Criterion, DI > 0 => Unstable
+0	7	High-n Ballooning, CA1 < 0 => Unstable

@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+fokker.bin
+
+graph title: GENRAY
+
+variable names
+0	 kinetic energy [KeV]
+1	 log(f)
+
+ix	iy	title
+0	1	log(f) vs E
+
+

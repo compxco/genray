@@ -1,0 +1,25 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+em_res.bin
+
+graph title: GENRAY
+
+variable names
+0	 R
+1	 y_e
+2	 u_perp_max/vte
+3        u_par_min/vte
+4	 u_par_max/vte
+5        u_0/vte
+6	 del_u/vte
+7	 n_parallel
+
+ix	iy	title
+0	2       u_perp/vte(R)
+0	3       u_par_min/vte(R)
+0	4       u_par_max/vte(R)
+0	5       u_0(r)/vte(R)
+0	6       del_u(r)/vte(R)
+0	1       y_e(R)=omegace/omega
+0	7	n_parallel(R)

@@ -1,0 +1,95 @@
+# makefile for GENRAY with no copious screen o/p
+#   using Lahey-Fujitsu pgf90 Fortran compiler
+# write(*,*) writes turned off
+# N.Ershov 
+# 10 Sep, 2004,   Jan 28, 2008 (BH)
+# USAGE: 
+# 1) make     	- building xgenray_nowrite
+# 2) make clean	- removing all object files
+# make 		- as usual make
+
+SHELL=		/bin/sh
+NAME=		xgenray_nowrite
+COMPILER=	pgf90
+BUILDER=	$(COMPILER)
+INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
+		emissa.i five.i fourb.i gr.i grill.i ions.i\
+		limit.i  loopb.i nperpcom.i\
+		name.i name_eccone.i name_genr.i name_grill.i \
+		name_non_uniform_mesh_profiles_line.i\
+		name_tokamak.i name_uniform_mesh_profiles.i\
+		output.i one.i \
+		onetwo.i oxb.i\
+		rho.i six.i spline_distrib.i three.i \
+		transport_prof.i \
+		write.i writencdf.i \
+		commons.i param.i  rrange.i n_parb.i rkutta.i\
+		globcd.h globcd1.h globcd2.h \
+		netcdf.inc
+SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
+		abhay_disp.f\
+		adj_sub.f adj_vmlibpr.f adj_orbit.f adj_control.f \
+		b.f  bcast.f besk.f besk2as.f bessel.f   bound.f\
+		bess_slatec.f besvec.f cn.f\
+		chamber_wall.f \
+		cninit.f   cnpermuz.f  coldm.f   complx.f  cone_ec.f\
+		contour.f croot.f  curba.f curba_GA.f\
+		combine_disp.f \
+                dcom16.f dddrz1.f dense.f dinit.f\
+		dmnf.f dskin.f dten16.f dxdphi.f   dxdr.f   dxdz.f\
+		dydphi.f   dydr.f   dydz.f   efield.f  efield1.f\
+		equilib.f emission.f emission_spectrum.f  eric_disp.f \
+		flown.f  forest.f fokker.f  gamma.f\
+		gr2new.f    gr3.f grill_lh.f   hamilmuz.f   hamilt1.f\
+		hamilt_lambda.f \
+		lin_liu_curnt.f lh_ql_flux.f \
+		mathcurb.f   minimization.f \
+		mk_graph.f mmdei.f  mullerfun2.f  ninit_ec.f \
+		netcdfr3d.f number1.f\
+		outinit.f   output.f  outputb1.f  ono_disp.f oxb.f\
+		partner.f plasmray.f   \
+		prep3d.f  prepripl.f  rhospl.f   rk_new.f\
+		read_write_genray_input.f\
+		rkb1.f rside1.f  relat_tens.f scatperp.f shkarofs.f\
+		rsideb1.f   s.f   sdr1.f   se.f   spline.f spldens.f\
+		slatec_ram.f\
+		stop.f tensrcld.f\
+		uertst.f   ugetio.f   uspkd.f\
+		write3d.f x.f   y.f wconvini.f zcunix.f\
+		zfunc.f   zr_psith.f zfun_cur.f
+OBJECTS=	$(SOURCES:.f=.o)
+F90SRCS=	kind_spec.f90
+F90OBJS=	$(F90SRCS:.f90=.o)
+NOWOBJS=	$(SOURCES:.f=.nwo)
+
+LOCATION  =    -L$(PGPLOT_DIR) -L/usr/X11R6/lib64
+NETCDF=        /usr/local/netcdf/PGF90/netcdf-3.6.2/lib/libnetcdf.a
+LIBRARIES=     -lX11 -lpgplot $(NETCDF) -lgcc
+
+DEBUG=
+CSPECIAL=
+
+COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG)
+
+$(NAME):	$(F90OBJS) $(NOWOBJS) 
+	rename .nwo .o *.nwo  | echo -n
+	$(BUILDER) -o $(NAME) $(F90OBJS) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+	chmod 755 $(NAME)
+	rm -rf *.o *.mod | echo -n
+
+$(F90OBJS): %.o: %.f90
+	$(COMPILE) $< -o $@
+
+$(NOWOBJS): %.nwo: %.f 
+	cp $< temp_nw.f
+	mpi/cmm -a temp_nw.f
+	mpi/cmm -p WRITE "write(*,*)" temp_nw.f
+	mpi/cmm -p PAUSE "pause" temp_nw.f
+	$(COMPILE) temp_nw.f -o temp_nw.o
+	mv temp_nw.o $@
+	rm -f temp_nw.f
+
+clean:	
+	rm -rf *.nwo $(NAME) temp_nw* *.mod | echo -n
+
+#end

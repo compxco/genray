@@ -1,0 +1,24 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+absorp.bin
+
+graph title: GENRAY
+
+variable names
+0	 Poloidal dist
+1	 power
+2	 rho
+3	 Ye
+4	 Yi1
+5        Yi2
+6        Y ion-ioni
+
+ix	iy	title
+6	1       power(yii)
+4	1       power(yi)
+0	2       rho(poloidal dist)
+0       3       ye(poloidal dist)
+0	4       yi1(poloidal dist)
+0	5	yi2(polidal diat)
+0	6       yii(poloidal dist)

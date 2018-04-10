@@ -1,0 +1,102 @@
+# makefile for GENRAY using Lahey Fortran compiler and MPI
+# N.Ershov 
+# 29 Feb, 2004,  Updated 16 Sept, 2004 (BH)
+# Usage:
+# 1) make     	- building xgenray_par
+# 2) make clean	- removing all object files
+
+#cmm comments out all write(*,*) and pause statements, for MPI runs
+#auto makes MPI insertions in the *.f files at CMPIINSERTPOSTION points,
+#  insertions specified in mpi.ins.
+
+SHELL=		/bin/sh
+NAME=		xgenray_par
+COMPILER=	mpif77
+BUILDER=	$(COMPILER)
+INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
+		emissa.i five.i fourb.i gr.i grill.i ions.i\
+		limit.i  loopb.i nperpcom.i\
+		name.i name_eccone.i name_genr.i name_grill.i \
+		name_non_uniform_mesh_profiles_line.i\
+		name_tokamak.i name_uniform_mesh_profiles.i\
+		output.i one.i \
+		onetwo.i oxb.i\
+		rho.i six.i spline_distrib.i three.i \
+		transport_prof.i \
+		write.i writencdf.i \
+		commons.i param.i  rrange.i n_parb.i rkutta.i\
+		globcd.h globcd1.h globcd2.h \
+		netcdf.inc
+SOURCES=	abc.f   absorpfw.f absorplh.f  arrays.f\
+		abhay_disp.f\
+		adj_sub.f adj_vmlibpr.f adj_orbit.f adj_control.f \
+		b.f  bcast.f besk.f besk2as.f bessel.f   bound.f\
+		bess_slatec.f besvec.f cn.f\
+		chamber_wall.f \
+		cninit.f   cnpermuz.f  coldm.f   complx.f  cone_ec.f\
+		contour.f croot.f  curba.f curba_GA.f\
+		combine_disp.f \
+                dcom16.f dddrz1.f dense.f dinit.f\
+		dmnf.f dskin.f dten16.f dxdphi.f   dxdr.f   dxdz.f\
+		dydphi.f   dydr.f   dydz.f   efield.f  efield1.f\
+		equilib.f emission.f emission_spectrum.f  eric_disp.f \
+		flown.f  forest.f fokker.f  gamma.f\
+		gr2new.f    gr3.f grill_lh.f   hamilmuz.f   hamilt1.f\
+		hamilt_lambda.f \
+		lin_liu_curnt.f lh_ql_flux.f \
+		mathcurb.f   mk_graph.f mmdei.f  mullerfun2.f  ninit_ec.f \
+		netcdfr3d.f number1.f\
+		outinit.f   output.f  outputb1.f  ono_disp.f oxb.f\
+		partner.f plasmray.f   \
+		prep3d.f  prepripl.f  rhospl.f   rk_new.f\
+		rkb1.f rside1.f  relat_tens.f scatperp.f shkarofs.f\
+		read_write_genray_input.f\
+		rsideb1.f   s.f   sdr1.f   se.f   spline.f spldens.f\
+		slatec_ram.f\
+		stop.f tensrcld.f\
+		uertst.f   ugetio.f   uspkd.f\
+		write3d.f x.f   y.f wconvini.f zcunix.f\
+		zfunc.f   zr_psith.f zfun_cur.f
+OBJECTS=	$(SOURCES:.f=.o)
+MPIOBJS=	$(SOURCES:.f=.mpio)
+
+LOCATION=	-L/usr/X11R6/lib -L/usr/local/netcdf-3.5.0/lib -L/usr/local/pgplot
+LIBRARIES=	-lX11 -lnetcdf -lpgplot_lf95
+
+$(NAME):	$(MPIOBJS) genray_par.mpio
+	mkdir TMP | echo -n
+	mv *.o TMP | echo -n
+	rename .mpio .o *.mpio  | echo -n
+	$(BUILDER) -o $(NAME) $(OBJECTS) genray_par.o $(LOCATION) $(LIBRARIES)
+	chmod 755 $(NAME)
+	rename .o .mpio *.o | echo -n
+	mv TMP/* . | echo -n
+	rmdir TMP | echo -n
+
+$(MPIOBJS): %.mpio: %.f 
+	cp $< temp_mpi.f
+	mpi/cmm -a temp_mpi.f
+	mpi/cmm -p WRITE "write(*," temp_mpi.f
+	mpi/cmm -p PAUSE "pause" temp_mpi.f
+	mpi/cmm -p PRINT " print " temp_mpi.f
+	$(COMPILER) -c temp_mpi.f -o temp_mpi.o
+	mv temp_mpi.o $@
+	rm -f temp_mpi.f
+
+genray_par.mpio:	genray.f mpi/mpi.ins
+	cp genray.f temp_mpi.f
+	mpi/cmm -a temp_mpi.f
+	mpi/cmm -p WRITE "write(*," temp_mpi.f
+	mpi/cmm -p PAUSE "pause" temp_mpi.f
+	mpi/cmm -p PRINT " print " temp_mpi.f
+	mpi/auto temp_mpi.f mpi/mpi.ins >genray_par.f
+	$(COMPILER) -c genray_par.f -o temp_mpi.o
+	mv temp_mpi.o genray_par.mpio
+	rm -f temp_mpi.f
+
+clean:	
+	rm -rf *.mpio $(NAME) temp_mpi* TMP | echo -n
+
+#end
+
+

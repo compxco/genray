@@ -1,0 +1,35 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+tool2.bin
+
+graph title: GENRAY
+
+variable names
+0        R 
+1        dens_e 
+2        temp_e 
+3	 b 
+4	 y_e
+5	 x_e
+6	 ur
+7	 cutoffp
+8	 cutoffm
+9	 d/(x/(1-N_par**2)-1)
+
+ix       iy     title
+0        1      dens_e (10**19/m**3)
+0        2      temp_e (KeV)
+0	 3	b (Tl)
+0	 4 	y_e
+0	 5 	x_e
+0	 6	ur=x_e+y_e**2
+0	 7	cutoffp=x/(1+y)+Npar**2-1	
+0	 8	cutoffm=x/(1-y)+Npar**2-1
+0	 9	d/(x/(1-N_par**2)-1)
+
+
+
+
+
+

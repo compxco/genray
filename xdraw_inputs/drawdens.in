@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+dens.bin
+
+graph title: GENRAY
+
+variable names
+0	 rho
+1	 density
+2	 temperature
+
+ix	iy	title
+0	1       density(rho) [10**13/cm**3]
+0	2       temperature(rho) [keV]

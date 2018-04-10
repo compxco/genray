@@ -1,0 +1,6 @@
+2758,2759c2758,2759
+<       double complex exde,eyde,ezde
+<       real*8 :: rnpar,rnper,romega,romegpe,rvgrpdc,redenfac
+---
+>       complex exde,eyde,ezde
+>       real rnpar,rnper,romega,romegpe,rvgrpdc,redenfac

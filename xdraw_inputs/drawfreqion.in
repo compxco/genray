@@ -1,0 +1,13 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+freqion.bin
+
+graph title: GENRAY
+
+variable names
+0	 R[m]
+1	 frequency[GHZ]
+
+ix	iy	title
+0	1       fpi[0],fci[1],flh[2],2-4*fci[3-5]

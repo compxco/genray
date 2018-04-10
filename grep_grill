@@ -1,0 +1,799 @@
+a_change.i:c[143] Made corrections in grill_lh.f inside subroutine rho_ini_LHFW
+a_change.i:c[141] Made some corrections for work with the grill conditions
+a_change.i:c[27] output *.nc file for grill launching [SAP, 050408]  
+a_change.i:c[26] New option added for calculation of grill ray starting conditions:
+a_change.i:c[26] For i_grill_pol_mesh=2 GENRAY creates non-uniform poloidal mesh
+a_change.i:c[26] For i_grill_npar_ntor_npol_mesh=2 GENRAY creates non-uniform
+a_change.i:c[4] Fixed coding inadaquacy in poloidal distn of power, grill_lh.f.
+a_change.i:c[4] Added igrilltw=1 option for uniform pol distn of power, grill_lh.f.
+a_change.i:c[4] Added igrillpw=3 option for guassian distn of power vs npar,
+a_change.i:c[4] grill_lh.f.   [bobh, 020826].
+commons.i:      include 'grill.i'
+grill.i:c     the variables for the grill parameters
+grill.i:c     nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill.i:      include 'grill_nml.i'
+grill.i:      include 'grill_no_nml.i'
+grill.i:c       ngrilla          is a max number of the poloidal grill angles	    
+grill.i:c       ngrill           is a number of the poloidal grill angles	    
+grill.i:c       thgrill(1:ngrilla) poloidal  angle of grill, measured counter
+grill.i:c       height(1:ngrilla)  is a poloidal length (m) of grill 
+grill.i:c                         (giving poloidal power distribution of each grill).
+grill.i:c       nthin(1:ngrilla)   is a number of rays near the each poloidal center,
+grill.i:c                         simulating a grill   
+grill.i:c       phigrill(1;ngrilla)is a toroidal grill angle of grill (degrees)
+grill.i:c       anmin(1:ngrilla)   position of the left bound   
+grill.i:c       anmax(1:ngrilla)   position of the right bounds  
+grill.i:c       nnkpar(1:ngrilla)  number of points  of power spectrum
+grill.i:c       powers(1:ngrilla)  power in one grill (MWatts)	    
+grill.i:c                         (total power of grill(in MWatts) will be   
+grill.i:c       rhopsi0(1:ngrilla) initial psi for wave front (0<rhopsi0<1)     
+grill.i:c       nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill.i:c       nthinmax=max{i=1,ngrill}nthin(i)
+grill.i:c                           near the grill poloidal angles thgrill(i)  !
+grill.i:c                           near the grill poloidal angles thgrill(i)  !
+grill.i:c       igrillpw      specifies the form of N_parallel power spectra
+grill.i:c       igrilltw      specifies the form poloidal variation of power,
+grill.i:c i_n_poloidal =1         The input parameter is N_parallel(from grill).
+grill.i:c i_n_poloidal =2         The input parameters: N_parallel(from grill)
+grill.i:c       antormin(1:ngrilla)   position of the left bound   
+grill.i:c       antormax(1:ngrilla)   position of the right bounds  
+grill.i:c       nnktor(1:ngrilla)  number of points  of power spectrum
+grill.i:c       anpolmin(1:ngrilla)   position of the left bound   
+grill.i:c       anpolmax(1:ngrilla)   position of the right bounds  
+grill.i:c       nnkpol(1:ngrilla)  number of points  of power spectrum
+grill.i:c       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+grill.i:c                         near the central grill angle thgrill(i)
+grill.i:c                            grill angle fpwth(j)=1/nthini
+grill.i:c       i_grill_npar_ntor_npol_mesh: option specifying the refactive
+grill_nml.i:c     the variables for the grill parameters from namelists
+grill_nml.i:c     nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill_nml.i:c     parameter (ngrilla) is set in param.i
+grill_nml.i:c------from namelist /grill/
+grill_nml.i:     &  rhopsi0,thgrill,
+grill_nml.i:     &  phigrill,height,
+grill_nml.i:c------from namelist /grill/
+grill_nml.i:     &  i_n_poloidal,i_rho_cutoff,ngrilld,ngrill,
+grill_nml.i:     &  igrillpw,igrilltw,
+grill_nml.i:     &  ilaunch,i_grill_pol_mesh,
+grill_nml.i:     &  i_grill_npar_ntor_npol_mesh
+grill_nml.i:       common /grill_nmnl/
+grill_nml.i:     &  rhopsi0(ngrilla),thgrill(ngrilla),
+grill_nml.i:     &  phigrill(ngrilla),height(ngrilla),
+grill_nml.i:     &  anmin(ngrilla),anmax(ngrilla),
+grill_nml.i:     &  powers(ngrilla),
+grill_nml.i:     &  antormin(ngrilla),antormax(ngrilla),
+grill_nml.i:     &  anpolmin(ngrilla),anpolmax(ngrilla),
+grill_nml.i:     &  i_n_poloidal,i_rho_cutoff,ngrilld,ngrill,
+grill_nml.i:     &  igrillpw,igrilltw,
+grill_nml.i:     &  nthin(ngrilla),nnkpar(ngrilla),
+grill_nml.i:     &  nnktor(ngrilla),nnkpol(ngrilla),
+grill_nml.i:     &  ilaunch,i_grill_pol_mesh,
+grill_nml.i:     &  i_grill_npar_ntor_npol_mesh
+grill_nml.i:c       ngrilla          is a max number of the poloidal grill angles	    
+grill_nml.i:c       ngrill           is a number of the poloidal grill angles	    
+grill_nml.i:c       thgrill(1:ngrilla) poloidal  angle of grill, measured counter
+grill_nml.i:c       height(1:ngrilla)  is a poloidal length (m) of grill 
+grill_nml.i:c                         (giving poloidal power distribution of each grill).
+grill_nml.i:c       nthin(1:ngrilla)   is a number of rays near the each poloidal center,
+grill_nml.i:c                         simulating a grill   
+grill_nml.i:c       phigrill(1;ngrilla)is a toroidal grill angle of grill (degrees)
+grill_nml.i:c       anmin(1:ngrilla)   position of the left bound   
+grill_nml.i:c       anmax(1:ngrilla)   position of the right bounds  
+grill_nml.i:c       nnkpar(1:ngrilla)  number of points  of power spectrum
+grill_nml.i:c       powers(1:ngrilla)  power in one grill (MWatts)	    
+grill_nml.i:c                         (total power of grill(in MWatts) will be   
+grill_nml.i:c       rhopsi0(1:ngrilla) initial psi for wave front (0<rhopsi0<1)     
+grill_nml.i:c       nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill_nml.i:c       nthinmax=max{i=1,ngrill}nthin(i)
+grill_nml.i:c                           near the grill poloidal angles thgrill(i)  !
+grill_nml.i:c                           near the grill poloidal angles thgrill(i)  !
+grill_nml.i:c       igrillpw      specifies the form of N_parallel power spectra
+grill_nml.i:c       igrilltw      specifies the form poloidal variation of power,
+grill_nml.i:c i_n_poloidal =1         The input parameter is N_parallel(from grill).
+grill_nml.i:c i_n_poloidal =2         The input parameters: N_parallel(from grill)
+grill_nml.i:c       antormin(1:ngrilla)   position of the left bound   
+grill_nml.i:c       antormax(1:ngrilla)   position of the right bounds  
+grill_nml.i:c       nnktor(1:ngrilla)  number of points  of power spectrum
+grill_nml.i:c       anpolmin(1:ngrilla)   position of the left bound   
+grill_nml.i:c       anpolmax(1:ngrilla)   position of the right bounds  
+grill_nml.i:c       nnkpol(1:ngrilla)  number of points  of power spectrum
+grill_nml.i:c       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+grill_nml.i:c                         near the central grill angle thgrill(i)
+grill_nml.i:c                            grill angle fpwth(j)=1/nthini
+grill_nml.i:c       i_grill_npar_ntor_npol_mesh: option specifying the refactive
+grill_no_nml.i:c      the variables for the grill parameters
+grill_no_nml.i:c      nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill_no_nml.i:        common /grill/
+grill_no_nml.i:c       ngrilla          is a max number of the poloidal grill angles	    
+grill_no_nml.i:c       ngrill           is a number of the poloidal grill angles	    
+grill_no_nml.i:c       thgrill(1:ngrilla) poloidal  angle of grill, measured counter
+grill_no_nml.i:c       height(1:ngrilla)  is a poloidal length (m) of grill 
+grill_no_nml.i:c                         (giving poloidal power distribution of each grill).
+grill_no_nml.i:c       nthin(1:ngrilla)   is a number of rays near the each poloidal center,
+grill_no_nml.i:c                         simulating a grill   
+grill_no_nml.i:c       phigrill(1;ngrilla)is a toroidal grill angle of grill (degrees)
+grill_no_nml.i:c       anmin(1:ngrilla)   position of the left bound   
+grill_no_nml.i:c       anmax(1:ngrilla)   position of the right bounds  
+grill_no_nml.i:c       nnkpar(1:ngrilla)  number of points  of power spectrum
+grill_no_nml.i:c       powers(1:ngrilla)  power in one grill (MWatts)	    
+grill_no_nml.i:c                         (total power of grill(in MWatts) will be   
+grill_no_nml.i:c       rhopsi0(1:ngrilla) initial psi for wave front (0<rhopsi0<1)     
+grill_no_nml.i:c       nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill_no_nml.i:c       nthinmax=max{i=1,ngrill}nthin(i)
+grill_no_nml.i:c                           near the grill poloidal angles thgrill(i)  !
+grill_no_nml.i:c                           near the grill poloidal angles thgrill(i)  !
+grill_no_nml.i:c       igrillpw      specifies the form of N_parallel power spectra
+grill_no_nml.i:c       igrilltw      specifies the form poloidal variation of power,
+grill_no_nml.i:c i_n_poloidal =1         The input parameter is N_parallel(from grill).
+grill_no_nml.i:c i_n_poloidal =2         The input parameters: N_parallel(from grill)
+grill_no_nml.i:c       antormin(1:ngrilla)   position of the left bound   
+grill_no_nml.i:c       antormax(1:ngrilla)   position of the right bounds  
+grill_no_nml.i:c       nnktor(1:ngrilla)  number of points  of power spectrum
+grill_no_nml.i:c       anpolmin(1:ngrilla)   position of the left bound   
+grill_no_nml.i:c       anpolmax(1:ngrilla)   position of the right bounds  
+grill_no_nml.i:c       nnkpol(1:ngrilla)  number of points  of power spectrum
+grill_no_nml.i:c       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+grill_no_nml.i:c                         near the central grill angle thgrill(i)
+grill_no_nml.i:c                            grill angle fpwth(j)=1/nthini
+grill_no_nml.i:c       i_grill_npar_ntor_npol_mesh: option specifying the refactive
+name_grill.i:c     namelist grill
+name_grill.i:      namelist /grill/ i_n_poloidal,n_theta_pol,ksi_nperp,
+name_grill.i:     *ngrilld, !the old name for ngrill for old genray.in files
+name_grill.i:     *ngrill,igrillpw,igrilltw,rhopsi0,thgrill,
+name_grill.i:     *phigrill,height,nthin,anmin,anmax,nnkpar,powers,
+name_grill.i:     &ilaunch,r0launch,z0launch,phi0launch,i_grill_pol_mesh,
+name_grill.i:     &i_grill_npar_ntor_npol_mesh
+name.i:      include 'name_grill.i'              !namelist /grill/
+one.i:c           The last case works only for istart=2 and grill_lh conditions 
+one.i:c                     ! It is used only  in grill_lh to create
+one_nml.i:c-----from namelist /grill/ 
+one_nml.i:c-----namelist /grill/ 
+one_nml.i:c-----from namelist /grill/ 
+one_nml.i:c-----namelist /grill/ 
+one_nml.i:c           The last case works only for istart=2 and grill_lh conditions 
+one_nml.i:c                     ! It is used only  in grill_lh to create
+one_no_nml.i:c           The last case works only for istart=2 and grill_lh conditions 
+one_no_nml.i:c                     ! It is used only  in grill_lh to create
+param_080220.i:c     for common/grill/
+param_080220.i:      integer ngrilla,nnkprmax,nraymaxl,nthinmax
+param_080220.i:      parameter (ngrilla=10,nnkprmax=60,nraymaxl=1000,nthinmax=50)
+param_080220.i:c      parameter (ngrilla=10,nnkprmax=60,nraymaxl=1000,nthinmax=40)
+param_080220.i:c ngrilla    is a maximal number of the N_parallel spectra
+param_080220.i:c ngrill     is a number of the N_parallel spectra
+param_080220.i:c nnkprmax=max{i=1,ngrill}nnkpar(i)
+param_080220.i:c nthinmax=max{i=1,ngrill}nthin(i)
+param_080220.i:c nraymaxl is the max number of rays from the grill
+param.i:c     for common/grill/
+param.i:      integer ngrilla,nnkprmax,nraymaxl,nthinmax
+param.i:      parameter (ngrilla=10,nnkprmax=60,nraymaxl=1000,nthinmax=64)
+param.i:c      parameter (ngrilla=10,nnkprmax=60,nraymaxl=1000,nthinmax=40)
+param.i:c ngrilla    is a maximal number of the N_parallel spectra
+param.i:c ngrill     is a number of the N_parallel spectra
+param.i:c nnkprmax=max{i=1,ngrill}nnkpar(i)
+param.i:c nthinmax=max{i=1,ngrill}nthin(i)
+param.i:c nraymaxl is the max number of rays from the grill
+cninit.f:      include 'grill.i'
+cninit.f:      if(istart.eq.2) then !grill conditions
+cninit.f:c     for the grill conditions it will use the different grill types
+cninit.f:      if(istart.eq.2) then !grill conditions
+cninit.f:             write(*,*)'cninit end grill condition'
+cninit.f:      endif !grill conditions
+cninit.f:      include 'grill.i'
+cninit.f:      include 'grill.i'
+dinit.f:      include 'grill.i'
+dinit.f:	  write(*,*)'before grill_lh '
+dinit.f:	  write(*,*)'ngrilla,ngrill,xma,yma',ngrilla,ngrill,xma,yma
+dinit.f:          call grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
+dinit.f:     1    nraymaxl,wdnpar0,igrillpw,igrilltw,i_n_poloidal,
+dinit.f:     1    i_grill_pol_mesh,i_grill_npar_ntor_npol_mesh)
+dinit.f:	   write(*,*)'in dinitmr after grill nray=',nray
+dinit.f:c         It uses the wave input data from the grill form
+dinit.f:c         4) call grill_lh to calculate the initial data
+dinit.f:          theta=thgrill(1)
+dinit.f:          write(*,*)'dinit before grill_lh ngrilla,ngrill',
+dinit.f:     1    ngrilla,ngrill
+dinit.f:          call grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
+dinit.f:     1    nraymaxl,wdnpar0,igrillpw,igrilltw,i_n_poloidal,
+dinit.f:     1    i_grill_pol_mesh,i_grill_npar_ntor_npol_mesh)
+dinit.f:	   write(*,*)'in dinitmr after grill'
+dinit.f:      include 'grill.i'
+emission.f:      include 'grill.i'
+genray.f:         write(*,*)'genray.f before wrtnetcdf_grill_launch filenc',
+genray.f:         call wrtnetcdf_grill_launch(filenc)
+genray.f:c     i_op=2 check the parameters for grill in genray.in
+genray.f:c--------check the parameters for grill in genray.in
+genray.f:         if (ngrill.gt.ngrilla) then
+genray.f: 20   format('equilib in check_param ngrill>ngrilla',/,
+genray.f:     .'it should be ngrilla.ge,ngrill',/,
+genray.f:     .'ngrilla= ',I4,'ngrill= ',I4,/,
+genray.f:     .'Change ngrilla in param.i or grilld in genray.in')
+genray.f:              write(*,20)ngrilla,ngrill
+genray.f:         do i=1,ngrill
+genray.f:     .      'nnkprmax.ge.max{i=1,ngrill}nnkpar(i)',/,
+genray.f:     .      'nnkprmax= ',I4,'max{i=1,ngrill}nnkpar(i)= ',I4)
+genray.f:         do i=1,ngrill
+genray.f:     .      'nthinmax.ge.max{i=1,ngrill}nthin(i)',/,
+genray.f:     .      'nthinmax= ',I4,'max{i=1,ngrill}nthin(i)= ',I4)
+grill_lh.f:c     the grill type wave launch
+grill_lh.f:c       igrillpw: option specifying the N_parallel power spectra       
+grill_lh.f:c                           a1=anmin(1:ngrill), a2=anmax(1:ngrill)     
+grill_lh.f:c       ngrill   is a number of the poloidal grill angles
+grill_lh.f:c       ngrilla    is a maximal number of the poloidal grill angles
+grill_lh.f:c       thgrill(ngrilla)    poloidal angle of grill,measured counter   
+grill_lh.f:c       height(ngrilla)     is a poloidal length (m) of grill 	       
+grill_lh.f:c                          of each grill).    			       
+grill_lh.f:c       nthin(ngrilla)      is a number of ray near the each poloidal
+grill_lh.f:c                          center, simulating a grill                  
+grill_lh.f:c       phigrill(1;ngrilla) is a toroidal grill angle of grill (degrees)
+grill_lh.f:c                n_parallel (ngrill=nspect)
+grill_lh.f:c       igrilltw: option specifying poloidal distribution of power
+grill_lh.f:c                =2 > {cos(pi(theta_pol-thgrill(i))/(height/radius))}**2
+grill_lh.f:c                     -0.5height/radius<theta_pol-thgrill(i)<0.5height/radius
+grill_lh.f:c       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+grill_lh.f:c                         near the central grill angle thgrill(i)
+grill_lh.f:c                            grill angle fpwth(j)=1/nthini
+grill_lh.f:c       i_grill_npar_ntor_npol_mesh: option specifying the refractive
+grill_lh.f:c       anmin(1:ngrilla)    position of the left bound of	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.
+grill_lh.f:c       anmax(1:ngrilla)    position of the right bounds  	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.
+grill_lh.f:c       nnkpar(1:ngrilla)   number of points  of power spectrum	       
+grill_lh.f:c       powers(1:ngrilla)   power in one grill (MWatts)	    	       
+grill_lh.f:c                          (total power of grill(in MWatts) will be    
+grill_lh.f:c       rhopsi0(1:ngrilla)  initial psi for wave front (0<rhopsi0<1)
+grill_lh.f:c       nnkprmax=max{i=1,ngrill}nnkpar(i)
+grill_lh.f:c       i_n_poloidal gives the type of the grill launch	
+grill_lh.f:c       antormin(1:ngrilla)    position of the left bound of	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.  
+grill_lh.f:c       antormax(1:ngrilla)    position of the right bounds  	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.  
+grill_lh.f:c       nnktor(1:ngrilla)   number of points  of power spectrum	       
+grill_lh.f:c       anpolmin(1:ngrilla)    position of the left bound of	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.  
+grill_lh.f:c       anpolmax(1:ngrilla)    position of the right bounds  	       
+grill_lh.f:c                          Or, as specified for igrillpw=3 above.  
+grill_lh.f:c       nnkpol(1:ngrilla)   number of points  of power spectrum	       
+grill_lh.f:c       nnktormax=max{i=1,ngrill}nnktor(i)
+grill_lh.f:c       nnkpolmax=max{i=1,ngrill}nnkpol(i)
+grill_lh.f:c                          nray=Sum{i=1,ngrill}Sum_{j=1,nthin(i)}      
+grill_lh.f:c                          near the grill poloidal angles thgrill(i)   
+grill_lh.f:      subroutine grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
+grill_lh.f:     1 nraymaxl,wdnpar0,igrillpw,igrilltw,i_n_poloidal,
+grill_lh.f:     1 ilaunch,r0launch,phi0launch,z0launch,i_grill_pol_mesh,
+grill_lh.f:     1 i_grill_npar_ntor_npol_mesh)
+grill_lh.f:      integer nraymaxl,ngrilla,ngrill,nray,iray,nthini,nnkpari,
+grill_lh.f:     .nnkprmax,igrillpw,igrilltw,i_n_poloidal,ilaunch,
+grill_lh.f:     .i_grill_pol_mesh,i_grill_npar_ntor_npol_mesh,
+grill_lh.f:      double precision thgrill(ngrilla),height(ngrilla),
+grill_lh.f:     1          phigrill(ngrilla),rhopsi0(ngrilla),
+grill_lh.f:     1          anmin(ngrilla),anmax(ngrilla),powers(ngrilla),
+grill_lh.f:     1          antormin(ngrilla),antormax(ngrilla),
+grill_lh.f:     1          anpolmin(ngrilla),anpolmax(ngrilla),
+grill_lh.f:      integer   nnkpar(ngrilla),nthin(ngrilla),
+grill_lh.f:     & nnktor(ngrilla),nnkpol(ngrilla)
+grill_lh.f:         write(*,*)'grill_lh: ilaunch=1; ngrill,nthin(1),'
+grill_lh.f:         write(*,*)'grill_lh: nnkpar(1) have been set =1'
+grill_lh.f:      write(*,*)'in grill_lh ngrill,i_n_poloidal,ilaunch',
+grill_lh.f:     &                       ngrill,i_n_poloidal,ilaunch
+grill_lh.f:      if (ngrill.lt.1) then 
+grill_lh.f:        write(*,*)'in ngrill_lh ngrill<1 but it should be .ge.1'
+grill_lh.f:        write(*,*)'Please change ngrill in genray.in file' 
+grill_lh.f:      if (ngrill.gt.ngrilla) then
+grill_lh.f:        write(*,*)'in ngrill_lh ngrilla<ngrill but it should be .ge.'
+grill_lh.f:        write(*,*)'please change ngrilla in param.i and recompile'
+grill_lh.f:      do i=1,ngrill
+grill_lh.f:         write(*,*)'i,thgrill(i),nthin(i)',i,thgrill(i),nthin(i)
+grill_lh.f:         write(*,*)'height(i),phigrill(i),rhopsi0(i),powers(i)',
+grill_lh.f:     1              height(i),phigrill(i),rhopsi0(i),powers(i)
+grill_lh.f:      do i=1,ngrill
+grill_lh.f:      do i=1,ngrill
+grill_lh.f:         thgrill(i)=thgrill(i)*tet
+grill_lh.f:         phigrill(i)=phigrill(i)*tet
+grill_lh.f:      write(*,*)'grill_lh iray=0, ngrill',ngrill
+grill_lh.f:      do i=1,ngrill
+grill_lh.f:         write(*,*)'in grill_lh i,rhopsi0(i),psi0,thgrill(i)',
+grill_lh.f:     *                          i,rhopsi0(i),psi0,thgrill(i)
+grill_lh.f:            wtheta(1)=thgrill(i)
+grill_lh.f:c           calculations: r=r(psi0,thgrill(i)),
+grill_lh.f:c                         z=z(psi0,thgrill(i))
+grill_lh.f:            call zr_psith(psi0,thgrill(i),z,r)
+grill_lh.f:c	    write(*,*)'grill_lh after zr_psith z,r',z,r
+grill_lh.f:            if((i_grill_pol_mesh.eq.1).or.(igrilltw.eq.1))then
+grill_lh.f:	         wtheta(j)=thgrill(i)+delth
+grill_lh.f:c                       near the grill poloidal angle thgrill(i)
+grill_lh.f:                 if (igrilltw.eq.1) then
+grill_lh.f:            endif !i_grill_pol_mesh.eq.1
+grill_lh.f:            if((i_grill_pol_mesh.eq.2).and.(igrilltw.ne.1))then
+grill_lh.f:c             grill angle fpwth(j)=1/nthini
+grill_lh.f:c                wtheta(k)= wtheta(k)+thgrill(i)
+grill_lh.f:c                wtheta_edge(k)= wtheta_edge(k)+thgrill(i)
+grill_lh.f:                wtheta(k)= wtheta(k)*aperture/pi+thgrill(i)
+grill_lh.f:                wtheta_edge(k)= wtheta_edge(k)*aperture/pi+thgrill(i)
+grill_lh.f:           endif !i_grill_pol_mesh.eq.2
+grill_lh.f:c          BH020826:  Added igrillpw.eq.3 option, and slightly
+grill_lh.f:           if(igrillpw.eq.1 .or. igrillpw.eq.2) then
+grill_lh.f:           elseif (igrillpw.eq.3) then
+grill_lh.f:             if(i_grill_npar_ntor_npol_mesh.eq.1) then
+grill_lh.f:                   if(igrillpw.eq.1) pwcpl(n)=1.d0/nnkpari
+grill_lh.f:    	           if(igrillpw.eq.2) pwcpl(n)=dsin(x1)*dsin(x1)/xx
+grill_lh.f:                  if(igrillpw.eq.3) pwcpl(n)=exp(-(delnpar/anmax(i))**2)
+grill_lh.f:             endif !i_grill_npar_ntor_npol_mesh.eq.1
+grill_lh.f:             if(i_grill_npar_ntor_npol_mesh.eq.2) then
+grill_lh.f:                if (igrillpw.eq.2) then
+grill_lh.f:                endif !igrillpw.eq.2
+grill_lh.f:                if(igrillpw.eq.3) then 
+grill_lh.f:                endif !igrillpw.eq.3
+grill_lh.f:            endif !i_grill_npar_ntor_npol_mesh.eq.2
+grill_lh.f:c          BH020826:  Added igrillpw.eq.3 option, and slightly
+grill_lh.f:           write(*,*)'i_n_poloidal.eq.4 igrillpw',igrillpw
+grill_lh.f:           if((igrillpw.eq.1).or.(igrillpw.eq.2)) then
+grill_lh.f:           elseif (igrillpw.eq.3) then
+grill_lh.f:             if(i_grill_npar_ntor_npol_mesh.eq.1) then
+grill_lh.f:                     if(igrillpw.eq.1) pwcpl_t=1.d0/nnktori
+grill_lh.f:    	             if(igrillpw.eq.2) pwcpl_t=dsin(x1)*dsin(x1)/xx
+grill_lh.f:               if(igrillpw.eq.3) pwcpl_t=exp(-(delntor/antormax(i))**2)
+grill_lh.f:                     if(igrillpw.eq.1) pwcpl_p=1.d0/nnktori
+grill_lh.f:    	             if(igrillpw.eq.2) pwcpl_p=dsin(y1)*dsin(y1)/yy
+grill_lh.f:               if(igrillpw.eq.3) pwcpl_p=exp(-(delnpol/anpolmax(i))**2)
+grill_lh.f:             endif ! i_grill_npar_ntor_npol_mesh.eq.1
+grill_lh.f:             if(i_grill_npar_ntor_npol_mesh.eq.2) then
+grill_lh.f:                if(igrillpw.eq.2) then
+grill_lh.f:                endif ! igrillpw.eq.2
+grill_lh.f:                if(igrillpw.eq.3) then
+grill_lh.f:                endif ! igrillpw.eq.3
+grill_lh.f:             endif ! i_grill_npar_ntor_npol_mesh.eq.2
+grill_lh.f:	 phi0=phigrill(i)
+grill_lh.f:              write(*,*)'grill_lh after call zr_psith z0,r0',z0,r0
+grill_lh.f:               phigrill(1)=phi0launch*tet
+grill_lh.f:	        write(*,*)'grill_lh: 1 n=',n
+grill_lh.f:                write(*,*)'grill_lh: iray',iray                
+grill_lh.f:	         write(*,*)'in grill_lh iray=',iray,'nraymaxl',nraymaxl
+grill_lh.f:	         write(*,*)'in grill_lh the total number of the rays is'
+grill_lh.f:	        arphiu0(iray)=phigrill(i)
+grill_lh.f:                 call nphiteta(z0,r0,phigrill(i),anzin(n),cnteta,cnphi)
+grill_lh.f:                  call grill_i_n_poloidal_2(z0,r0,phigrill(i),
+grill_lh.f:           write(*,*)'grill_lh after nphiteta iray,z0,r0,phigrill(i)',
+grill_lh.f:     &             iray,z0,r0,phigrill(i)
+grill_lh.f:                 write(*,*)'grill_lh after nphiteta cnteta,cnphi',
+grill_lh.f:                   write(*,*)'grill_lh nnkpari.eq.1'
+grill_lh.f:                write(*,*)'grill_lh  i_n_poloidal,iray,wdnpar0(iray)',
+grill_lh.f:	         write(*,*)'in grill_lh iray=',iray,'nraymaxl',nraymaxl
+grill_lh.f:	         write(*,*)'in grill_lh the total number of the rays is'
+grill_lh.f:	           arphiu0(iray)=phigrill(i)
+grill_lh.f:                 write(*,*)'grill_lh i_n_poloidal,iray,wdnpar0(iray)',
+grill_lh.f:      end do !i=1,ngrill
+grill_lh.f:      write(*,*)'grill_lh.f nray,powert',nray,powert
+grill_lh.f:      write(*,*)'in grill_lh:z r,phi,bmod',z,r,phi,bmod
+grill_lh.f:      integer i_n_poloidal ! the grill case (see inigrill)
+grill_lh.f:      write(*,*)'grill_lh.f rho_ini_LHFW i_n_poloidal,n_theta_pol',
+grill_lh.f:      write(*,*)'grill_lh in rho_ini_LHFW rho_loc= ',rho_loc
+grill_lh.f:      write(*,*)'grill_lh in rho_ini_LHFW psi= ',psi
+grill_lh.f:      write(*,*)'grill_lh psi,theta,z,r',psi,theta,z,r
+grill_lh.f:c      write(*,*)'grill_lh ps cutoff3_d_omega',cutoff3_d_omega
+grill_lh.f:        write(*,*)'grill_lh in rho_ini_LHFW n_theta_pol,n_toroidal',
+grill_lh.f:           call grill_i_n_poloidal_2(z,r,phi,
+grill_lh.f:c           write(*,*)'grill_lh n_theta_pol,n_toroidal',
+grill_lh.f:        call plot_disp_cold_grill(z,r,phi,cnpar,0.d0,n_nperp)
+grill_lh.f:      write(*,*)'grill_lh.f in  rho_ini_LHFW after '
+grill_lh.f:      write(*,*)'plot_disp_cold_grill and wave_normal_surface'
+grill_lh.f:        write(*,*)'grill_lh.f rho_ini_LHFW cnper',cnper
+grill_lh.f:c      write(*,*)'grill_lh.f: create_equal_mesh a,b,n',a,b,n
+grill_lh.f:               ! near the central polidal angle of the grill
+grill_lh.f:               ! aperture (rad) poloidal aperture of the grill
+grill_lh.f:      real*8 aperture ! (rad) poloidal aperture of the grill
+grill_lh.f:                       ! near the central polidal angle of the grill
+grill_lh.f:c      write(*,*)'grill_lh.h in  f_pow_poloid_1:del_theta,aperture',
+grill_lh.f:c     it as assumed in grill_lh: dabs(x).le.pi
+grill_lh.f:c      write(*,*)'grill_lh.h in   f_pow_npar_2: x,dabs(x)',x,dabs(x)
+grill_lh.f:c     it as assumed in grill_lh: dabs(x).le.1.d0
+grill_lh.f:c     write(*,*)'grill_lh.h in   f_pow_npar_3:xd',x
+grill_lh.f:      subroutine grill_i_n_poloidal_2(z,r,phi,cnpar,cntheta,cnphi)
+grill_lh.f:c     It is used for i_n_poloidal=2 grill case
+grill_lh.f:      write(*,*)'grill_i_n_poloidal_2: cnpar_phi,cnpar_theta',
+grill_lh.f:      write(*,*)'grill_i_n_poloidal_2: cntheta,cnper_theta',
+grill_lh.f:c      write(*,*)'grill_lh old formula cnper_phi',cnper_phi
+grill_lh.f:      write(*,*)'grill_lh new formula cnper_phi',cnper_phi
+netcdfr3d.f:      include 'grill_nml.i'    !ngrill
+netcdfr3d.f:     +     'Ray launch type: 1,eccone; 2,grill, 3,OX in plasma',istatus)
+netcdfr3d.f:      write(*,*)'before ncvdef(ngrill)'
+netcdfr3d.f:      vid=ncvdef(ncid,'ngrill',NCLONG,0,0,istatus)
+netcdfr3d.f:     +     'Number of rf source ray grills, istart=2,3',istatus)
+netcdfr3d.f:     +     ',nray/ngrill rays launched per grill istart=2,3',istatus)
+netcdfr3d.f:     +     ',Each grill has (nray/ngrill) launched rays, istart=2,3',
+netcdfr3d.f:      vid=ncvid(ncid,'ngrill',istatus)
+netcdfr3d.f:      call ncvpt(ncid,vid,1,1,ngrill,istatus)
+netcdfr3d.f:      write(*,*)'wrtnetcdf after ncptc ngrill istatus',istatus
+netcdfr3d.f:      subroutine wrtnetcdf_grill_launch(netcdfnml)
+netcdfr3d.f:      include 'grill.i'
+netcdfr3d.f:      write(*,*)'netcdfr3d.f in wrtnetcdf_grill_launch'
+netcdfr3d.f:      write(*,*)'netcdfr3d.f in wrtnetcdf_grill_launch'
+netcdfr3d.f:      include 'grill_nml.i'    !ngrill
+netcdfr3d.f:     +     'Ray launch type: 1,eccone; 2,grill, 3,OX in plasma',istatus)
+netcdfr3d.f:      write(*,*)'before ncvdef(ngrill)'
+netcdfr3d.f:      vid=ncvdef(ncid,'ngrill',NCLONG,0,0,istatus)
+netcdfr3d.f:     +     'Number of rf source ray grills, istart=2,3',istatus)
+netcdfr3d.f:     +     ',nray/ngrill rays launched per grill istart=2,3',istatus)
+netcdfr3d.f:     +     ',Each grill has (nray/ngrill) launched rays, istart=2,3',
+netcdfr3d.f:      write(*,*)'befor vid=ncvid(ncid,ngrill'
+netcdfr3d.f:      vid=ncvid(ncid,'ngrill',istatus)
+netcdfr3d.f:      call ncvpt(ncid,vid,1,1,ngrill,istatus)
+output.f:      subroutine plot_disp_cold_grill(z,r,phi,cnpar,t,n_nperp)
+output.f:c     This subroutine is called from grill_lh.f
+output.f:      write(*,*)'plot_disp_cold_grill n_param,n_nperp',n_param,n_nperp
+output.f:      write(*,*)'plot_disp_cold_grill'
+oxb.f:      subroutine ox_conversion_grill_in_poloidal_point(theta_pol,
+oxb.f:c         4) call grill_lh to calculate the initial data
+oxb.f:c     output data are in 'grill.i'
+oxb.f:      include 'grill.i'
+oxb.f:c         It uses the wave input data from the grill form
+oxb.f:c         4) call grill_lh to calculate the initial data
+oxb.f:c      theta=thgrill(1)
+oxb.f:      thgrill(1)=theta
+oxb.f:     1ngrilla,ngrill',
+oxb.f:     1ngrilla,ngrill
+oxb.f:      call grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
+oxb.f:     1nraymaxl,wdnpar0,igrillpw,igrilltw,i_n_poloidal,
+oxb.f:     1i_grill_pol_mesh,i_grill_npar_ntor_npol_mesh)
+oxb.f:      include 'grill.i'
+oxb.f:c            set the n_parallel grill spectrum
+oxb.f:             write(*,*)'before ox_conversion_grill_in_poloidal_point'
+oxb.f:             call ox_conversion_grill_in_poloidal_point(theta_pol,
+prep3d.f:      include 'grill.i'
+prep3d.f:c        powinilh(iray) (erg/c) was calculated in grill_lh
+prep3d.f:c        grill conditions for the waves (LH or FW)
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:c        the reading of the data for LH grill
+read_write_genray_input.f:c         call inigrill  
+read_write_genray_input.f:c         if (ngrilld.ne.0) then
+read_write_genray_input.f:c          pause  'Attention !!! genray.in file contains old ngrilld'
+read_write_genray_input.f:c 1000     format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input.f:c     &   'The new genray.in file uses ngrill instead of ngrilld',/,
+read_write_genray_input.f:c     &   'The code will put ngrill=ngrilld')
+read_write_genray_input.f:c          ngrill=ngrilld
+read_write_genray_input.f:         read(i_unit,grill,iostat=kode)
+read_write_genray_input.f:         call check_read(kode,'grill')
+read_write_genray_input.f:         write(*,grill)
+read_write_genray_input.f:         if (ngrilld.ne.0) then
+read_write_genray_input.f:         pause'Attention!!!genray.in file contains old variable ngrilld'
+read_write_genray_input.f: 1000       format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input.f:     &      'The new genray.in file ues ngrill instead of ngrilld',/,
+read_write_genray_input.f:     &      'The code will put ngrill=ngrilld')
+read_write_genray_input.f:            ngrill=ngrilld
+read_write_genray_input.f:           write(*,*)'grill_lh'
+read_write_genray_input.f:           write(*,*)'       Setting ngrill=1,nthin(1)=1,nnkpar(1)=1,'
+read_write_genray_input.f:           ngrill=1
+read_write_genray_input.f:         if ((i_grill_pol_mesh.ne.1).and.(i_grill_pol_mesh.ne.2)) then  
+read_write_genray_input.f:           write(*,*)'read_write genray_input.f in inigrill:'
+read_write_genray_input.f:           write(*,*)'     it should be i_grill_pol_mesh=1 or =2 but'
+read_write_genray_input.f:           write(*,*)'     i_grill_pol_mesh=',i_grill_pol_mesh
+read_write_genray_input.f:           write(*,*)'     Please change i_grill_pol_mesh in input file'
+read_write_genray_input.f:           stop 'after read grill'
+read_write_genray_input.f:         write(*,*)'from grill i_n_poloidal,ngrill',i_n_poloidal,ngrill  
+read_write_genray_input.f:            write(*,*)'in inigrill i_n_poloidal<1 or i_n_poloidal>4' 
+read_write_genray_input.f:         if(ngrill.gt.ngrilla) then
+read_write_genray_input.f:           write(*,*)'ngrill.gt.ngrilla'
+read_write_genray_input.f:           write(*,*)'ngrill=',ngrill,'ngrilla=',ngrilla
+read_write_genray_input.f:        do i=1,ngrill
+read_write_genray_input.f:c----------powers(1:ngrilla)  power in one grill (MWatts)
+read_write_genray_input.f:c          (total input power to grills(in MWatts) will 
+read_write_genray_input.f:c       nnkprmax must be equal max{i=1,ngrill}nnkpar(i)
+read_write_genray_input.f:c       nnkprmxn=max{i=1,ngrill}nnkpar(i)
+read_write_genray_input.f:        do i=1,ngrill
+read_write_genray_input.f:c       nthinmax must be equal max{i=1,ngrill}nthin(i)
+read_write_genray_input.f:c       nthinmxn=max{i=1,ngrill}nthin(i)
+read_write_genray_input.f:        do i=1,ngrill
+read_write_genray_input.f:c     end of the reading of the data for LH grill
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:c        the reading of the data for LH grill
+read_write_genray_input.f:c$$$            do i=1,ngrilla
+read_write_genray_input.f:         write(i_unit,grill,iostat=kode) 
+read_write_genray_input.f:         call check_read(kode,'grill')
+read_write_genray_input.f:c      include 'grill.i'
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:c      namelist /grill/ i_n_poloidal,n_theta_pol,ksi_nperp,
+read_write_genray_input.f:c     *ngrilld, !the old name for ngrill for old genray.in files
+read_write_genray_input.f:c     *ngrill,igrillpw,igrilltw,rhopsi0,thgrill,
+read_write_genray_input.f:c     * phigrill,height,nthin,anmin,anmax,nnkpar,powers,
+read_write_genray_input.f:c     &ilaunch,r0launch,z0launch,phi0launch,i_grill_pol_mesh
+read_write_genray_input.f:c     &i_grill_npar_ntor_npol_mesh:
+read_write_genray_input.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input.f:! if istart=3 it use &grill and the additional calculations in dinit
+read_write_genray_input.f:!       The last case works only for istart=2 and grill_lh conditions 
+read_write_genray_input.f:! i_plot_disp_cold  It used only in grill_lh to plot D in initial point
+read_write_genray_input.f:!/grill/
+read_write_genray_input.f:! i_n_poloidal =1         The input parameter is N_parallel(from grill).
+read_write_genray_input.f:! i_n_poloidal =2         The input parameters: N_parallel(from grill)
+read_write_genray_input.f:!  ngrill  is a number of the poloidal grill angles
+read_write_genray_input.f:!          It is required that ngrill.le.ngrilla, 
+read_write_genray_input.f:!          where ngrilla is parameter in param.i
+read_write_genray_input.f:!  igrillpw options specifying N_parallel power spectra
+read_write_genray_input.f:!  igrilltw specifies the form poloidal variation of power,
+read_write_genray_input.f:!  rhopsi0(1:ngrill) initial small radius for wave front
+read_write_genray_input.f:!  rhopsi0(i)=...    i=1,ngrill
+read_write_genray_input.f:!  thgrill(1:ngrill) poloidal  angle of grill, measured counter
+read_write_genray_input.f:!  thgrill(i)=...    i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input.f:!  phigrill(1;ngrill) is a toroidal grill angle of grill
+read_write_genray_input.f:!  phigrill(i)=... i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input.f:! height(1:ngrill) is a poloidal length (m) of grill
+read_write_genray_input.f:!                 (giving poloidal power distribution of each grill).
+read_write_genray_input.f:! height(i)=...   i=1,ngrill                  [default=0.2d0]
+read_write_genray_input.f:! nthin(1:ngrill) is a number of rays near the each poloidal
+read_write_genray_input.f:!                 center, simulating a grill
+read_write_genray_input.f:! nthin(i)=...    i=1,ngrill       [default: nthin(1)=1]
+read_write_genray_input.f:!  anmin(1:ngrill)  position of the left bound
+read_write_genray_input.f:!  anmin(i)=...     i=1,ngrill
+read_write_genray_input.f:!  anmax(1:ngrill)  position of the right bounds
+read_write_genray_input.f:!  anmax(1)=...     i=1,ngrill
+read_write_genray_input.f:!  nnkpar(1:ngrill)  number of points  of power spectrum
+read_write_genray_input.f:!  nnkpar(i)=...     i=1,ngrill
+read_write_genray_input.f:!  powers(1:ngrill)  power in one grill (MWatts)
+read_write_genray_input.f:!  (total power of grill(in MWatts) will be powtott=sum{powers}
+read_write_genray_input.f:!  powers(i)=...     i=1,ngrill
+read_write_genray_input.f:!  antormin(1:ngrill)  position of the left bound
+read_write_genray_input.f:!  antormin(i)=...     i=1,ngrill
+read_write_genray_input.f:!  antormax(1:ngrill)  position of the right bounds
+read_write_genray_input.f:!  antormax(1)=...     i=1,ngrill
+read_write_genray_input.f:!  nnktor(1:ngrill)  number of points  of power spectrum
+read_write_genray_input.f:!  nnktor(i)=...     i=1,ngrill
+read_write_genray_input.f:!  anpolmin(1:ngrill)  position of the left bound
+read_write_genray_input.f:!  anpolmin(i)=...     i=1,ngrill
+read_write_genray_input.f:!  anpolmax(1:ngrill)  position of the right bounds
+read_write_genray_input.f:!  anpolmax(1)=...     i=1,ngrill
+read_write_genray_input.f:!  nnkpol(1:ngrill)  number of points  of power spectrum
+read_write_genray_input.f:!  nnkpol(i)=...     i=1,ngrill
+read_write_genray_input.f:!       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+read_write_genray_input.f:!                         near the central grill angle thgrill(i)
+read_write_genray_input.f:!                            grill angle fpwth(j)=1/nthini
+read_write_genray_input.f:!       i_grill_npar_ntor_npol_mesh: option specifying the refractive
+read_write_genray_input.f:c&grill
+read_write_genray_input.f:      ngrill=1
+read_write_genray_input.f:      igrillpw=1
+read_write_genray_input.f:      igrilltw=2
+read_write_genray_input.f:      thgrill(1)= 0.0d+0
+read_write_genray_input.f:      phigrill(1)=0.0d+0
+read_write_genray_input.f:      i_grill_pol_mesh=1
+read_write_genray_input.f:      i_grill_npar_ntor_npol_mesh=1
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:c        the reading of the data for LH grill
+read_write_genray_input.f:         do i=1,ngrill
+read_write_genray_input.f:      include 'grill_nml.i'
+read_write_genray_input.f:c--------for namelist /grill/ 
+read_write_genray_input.f:c        transformation data /grill/ from genray.dat to genray.in MKSA form 
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:c        the reading of the data for LH grill
+read_write_genray_input_prep_090831.f:c         call inigrill  
+read_write_genray_input_prep_090831.f:c         if (ngrilld.ne.0) then
+read_write_genray_input_prep_090831.f:c          pause  'Attention !!! genray.in file contains old ngrilld'
+read_write_genray_input_prep_090831.f:c 1000     format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input_prep_090831.f:c     &   'The new genray.in file uses ngrill instead of ngrilld',/,
+read_write_genray_input_prep_090831.f:c     &   'The code will put ngrill=ngrilld')
+read_write_genray_input_prep_090831.f:c          ngrill=ngrilld
+read_write_genray_input_prep_090831.f:         read(i_unit,grill,iostat=kode)
+read_write_genray_input_prep_090831.f:         call check_read(kode,'grill')
+read_write_genray_input_prep_090831.f:         if (ngrilld.ne.0) then
+read_write_genray_input_prep_090831.f:         pause'Attention!!!genray.in file contains old variable ngrilld'
+read_write_genray_input_prep_090831.f: 1000       format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input_prep_090831.f:     &      'The new genray.in file ues ngrill instead of ngrilld',/,
+read_write_genray_input_prep_090831.f:     &      'The code will put ngrill=ngrilld')
+read_write_genray_input_prep_090831.f:            ngrill=ngrilld
+read_write_genray_input_prep_090831.f:           write(*,*)'grill_lh'
+read_write_genray_input_prep_090831.f:           write(*,*)'       Setting ngrill=1,nthin(1)=1,nnkpar(1)=1,'
+read_write_genray_input_prep_090831.f:           ngrill=1
+read_write_genray_input_prep_090831.f:         if ((i_grill_pol_mesh.ne.1).and.(i_grill_pol_mesh.ne.2)) then  
+read_write_genray_input_prep_090831.f:           write(*,*)'read_write genray_input.f in inigrill:'
+read_write_genray_input_prep_090831.f:           write(*,*)'     it should be i_grill_pol_mesh=1 or =2 but'
+read_write_genray_input_prep_090831.f:           write(*,*)'     i_grill_pol_mesh=',i_grill_pol_mesh
+read_write_genray_input_prep_090831.f:           write(*,*)'     Please change i_grill_pol_mesh in input file'
+read_write_genray_input_prep_090831.f:           stop 'after read grill'
+read_write_genray_input_prep_090831.f:         write(*,*)'from grill i_n_poloidal,ngrill',i_n_poloidal,ngrill  
+read_write_genray_input_prep_090831.f:            write(*,*)'in inigrill i_n_poloidal<1 or i_n_poloidal>4' 
+read_write_genray_input_prep_090831.f:         if(ngrill.gt.ngrilla) then
+read_write_genray_input_prep_090831.f:           write(*,*)'ngrill.gt.ngrilla'
+read_write_genray_input_prep_090831.f:           write(*,*)'ngrill=',ngrill,'ngrilla=',ngrilla
+read_write_genray_input_prep_090831.f:        do i=1,ngrill
+read_write_genray_input_prep_090831.f:c----------powers(1:ngrilla)  power in one grill (MWatts)
+read_write_genray_input_prep_090831.f:c          (total input power to grills(in MWatts) will 
+read_write_genray_input_prep_090831.f:c       nnkprmax must be equal max{i=1,ngrill}nnkpar(i)
+read_write_genray_input_prep_090831.f:c       nnkprmxn=max{i=1,ngrill}nnkpar(i)
+read_write_genray_input_prep_090831.f:        do i=1,ngrill
+read_write_genray_input_prep_090831.f:c       nthinmax must be equal max{i=1,ngrill}nthin(i)
+read_write_genray_input_prep_090831.f:c       nthinmxn=max{i=1,ngrill}nthin(i)
+read_write_genray_input_prep_090831.f:        do i=1,ngrill
+read_write_genray_input_prep_090831.f:c     end of the reading of the data for LH grill
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:c        the reading of the data for LH grill
+read_write_genray_input_prep_090831.f:c$$$            do i=1,ngrilla
+read_write_genray_input_prep_090831.f:         write(i_unit,grill,iostat=kode) 
+read_write_genray_input_prep_090831.f:         call check_read(kode,'grill')
+read_write_genray_input_prep_090831.f:c      include 'grill.i'
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:c      namelist /grill/ i_n_poloidal,n_theta_pol,ksi_nperp,
+read_write_genray_input_prep_090831.f:c     *ngrilld, !the old name for ngrill for old genray.in files
+read_write_genray_input_prep_090831.f:c     *ngrill,igrillpw,igrilltw,rhopsi0,thgrill,
+read_write_genray_input_prep_090831.f:c     * phigrill,height,nthin,anmin,anmax,nnkpar,powers,
+read_write_genray_input_prep_090831.f:c     &ilaunch,r0launch,z0launch,phi0launch,i_grill_pol_mesh
+read_write_genray_input_prep_090831.f:c     &i_grill_npar_ntor_npol_mesh:
+read_write_genray_input_prep_090831.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input_prep_090831.f:! if istart=3 it use &grill and the additional calculations in dinit
+read_write_genray_input_prep_090831.f:!       The last case works only for istart=2 and grill_lh conditions 
+read_write_genray_input_prep_090831.f:! i_plot_disp_cold  It used only in grill_lh to plot D in initial point
+read_write_genray_input_prep_090831.f:!/grill/
+read_write_genray_input_prep_090831.f:! i_n_poloidal =1         The input parameter is N_parallel(from grill).
+read_write_genray_input_prep_090831.f:! i_n_poloidal =2         The input parameters: N_parallel(from grill)
+read_write_genray_input_prep_090831.f:!  ngrill  is a number of the poloidal grill angles
+read_write_genray_input_prep_090831.f:!          It is required that ngrill.le.ngrilla, 
+read_write_genray_input_prep_090831.f:!          where ngrilla is parameter in param.i
+read_write_genray_input_prep_090831.f:!  igrillpw options specifying N_parallel power spectra
+read_write_genray_input_prep_090831.f:!  igrilltw specifies the form poloidal variation of power,
+read_write_genray_input_prep_090831.f:!  rhopsi0(1:ngrill) initial small radius for wave front
+read_write_genray_input_prep_090831.f:!  rhopsi0(i)=...    i=1,ngrill
+read_write_genray_input_prep_090831.f:!  thgrill(1:ngrill) poloidal  angle of grill, measured counter
+read_write_genray_input_prep_090831.f:!  thgrill(i)=...    i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input_prep_090831.f:!  phigrill(1;ngrill) is a toroidal grill angle of grill
+read_write_genray_input_prep_090831.f:!  phigrill(i)=... i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input_prep_090831.f:! height(1:ngrill) is a poloidal length (m) of grill
+read_write_genray_input_prep_090831.f:!                 (giving poloidal power distribution of each grill).
+read_write_genray_input_prep_090831.f:! height(i)=...   i=1,ngrill                  [default=0.2d0]
+read_write_genray_input_prep_090831.f:! nthin(1:ngrill) is a number of rays near the each poloidal
+read_write_genray_input_prep_090831.f:!                 center, simulating a grill
+read_write_genray_input_prep_090831.f:! nthin(i)=...    i=1,ngrill       [default: nthin(1)=1]
+read_write_genray_input_prep_090831.f:!  anmin(1:ngrill)  position of the left bound
+read_write_genray_input_prep_090831.f:!  anmin(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  anmax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep_090831.f:!  anmax(1)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  nnkpar(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep_090831.f:!  nnkpar(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  powers(1:ngrill)  power in one grill (MWatts)
+read_write_genray_input_prep_090831.f:!  (total power of grill(in MWatts) will be powtott=sum{powers}
+read_write_genray_input_prep_090831.f:!  powers(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  antormin(1:ngrill)  position of the left bound
+read_write_genray_input_prep_090831.f:!  antormin(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  antormax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep_090831.f:!  antormax(1)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  nnktor(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep_090831.f:!  nnktor(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  anpolmin(1:ngrill)  position of the left bound
+read_write_genray_input_prep_090831.f:!  anpolmin(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  anpolmax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep_090831.f:!  anpolmax(1)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!  nnkpol(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep_090831.f:!  nnkpol(i)=...     i=1,ngrill
+read_write_genray_input_prep_090831.f:!       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+read_write_genray_input_prep_090831.f:!                         near the central grill angle thgrill(i)
+read_write_genray_input_prep_090831.f:!                            grill angle fpwth(j)=1/nthini
+read_write_genray_input_prep_090831.f:!       i_grill_npar_ntor_npol_mesh: option specifying the refractive
+read_write_genray_input_prep_090831.f:c&grill
+read_write_genray_input_prep_090831.f:      ngrill=1
+read_write_genray_input_prep_090831.f:      igrillpw=1
+read_write_genray_input_prep_090831.f:      igrilltw=2
+read_write_genray_input_prep_090831.f:      thgrill(1)= 0.0d+0
+read_write_genray_input_prep_090831.f:      phigrill(1)=0.0d+0
+read_write_genray_input_prep_090831.f:      i_grill_pol_mesh=1
+read_write_genray_input_prep_090831.f:      i_grill_npar_ntor_npol_mesh=1
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:c        the reading of the data for LH grill
+read_write_genray_input_prep_090831.f:         do i=1,ngrill
+read_write_genray_input_prep_090831.f:      include 'grill_nml.i'
+read_write_genray_input_prep_090831.f:c--------for namelist /grill/ 
+read_write_genray_input_prep_090831.f:c        transformation data /grill/ from genray.dat to genray.in MKSA form 
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:c        the reading of the data for LH grill
+read_write_genray_input_prep.f:c         call inigrill  
+read_write_genray_input_prep.f:c         if (ngrilld.ne.0) then
+read_write_genray_input_prep.f:c          pause  'Attention !!! genray.in file contains old ngrilld'
+read_write_genray_input_prep.f:c 1000     format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input_prep.f:c     &   'The new genray.in file uses ngrill instead of ngrilld',/,
+read_write_genray_input_prep.f:c     &   'The code will put ngrill=ngrilld')
+read_write_genray_input_prep.f:c          ngrill=ngrilld
+read_write_genray_input_prep.f:         read(i_unit,grill,iostat=kode)
+read_write_genray_input_prep.f:         call check_read(kode,'grill')
+read_write_genray_input_prep.f:         write(*,grill)
+read_write_genray_input_prep.f:         if (ngrilld.ne.0) then
+read_write_genray_input_prep.f:         pause'Attention!!!genray.in file contains old variable ngrilld'
+read_write_genray_input_prep.f: 1000       format('Attention!!! genray.in file contains old ngrilld',/,
+read_write_genray_input_prep.f:     &      'The new genray.in file ues ngrill instead of ngrilld',/,
+read_write_genray_input_prep.f:     &      'The code will put ngrill=ngrilld')
+read_write_genray_input_prep.f:            ngrill=ngrilld
+read_write_genray_input_prep.f:           write(*,*)'grill_lh'
+read_write_genray_input_prep.f:           write(*,*)'       Setting ngrill=1,nthin(1)=1,nnkpar(1)=1,'
+read_write_genray_input_prep.f:           ngrill=1
+read_write_genray_input_prep.f:         if ((i_grill_pol_mesh.ne.1).and.(i_grill_pol_mesh.ne.2)) then  
+read_write_genray_input_prep.f:           write(*,*)'read_write genray_input.f in inigrill:'
+read_write_genray_input_prep.f:           write(*,*)'     it should be i_grill_pol_mesh=1 or =2 but'
+read_write_genray_input_prep.f:           write(*,*)'     i_grill_pol_mesh=',i_grill_pol_mesh
+read_write_genray_input_prep.f:           write(*,*)'     Please change i_grill_pol_mesh in input file'
+read_write_genray_input_prep.f:           stop 'after read grill'
+read_write_genray_input_prep.f:         write(*,*)'from grill i_n_poloidal,ngrill',i_n_poloidal,ngrill  
+read_write_genray_input_prep.f:            write(*,*)'in inigrill i_n_poloidal<1 or i_n_poloidal>4' 
+read_write_genray_input_prep.f:         if(ngrill.gt.ngrilla) then
+read_write_genray_input_prep.f:           write(*,*)'ngrill.gt.ngrilla'
+read_write_genray_input_prep.f:           write(*,*)'ngrill=',ngrill,'ngrilla=',ngrilla
+read_write_genray_input_prep.f:        do i=1,ngrill
+read_write_genray_input_prep.f:c----------powers(1:ngrilla)  power in one grill (MWatts)
+read_write_genray_input_prep.f:c          (total input power to grills(in MWatts) will 
+read_write_genray_input_prep.f:c       nnkprmax must be equal max{i=1,ngrill}nnkpar(i)
+read_write_genray_input_prep.f:c       nnkprmxn=max{i=1,ngrill}nnkpar(i)
+read_write_genray_input_prep.f:        do i=1,ngrill
+read_write_genray_input_prep.f:c       nthinmax must be equal max{i=1,ngrill}nthin(i)
+read_write_genray_input_prep.f:c       nthinmxn=max{i=1,ngrill}nthin(i)
+read_write_genray_input_prep.f:        do i=1,ngrill
+read_write_genray_input_prep.f:c     end of the reading of the data for LH grill
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:c        the reading of the data for LH grill
+read_write_genray_input_prep.f:c$$$            do i=1,ngrilla
+read_write_genray_input_prep.f:         write(i_unit,grill,iostat=kode) 
+read_write_genray_input_prep.f:         call check_read(kode,'grill')
+read_write_genray_input_prep.f:c      include 'grill.i'
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:c      namelist /grill/ i_n_poloidal,n_theta_pol,ksi_nperp,
+read_write_genray_input_prep.f:c     *ngrilld, !the old name for ngrill for old genray.in files
+read_write_genray_input_prep.f:c     *ngrill,igrillpw,igrilltw,rhopsi0,thgrill,
+read_write_genray_input_prep.f:c     * phigrill,height,nthin,anmin,anmax,nnkpar,powers,
+read_write_genray_input_prep.f:c     &ilaunch,r0launch,z0launch,phi0launch,i_grill_pol_mesh
+read_write_genray_input_prep.f:c     &i_grill_npar_ntor_npol_mesh:
+read_write_genray_input_prep.f:! if istart=1 use namelist &eccone below, =2 use &grill
+read_write_genray_input_prep.f:! if istart=3 it use &grill and the additional calculations in dinit
+read_write_genray_input_prep.f:!       The last case works only for istart=2 and grill_lh conditions 
+read_write_genray_input_prep.f:! i_plot_disp_cold  It used only in grill_lh to plot D in initial point
+read_write_genray_input_prep.f:!/grill/
+read_write_genray_input_prep.f:! i_n_poloidal =1         The input parameter is N_parallel(from grill).
+read_write_genray_input_prep.f:! i_n_poloidal =2         The input parameters: N_parallel(from grill)
+read_write_genray_input_prep.f:!  ngrill  is a number of the poloidal grill angles
+read_write_genray_input_prep.f:!          It is required that ngrill.le.ngrilla, 
+read_write_genray_input_prep.f:!          where ngrilla is parameter in param.i
+read_write_genray_input_prep.f:!  igrillpw options specifying N_parallel power spectra
+read_write_genray_input_prep.f:!  igrilltw specifies the form poloidal variation of power,
+read_write_genray_input_prep.f:!  rhopsi0(1:ngrill) initial small radius for wave front
+read_write_genray_input_prep.f:!  rhopsi0(i)=...    i=1,ngrill
+read_write_genray_input_prep.f:!  thgrill(1:ngrill) poloidal  angle of grill, measured counter
+read_write_genray_input_prep.f:!  thgrill(i)=...    i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input_prep.f:!  phigrill(1;ngrill) is a toroidal grill angle of grill
+read_write_genray_input_prep.f:!  phigrill(i)=... i=1,ngrill (degree)         [default=0.d0]
+read_write_genray_input_prep.f:! height(1:ngrill) is a poloidal length (m) of grill
+read_write_genray_input_prep.f:!                 (giving poloidal power distribution of each grill).
+read_write_genray_input_prep.f:! height(i)=...   i=1,ngrill                  [default=0.2d0]
+read_write_genray_input_prep.f:! nthin(1:ngrill) is a number of rays near the each poloidal
+read_write_genray_input_prep.f:!                 center, simulating a grill
+read_write_genray_input_prep.f:! nthin(i)=...    i=1,ngrill       [default: nthin(1)=1]
+read_write_genray_input_prep.f:!  anmin(1:ngrill)  position of the left bound
+read_write_genray_input_prep.f:!  anmin(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  anmax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep.f:!  anmax(1)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  nnkpar(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep.f:!  nnkpar(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  powers(1:ngrill)  power in one grill (MWatts)
+read_write_genray_input_prep.f:!  (total power of grill(in MWatts) will be powtott=sum{powers}
+read_write_genray_input_prep.f:!  powers(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  antormin(1:ngrill)  position of the left bound
+read_write_genray_input_prep.f:!  antormin(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  antormax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep.f:!  antormax(1)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  nnktor(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep.f:!  nnktor(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  anpolmin(1:ngrill)  position of the left bound
+read_write_genray_input_prep.f:!  anpolmin(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  anpolmax(1:ngrill)  position of the right bounds
+read_write_genray_input_prep.f:!  anpolmax(1)=...     i=1,ngrill
+read_write_genray_input_prep.f:!  nnkpol(1:ngrill)  number of points  of power spectrum
+read_write_genray_input_prep.f:!  nnkpol(i)=...     i=1,ngrill
+read_write_genray_input_prep.f:!       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)
+read_write_genray_input_prep.f:!                         near the central grill angle thgrill(i)
+read_write_genray_input_prep.f:!                            grill angle fpwth(j)=1/nthini
+read_write_genray_input_prep.f:!       i_grill_npar_ntor_npol_mesh: option specifying the refractive
+read_write_genray_input_prep.f:c&grill
+read_write_genray_input_prep.f:      ngrill=1
+read_write_genray_input_prep.f:      igrillpw=1
+read_write_genray_input_prep.f:      igrilltw=2
+read_write_genray_input_prep.f:      thgrill(1)= 0.0d+0
+read_write_genray_input_prep.f:      phigrill(1)=0.0d+0
+read_write_genray_input_prep.f:      i_grill_pol_mesh=1
+read_write_genray_input_prep.f:      i_grill_npar_ntor_npol_mesh=1
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:c        the reading of the data for LH grill
+read_write_genray_input_prep.f:         do i=1,ngrill
+read_write_genray_input_prep.f:      include 'grill_nml.i'
+read_write_genray_input_prep.f:c--------for namelist /grill/ 
+read_write_genray_input_prep.f:c        transformation data /grill/ from genray.dat to genray.in MKSA form 

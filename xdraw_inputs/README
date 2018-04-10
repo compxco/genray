@@ -1,0 +1,25 @@
+/home/bobh/cql3d/genray/genray_cvs/xdraw
+
+The xdraw code was constructed by Sheryl M. Glasser.
+The make utility gives the executable xdraw1, which
+is then linked to xdraw.
+
+Usage is
+xdraw xxxx
+where xxxx is one of the drawxxxx.in files in
+the xdraw_input/ directory.
+
+xdraw plots data which is output by the genray
+code into *.bin files.   The drawxxxx.in file
+specifies the input file and the quantities 
+which are to be plotted.
+
+Nov 14, 2004
+============
+
+Sheryl Glasser points out that it possible
+to PS only using
+psonly:   1
+in the xdraw.ini file.
+Won't get the plots to the X-windows screen.
+

@@ -1,0 +1,148 @@
+# makefile for CQL3D (f90 pointered version, with .f extensions)
+# May/06:  makefile_lf95_ptr is system developed by Nikolay Ershov
+#          to produce a Fortran 90 pointered version of the code,
+#          rather than the Cray pointered version obtained with
+#          makefile_lf95.  Comparison of these two makefiles shows
+#          only differences are in four lines referring to doptr.py
+#          and tmpptr.f.
+#          The source code modifications are carried out with the
+#          python script doptr.py in ./ptr, and additional files
+#          in that subdirectory.
+#          Please follow this scheme for modification in code storage,
+#          so that the two pointering systems are carried forward.
+
+SHELL     = /bin/sh
+NAME      = xcql3d_g95
+COMPILER=	/opt/g95/0.91_x86_64_32DI/bin/g95
+#COMPILER=/opt/g95/2010-08-18/bin/g95
+BUILDER=	$(COMPILER)
+INCLUDES  = advnce.h comm.h frcomm.h frname.h frname_decl.h name.h  \
+	param.h trans.h wpadvnc.h name_decl.h
+SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
+	aindflt.f  aindflt1.f aindfpa.f  aingeom.f  ainitial.f   \
+	ainpla.f  ainplt.f  ainpltpa.f   \
+	ainsetpa.f  ainsetva.f  ainspec.f  ainvnorm.f  \
+	aminmx.f bavdens.f  bavgmax.f  baviorbt.f   \
+	bcast.f  bsl.f  bsu.f  cfpcoefc.f  cfpcoefn.f  \
+        cfpcoefr.f  cfpgamma.f  cfpleg.f     \
+	cfpmodbe.f  cfpsymt.f  coefefad.f  coefefld.f  coefegad.f  \
+	coeffpad.f  coefload.f  coefmidt.f  coefmidv.f   \
+	coefrfad.f  coefstup.f  coefsyad.f  coefwti.f  \
+	coefwtj.f  diag.f  diagcfac.f   \
+	diagdens.f  diagdenz.f  diagentr.f  diagescl.f  diaggnde.f  \
+	diaggnde2.f  diagimpd.f  diagscal.f  diagwrng.f  diagxswt.f   \
+	diagxswx.f  dsk_gr.f dskout.f  efield.f  eflditer.f eqalloc.f   \
+	eqcoord.f  eqelpse.f  eqflxavg.f  eqfn.f  \
+	eqfndpsi.f  eqfninv.f  eqfpsi.f   \
+	eqindflt.f  eqinitl.f  eqjac.f  eqonovrp.f  \
+	eqorbit.f  eqrhopsi.f  eqrhs.f   \
+	eqtopeol.f  equilib.f  eqvolpsi.f  eqwrng.f  \
+	esefld.f  exlin.f  exsweep.f  exsweept.f   \
+	exsweepx.f  finit.f  firstdrv.f  fle.f flxfn.f fow_orbits.f  \
+	freya.f  freyasou.f  frhexdrv.f   \
+	frinitl.f  frinitz.f  frnbdep2.f  frnfreya.f  \
+	frplteq.f  frset.f frsmooth.f  frsplft.f   \
+	frstup.f  frsubs.f  frsuppor.f  frwrong.f  hpalloc0.f  \
+	ilut.f impavnc0.f  impchk.f  impnorm.f  it3dalloc.f  \
+	lookup.f  losscone.f  lossegy.f  lossorbm.f  \
+	losstor.f  micfrplt.f  micgetr.f   \
+	micgmbnd.f  micgnbnd.f  micxinil.f  micxinim.f  micxinit.f  \
+	micxiniz.f  netcdfrf.f  netcdfrw2.f ntdstore.f   \
+	ntloop.f  pack21.f  pltcont.f  pltcycl.f  pltdf.f  \
+	pltdnz.f  pltelec.f  pltendn.f   \
+	pltends.f  pltfluxs.f pltfofvv.f pltfvsv.f  pltinit.f  pltlosc.f  \
+	pltmain.f  pltpower.f  pltprppr.f   \
+	pltrstv.f  pltrun.f pltstrml.f  pltvec.f  pltvectr.f  \
+	pltvflux.f  profaxis.f  profiles.f prppr.f   \
+	prpprctr.f  psif.f  psifp.f  psifppy.f  psifpy.f  psiinv.f  \
+	r8lsode.f  r8subs.f  rdc_multi.f rdc_bplt.f restcon.f resthks.f  \
+	restvty.f  rf.f  sigalloc.f  siggy.f  sigmax.f  sigsetup.f  \
+        sigv5d.f sigfn.f      sigie.f  sigmaxwl.f   sigv.f  \
+	soucrit.f sounorm.f  soup.f  soup0.f  souplt.f   \
+	sourc0.f  sourcee.f  sourcef.f  sourceko.f sourcpwr.f   \
+	synchrad.f  tdbootst.f tdboothi.f  tdchief.f  tddiag.f  \
+	tddsig.f  tdeqdsk.f  tdfinterp.f  tdinitl.f  tdinlegw.f  \
+	tdinterp.f  tdnflxs.f  tdnpa.f  tdnpadiag.f  tdnpa0.f  \
+	tdnpacxcs.f  tdnpalam.f  tdnpabscs.f  tdoutput.f   \
+	tdplteq.f  tdpltjop.f  tdpltmne.f  tdpro.f  \
+	tdreadf.f  tdrmshst.f  tdsetnpa.f  tdsetsxr.f   \
+	tdstin.f  tdsxr.f  tdsxr0.f  tdsxray.f  tdsxrplt.f  \
+	tdtloop.f  tdtoarad.f   \
+	tdtoaray.f  tdtraloc.f  tdtransp.f  tdtranspn.f  tdtravct.f  \
+	tdtrchk.f  tdtrchkd.f  tdtrcon.f   \
+	tdtrdfus.f  tdtrfcop.f  tdtrflg.f  tdtrflx.f  \
+	tdtrmuy.f  tdtrrsou.f  tdtrrtov.f   \
+	tdtrrtov2.f  tdtrsavf.f  tdtrsym.f  tdtrvint.f  \
+	tdtrvsou.f  tdtrvtor.f  tdtrvtor2.f   \
+	tdtrvtor3.f  tdtrwtl.f  tdtry.f  tdtscinp.f  tdtscout.f  \
+	tdwrng.f  tdwritef.f  tdxin13d.f   \
+	tdxin23d.f  tdxin33d.f  tdxinitl.f  urfalloc.f  \
+	urfavg.f  urfb0.f  urfbes.f   \
+	urfbplt.f  urfchief.f  urfdamp0.f  urfdamp1.f  \
+	urfdamp2.f  urfdampa.f urfdout.f  urfedge.f   \
+	urffflx.f  urfindfl.f  urfinitl.f  urfmidv.f  \
+	urfpack.f  urfpackm.f  urfrays.f  urfread.f   \
+	urfread_.f  urfsetup.f  urfwrite.f  urfwrite_.f  \
+	urfwrong.f  urfwr0.f  urfwr0c.f \
+        vlf.f vlfalloc.f vlfbplt.f vlfsetup.f vlh.f  vlhbplt.f vlhd.f  \
+	wpalloc.f  wparsou.f  wpavg.f  wpbdry.f  \
+	wpcheck.f  wpchgdy.f wpcthta.f  wpelecf.f   \
+	wpinitl.f  wploweq.f  wpsavf.f  wptrafx.f  wptramu.f  \
+	wptrmuy.f  wpvptb.f  wpwrng.f  wpmshchk.f \
+	zblock.f  zcunix.f  zfreya.f    znonsym.f
+#	zblock.f  zcunix.f  zfreya.f    znonsym.f dgbtrf.f ilaenv.f
+#	zblock.f  zcunix.f  zfreya.F    zgauss.f   znonsym.f 
+#	zblock.f  zcunix.f  zfreya.F    zgauss.f    dropfile.c znonsym.f 
+OBJECTS   = $(SOURCES:.f=.o)
+#LOCATION  =     -L/usr/lib64  -L/opt/pgplot -L/opt/netcdf/3.6.1/g77/lib -L/usr/X11R6/lib64
+#LOCATION  =     -L/opt/pgplot -L/opt/netcdf/3.6.3/gfortran/lib -L/usr/X11R6/lib64 -L/usr/lib64 
+LOCATION  =     -L/opt/pgplot/g95-0.91 -L/opt/netcdf/3.6.3/g95-0.91/lib -L/usr/X11R6/lib64 -L/usr/lib64 
+LIBRARIES=	-lX11 -lnetcdf -lpng -llapack -lblas /opt/pgplot/g95-0.91/libpgplot.a
+#INCLUDE=/opt/netcdf/3.6.1/g77/include
+INCLUDE=/opt/netcdf/3.6.3/g95-0.91/include
+#INCLUDE=/opt/netcdf/3.6.3/gfortran/include
+DEBUG     = -g 
+OPTIMIZE  = -O
+LISTING   = -Mlist
+#CSPECIAL  = -finit-local-zero #Need gfortran 4.3 for zeroing
+CSPECIAL  = 
+#SPECIAL   = -byteswapio -Mbackslash
+#LDSPECIAL = -Wl,-noinhibit-exec -finit-local-zero #Need gfortran 4.3 for zeroing
+LDSPECIAL = -Wl,-noinhibit-exec
+#COMPILE   = $(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE) # or use $(OPTIMIZE)
+COMPILE   =  $(COMPILER) -c $(CSPECIAL) $(OPTIMIZE) -I $(INCLUDE) # or use $(DEBUG)
+#LOAD      = $(BUILDER) -o $(NAME) $(LDSPECIAL) $(DEBUG) # Remove -m for optimize
+LOAD      = $(BUILDER) -o $(NAME) $(LDSPECIAL)  # Remove -m for optimize
+PROTECT   = chmod 755
+DELETE    = rm -f
+
+# The following gives suffixes to be used in checking for suffix rules.
+# Written without dependencies, it may be useful to turn of such checking?
+.SUFFIXES:
+
+all: $(NAME)
+	$(PROTECT) $(NAME)
+
+$(NAME): $(OBJECTS)
+	$(LOAD)    $(OBJECTS) $(LOCATION) $(LIBRARIES)
+
+# Following use of pattern matching works; 
+# it is based on statements in Sect. 10.7 of gmake Manual
+# by Stallman and McGrath.
+# However, the two rules following this seem clearer to me (BobH).
+#%.o:               %.f        $(INCLUDES)
+#	$(COMPILE) $< -o $@
+
+$(SOURCES):        $(INCLUDES)
+
+# see Sect. 4.10.1, Static Pattern Rules.
+$(OBJECTS): %.o: %.f    $(INCLUDES)
+	$(COMPILE) $< -o $@
+
+rebuild:
+	$(COMPILE) $(SOURCES)
+	$(LOAD) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+
+clean:
+	$(DELETE)  $(NAME) $(OBJECTS) *.lst
+

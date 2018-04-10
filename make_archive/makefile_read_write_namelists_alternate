@@ -1,0 +1,41 @@
+SHELL=		/bin/sh
+NAME=		read_write
+SOURCES=	read_write_genray_input.f bcast.f partner.f \
+		zcunix.f test_read_write_namelists.f 
+OBJECTS   = $(SOURCES:.f=.o)
+LOCATION=	-L/usr/lib64  -L/usr/local/pgplot
+LIBRARIES=	-lX11 -lnetcdff -lnetcdf -lpgplot
+DEBUG     = -g 
+OPTIMIZE  = -O
+LISTING   = -Mlist
+SPECIAL   = -byteswapio -Mbackslash
+LDSPECIAL =
+INCLUDE   = ..
+COMPILE   = gfortran -c -I $(INCLUDE) $(OPTIMIZE) # or use $(DEBUG)
+LOAD      = gfortran -o $(NAME) $(LDSPECIAL) $(DEBUG) # Remove -m for optimize
+PROTECT   = chmod 755
+DELETE    = rm -f
+
+# The following gives suffixes to be used in checking for suffix rules.
+# Written without dependencies, it may be useful to turn of such checking?
+.SUFFIXES:
+
+$(NAME):           $(OBJECTS)
+	$(LOAD)    $(OBJECTS) $(LOCATION) $(LIBRARIES)
+	$(PROTECT) $(NAME)
+
+# Following use of pattern matching works; 
+# it is based on statements in Sect. 10.7 of gmake Manual
+# by Stallman and McGrath.
+
+# see Sect. 4.10.1, Static Pattern Rules.
+$(OBJECTS): %.o: %.f
+	$(COMPILE) $< -o $@
+
+rebuild:
+	$(COMPILE) $(SOURCES)
+	$(LOAD) $(OBJECTS) $(LOCATION) $(LIBRARIES)
+
+clean:
+	$(DELETE)  $(NAME) $(OBJECTS) *.lst
+

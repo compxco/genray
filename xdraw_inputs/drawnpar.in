@@ -1,0 +1,30 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+npar.bin
+
+graph title: GENRAY
+
+variable names
+0        THETA
+1	 R
+2	 z
+3	 Poloidal dist.
+4	 Ez/E
+5	 rho
+6	 n_parallel
+7        n_perpendic.
+8        n_phi
+9	 n_parallel-n_phi
+
+ix	iy	title
+0	1       R(theta)
+0	2       z(theta)
+0	3       poloidal dist.(theta)
+0	4       Ez(theta)
+0	5       rho(theta)
+0	6       n_parallel(theta)
+0	7       n_perpendic(theta)
+0	8       n_phi(theta)
+0	9	n_parallel-n_phi(theta)
+

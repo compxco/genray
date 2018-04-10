@@ -1,0 +1,26 @@
+In the source distribution, there is a file
+genray.in_template_MKSA_111031 [or later date]
+which gives the latest description of the input namelist.
+This can give some idea of code capabilities.
+
+In the regression test file, 00_Genray_Regression_Tests_nnnnnn.tar
+there are about a dozen regressions tests, as described
+in the README.   These can be executed with the commands
+in file tests.
+
+You will need to have xdraw and executable, obtained with the
+makefile in genray_cswim_svn/trunk/xdraw/  It is in c, and compiles
+without additional libraries, so, almost everywhere.
+I make a alias to the xdraw1 executable to xdraw.
+
+There is a brief code description at 
+http://www.compxco.com/genray.html
+and a manual at the bottom of this page.
+
+There is also a IPS test case for LH at
+hopper09:/global/homes/u/u650/my_ips_trunk/components/rf/genray/src/\
+tests/Cmod_LH/one_ray_111106_newPS
+
+ls -lt make_archive/* gives a sort of history of the compilers and computers
+with which genray has been compiled, including dates.  The newer ones
+will work with the present distribution.

@@ -1,0 +1,78 @@
+CFLAGS_DEBUG = -g -DUNIX -D_HPUX_SOURCE
+CFLAGS_EXEC  = -O -DUNIX -D_HPUX_SOURCE
+CFLAGS = $(CFLAGS_DEBUG)
+C89FLAGS = -g -DUNIX -D_HPUX_SOURCE
+NEWCFLAGS = -g +FPV -DUNIX -D_HPUX_SOURCE
+CC = gcc
+COM = gcc $(C89FLAGS) -c
+MAP =
+
+DRAW1 = xdraw.o xinit.o limits.o binread.o
+DRAW1A = redraw.o xcontour.o event.o xedit.o ps.o
+DRAW3M = xtoolsm.o setcolor.o menu.o menuwin.o glx.o
+DRAW3 = xtools.o setcolor.o spline.o
+DRAW4 = xtoolsw.o setcolor.o xmotif.o
+
+xdraw1: $(DRAW1) $(DRAW1A) $(DRAW3)
+	$(CC) -o xdraw1 $(DRAW1) \
+	$(DRAW1A) \
+	$(DRAW3) \
+	-lm -L/usr/X11R6/lib64 -lX11
+
+xdraw: linkx $(DRAW1) $(DRAW3M)
+	$(CC) -o xdraw $(DRAW1) \
+      $(DRAW3M) \
+      -lm -L/usr/X11R6/lib64 -lX11
+
+xdraww: linkw $(DRAW1) $(DRAW4)
+	$(CC) -o xdraww $(DRAW1) \
+      $(DRAW4) \
+      -lm -L/usr/X11R6/lib64 -lXm -lXt -bloadmap:map
+
+resource: XDraw
+	xrdb -merge XDraw
+
+linkx:
+	@-ln -f -s xtools.c xtoolsm.c
+linkw:
+	@-ln -f -s xtools.c xtoolsw.c
+
+smaller: smaller.o
+	$(CC) -o smaller smaller.o -lm
+
+xdraw.o: xdraw.c xdraw.h curves.h xcontour.h xtools.h ps.h
+xinit.o: xinit.c xdraw.h curves.h
+spline.o: spline.h
+limits.o: limits.c curves.h
+event.o: event.c curves.h
+binread.o: binread.c
+redraw.o: redraw.c xdraw.h curves.h ps.h
+xcontour.o: xcontour.c xcontour.h curves.h xdraw.h xtools.h ps.h
+xedit.o: xedit.c curves.h xinit.h xtools.h
+xtools.o: xtools.c xtools.h ps.h
+setcolor.o: setcolor.c setcolor.h
+menu.o: menu.c menu.h menuwin.h curves.h xdraw.h xtools.h xcontour.h ps.h
+menuwin.o: menuwin.c menuwin.h glx.h device.h
+glx.o: glx.c glx.h
+ps.o: ps.c ps.h
+smaller: smaller.c
+
+xtoolsm.o: xtoolsm.c xtools.h ps.h
+	$(CC) -g -DUNIX -DUSE_MENU -c xtoolsm.c
+xtoolsw.o: xtoolsw.c xtools.h ps.h
+	$(CC) -g -DUNIX -DMOTIF -c xtoolsw.c
+
+dump: dump.o
+	$(CC) -o dump dump.o
+
+SRC2 = cprint.o
+cprint: $(SRC2)
+	$(CC) -o cprint $(SRC2)
+
+xdata: xdata.o
+	$(CC) -o xdata xdata.o -lm
+
+SRC3 = pspack.o ps.o
+pspack: $(SRC3)
+	$(CC) -o pspack $(SRC3)
+pspack.o: pspack.c pspack.h
