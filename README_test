@@ -11,3 +11,10 @@ git status ==> it is in Changes to be committed list,
 Got rid of  .#README_test (emacs releted) by saving it.
 Now git status ==> Changed but not updated:  modified:   README_test
 Do git add README_test ==> # Changes to be committed: modified:   README_test
+git commit -a -m 'More README_tests' ==> works [Wouldn't work without the
+   -m '<Message>'
+Making further mods, and saving.
+Then,
+git checkout README_test ==> overwrites changed README in working directory.
+                             I updated the checkout file. added and 
+                             committed.
