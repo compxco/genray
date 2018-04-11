@@ -18,3 +18,10 @@ Then,
 git checkout README_test ==> overwrites changed README in working directory.
                              I updated the checkout file. added and 
                              committed.
+
+
+Making copy of the directory and sub-directories.  Then comparing these
+directories with the copy with bcompare, after  commiting this 
+README_test file.  Purpose: to see what is changed througout the
+directories.
+
