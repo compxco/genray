@@ -2640,6 +2640,7 @@ c      write(*,*)'in hotnperp after npernpar'
       write(*,*)'htnperp ibw=',ibw
       
       iraystop=0
+      cnper_0=0.d0 ! YuP[08-2017] Initialize
 
 c-----choosing of the cold mode N_perp=cnper_0 accoding to ioxm parameter      
       if(ibw.eq.0) then   
@@ -2660,7 +2661,8 @@ c-----choosing of the cold mode N_perp=cnper_0 accoding to ioxm parameter
           write(*,*)'in hotnperp iraystop=1, hotnperp could not find 
      .    the root for the cold plasma mode'
         endif
-      endif
+        !YuP: what is cnper_0 in case of ibw=1?
+      endif ! ibw=0
 
 c-----initialization common/nperpcom/, it is in nperpcom.i
       nllc=nll

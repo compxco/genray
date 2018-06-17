@@ -293,7 +293,7 @@ c       write(*,*)'mk_graph bef 79'
      
 
 10    CONTINUE
-      write(*,*)'after 10'
+cyup      write(*,*)'after 10'
       WRITE(82)
       write(85)
       write(75)
@@ -2263,7 +2263,8 @@ c-----for Drawing Markers:
 c-----externals
       real*8 x,y
 
-      integer i,i_sign    
+      integer i,i_sign   
+      integer ibmx !local 
      
       if(myrank.ne.0) return
       
@@ -2329,8 +2330,9 @@ c           write(*,*)'(-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
 
         if (ib.gt.1) then
 c----------ib.gt.1 iones resonance condition may be
-           yb=y(z,r,phi,ib)
-	   delib=1.d0-yb     
+           ibmx=ib !min(ib,nbulk) ! safety check: not to exceed nbulk
+           yb=y(z,r,phi,ibmx)
+           delib=1.d0-yb     
            if (delib.lt.0.d0) i_sign=-1 ! not used
 c--------------------------------------------------------------------
 c          calculate roots of the dispersion
@@ -2509,6 +2511,7 @@ c-----externals
       real*8 x,y,rrind    
  
       integer i,i_sign    
+      integer ibmx !local
 
       if(myrank.ne.0) return
       
@@ -2583,8 +2586,9 @@ c           write(*,*)'(-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
 
         if (ib.gt.1) then
 c----------ib.gt.1 iones resonance condition may be
-           yb=y(z,r,phi,ib)
-	   delib=1.d0-yb     
+           ibmx=ib !min(ib,nbulk) ! safety check: not to exceed nbulk
+           yb=y(z,r,phi,ibmx)
+           delib=1.d0-yb     
            if (delib.lt.0.d0) i_sign=-1 ! not used
 c--------------------------------------------------------------------
 c          calculate roots of the dispersion
@@ -6267,7 +6271,7 @@ c       write(*,*)'mk_graph bef 79'
      
 
 10    CONTINUE
-      write(*,*)'after 10'
+cyup      write(*,*)'after 10'
       WRITE(82)
       write(85)
       write(75)

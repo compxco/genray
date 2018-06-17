@@ -128,7 +128,8 @@ c-----------------------------------------
 c-----from namelist /numercl/
      &iout3d*20,           
 c-----from namelist /genr/  
-     &outdat*20,stat*3,             
+     &outdat*20,stat*3,     
+     &outnetcdf*8, outprint*8, outxdraw*8,
      &mnemonic*128,                 
      &rayop*8,                        
      &dielectric_op*8,              
@@ -265,7 +266,7 @@ c----------------------------------------
 c-----from namelist /numercl/
      &iout3d,           
 c-----from namelist /genr/  
-     &outdat,stat,             
+     &outdat,stat, outnetcdf, outprint, outxdraw,    
      &mnemonic,                 
      &rayop,                        
      &dielectric_op,              
@@ -518,6 +519,9 @@ c outdat is the name of the output file that contains the data along the ray
 c        r,z,phi,n_r,n_z,m (usually it outdat='zrn.dat')
 c stat   is the status of outdat file (usually stat='new')        
 c netcdfnm !name of the input *.nc file with 3d non-maxwellian distribution
+c outnetcdf='enabled' (by default), or 'disabled' (to suppress writing data to *.nc)
+c outprint='enabled' (by default), or 'disabled' (to suppress printout to screen)
+c outxdraw='enabled' (by default), or 'disabled' (to suppress saving files for xdraw)
 c------------------------------------------------------------------------
 c The data for the creation of the analytical
 c non-Maxwellian electron distribution:

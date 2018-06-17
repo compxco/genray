@@ -31,20 +31,25 @@ c------------------------------------------------------------------
       do 100 i=1,ndim
          deru(i)=t
  100  continue
+      prmt(7)=prmt(1)+prmt(6)
+      prmt(8)=prmt(1)+prmt(3)
+ 
 c      read(1,20)prmt(1),prmt(2),prmt(3)
+c      read(1,25)prmt(4),prmt(6)
+c      read(1,30)ihlf
+c      ihlf=prmt(9)
+c      prmt(9)=ihlf
+
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'in arrays prmt(1)=',prmt(1)
       write(*,*)'in arrays prmt(2)=',prmt(2)
       write(*,*)'in arrays tau=prmt(3)=',prmt(3)
-c      read(1,25)prmt(4),prmt(6)
       write(*,*)'in arrays acccuracy=prmt(4)=',prmt(4)
       write(*,*)'in arrays hprint=prmt(6)=',prmt(6)
-c      read(1,30)ihlf
-      prmt(7)=prmt(1)+prmt(6)
-      prmt(8)=prmt(1)+prmt(3)
-c      ihlf=prmt(9)
-c      prmt(9)=ihlf
       write(*,*)'in arrays hamiltonian acccuracy=prmt(9)=',prmt(9)
 c     write(*,*)'in arrays ihlf=',ihlf
+      endif ! outprint
+      
  20   format(f6.3/f8.3/d7.1)
  25   format(d7.1/d7.1)
  30   format(i3)

@@ -88,7 +88,7 @@ cSm070613
 cSAP080727
 c      if (no_reflection.eq.1) goto 30
 cSAP081028
-      write(*,*)'in bound no_reflection',no_reflection
+cyup      write(*,*)'in bound no_reflection',no_reflection
       
       if (no_reflection.eq.1) then 
           
@@ -136,7 +136,7 @@ c---------------- idx derivativs order 0.ge.idx.le.3---------------
       zm=zzrm
 
       if ((z.ge.zp-epsbnd).or.(z.le.zm+epsbnd)) then
-         write(*,*)'in bound r,zm,z,zp,epsbnd',r,zm,z,zp,epsbnd
+cyup         write(*,*)'in bound r,zm,z,zp,epsbnd',r,zm,z,zp,epsbnd
          ibound=1.d0
          goto 10
       endif
@@ -153,7 +153,7 @@ c      res=ias2r(tx,nx,ty,ny,cxy,ncx,ncy,0,0,r,z)
 
       if (res.ge.(psilim*(1.d0-epsbnd))) then
          ibound=1.d0
-         write(*,*)'in bound res,psilim,epsbnd',res,psilim,epsbnd
+cyup         write(*,*)'in bound res,psilim,epsbnd',res,psilim,epsbnd
          goto 10
       end if
       rho=rhopsi(res)
@@ -161,7 +161,7 @@ c-----------------------
       bmod=b(z,r,phi)
       if (rho.ge.1.d0-epsbnd) then
          ibound=1.d0
-         write(*,*)'in bound rho,epsbnd',rho,epsbnd
+cyup         write(*,*)'in bound rho,epsbnd',rho,epsbnd
          goto 10
       else
          goto 30
@@ -169,32 +169,32 @@ c-----------------------
 c-----------------------
  10   continue 
 
-      write(*,*)'in bound no_reflection,i',no_reflection,'ibound',ibound
+cyup      write(*,*)'in bound no_reflection,i',no_reflection,'ibound',ibound
       
       if ((no_reflection.eq.1).and.(ibound.eq.1)) then 
           ibound=-1           !initialization
-          write(*,*)'before wall_limiter_reflection_point'
-          write(*,*)'z,r,phi,cnz,cnr,cm',
-     &               z,r,phi,cnz,cnr,cm
+cyup          write(*,*)'before wall_limiter_reflection_point'
+cyup          write(*,*)'z,r,phi,cnz,cnr,cm',
+cyup     &               z,r,phi,cnz,cnr,cm
 
           call  wall_limiter_reflection_point(z,r,phi,cnz,cnr,cm,
      &    i_reflection,
      &    cnzref,cnrref,cmref,z_ref,r_ref,phi_ref)
 
-          write(*,*)'after wall_limiter_reflection_point i_reflection=',
-     &    i_reflection
+cyup          write(*,*)'after wall_limiter_reflection_point i_reflection=',
+cyup     &    i_reflection
 
           if (i_reflection.eq.1) then  
 
-             write(*,*)'z,r,phi,cnz,cnr,cm',
-     &                  z,r,phi,cnz,cnr,cm
-             write(*,*)'z_ref,r_ref,phi_ref',z_ref,r_ref,phi_ref
-             write(*,*)'cnzref,cnrref,cmref',
-     &                  cnzref,cnrref,cmref
+cyup             write(*,*)'z,r,phi,cnz,cnr,cm',
+cyup     &                  z,r,phi,cnz,cnr,cm
+cyup             write(*,*)'z_ref,r_ref,phi_ref',z_ref,r_ref,phi_ref
+cyup             write(*,*)'cnzref,cnrref,cmref',
+cyup     &                  cnzref,cnrref,cmref
 
              irefl=irefl+1
 
-             write(*,*)'###irefl=',irefl
+cyup             write(*,*)'###irefl=',irefl
 
              ibound=1.d0
              iflref=1
@@ -225,13 +225,13 @@ c      write(*,*)'in bound drdt,dzdt',drdt,dzdt,'edg',edg
       edag=edg/(grad*dmrdt)
       if (edg.gt.0d0) then
          irefl=irefl+1
-         write(*,*)'in bound irefl=',irefl
+cyup         write(*,*)'in bound irefl=',irefl
          call reflect(z,r,phi,cnz,cnr,cnzref,cnrref)
 	 iflref=1
       else
 	 grad=dsqrt(dpsidz*dpsidz+dpsidr*dpsidr)
 	 dmrdt=dsqrt(drdt*drdt+dzdt*dzdt)
-         write(*,*)'in bound edg.le.0,edg,grad,dmrdt',edg,grad,dmrdt
+cyup         write(*,*)'in bound edg.le.0,edg,grad,dmrdt',edg,grad,dmrdt
       endif
  30   continue
 
@@ -277,8 +277,8 @@ cSAP080727
       if (no_reflection.eq.1) goto 10
 c-----------------------
       if ((r.lt.rmin+epsbnd).or.(r.gt.rmax-epsbnd)) then
-         write(*,*)'in boundc rmin+epsbnd,r,rmax-epsbnd',
-     1   rmin+epsbnd,r,rmax-epsbnd
+cyup         write(*,*)'in boundc rmin+epsbnd,r,rmax-epsbnd',
+cyup     1   rmin+epsbnd,r,rmax-epsbnd
 c	 read(*,*)
          iboundc=1
          goto 10
@@ -296,9 +296,9 @@ c---------------- idx derivativs order 0.ge.idx.le.3---------------
       zm=zzrm
 c      write(*,*)'in boundc rrr,zm,z,zp',rrr,zm,z,zp
       if ((z.gt.zp-epsbnd).or.(z.lt.zm+epsbnd)) then
-         write(*,*)'in boundc rrr,zm,z,zp',rrr,zm,z,zp
-         write(*,*)'in boundc zm+epsbnd,z,zp-epsbnd',
-     1	 zm+epsbnd,z,zp-epsbnd
+cyup         write(*,*)'in boundc rrr,zm,z,zp',rrr,zm,z,zp
+cyup         write(*,*)'in boundc zm+epsbnd,z,zp-epsbnd',
+cyup     1	 zm+epsbnd,z,zp-epsbnd
          iboundc=1
          goto 10
       end if
@@ -316,15 +316,15 @@ c      res=ias2r(tx,nx,ty,ny,cxy,ncx,ncy,0,0,r,z)
 c      rho=rhopsi(res)
 
       if (res.gt.(psilim*(1.d0-epsbnd))) then
-         write(*,*)'in boundc res,psilim*(1-epsbnd)',
-     1	 res,psilim*(1.d0-epsbnd)
+cyup         write(*,*)'in boundc res,psilim*(1-epsbnd)',
+cyup     1	 res,psilim*(1.d0-epsbnd)
          iboundc=1
          goto 10
       end if
 c-----------------------
       rho=rhopsi(res)
       if (rho.gt.1.d0-epsbnd) then
-         write(*,*)'in boundc rho,1.d0-epsbnd',rho,1.d0-epsbnd
+cyup         write(*,*)'in boundc rho,1.d0-epsbnd',rho,1.d0-epsbnd
          iboundc=1
          goto 10
       end if
@@ -378,25 +378,25 @@ c	      write(*,*)'before reflect cnpsi,cnteta',cnpsi,cnteta
 	      cnzref=pp*(cnpsi*dpsidz+cnteta*dpsidr)
 	      cnrref=pp*(cnpsi*dpsidr-cnteta*dpsidz)
 cSAP081010 
-              write(*,*)'reflect1 cnzref,cnrref',cnzref,cnrref
+cyup              write(*,*)'reflect1 cnzref,cnrref',cnzref,cnrref
               grad_psi_z=dpsidz*pp
               grad_psi_r=dpsidr*pp
-              write(*,*)'grad_psi_z,grad_psi_r',grad_psi_z,grad_psi_r
-              write(*,*)'cnpsi,cnz,cnr',cnpsi,cnz,cnr
+cyup              write(*,*)'grad_psi_z,grad_psi_r',grad_psi_z,grad_psi_r
+cyup              write(*,*)'cnpsi,cnz,cnr',cnpsi,cnz,cnr
              
               cnz_psi=-grad_psi_z*cnpsi
               cnr_psi=-grad_psi_r*cnpsi
-              write(*,*)'cnz_psi,cnr_psi',cnz_psi,cnr_psi
+cyup              write(*,*)'cnz_psi,cnr_psi',cnz_psi,cnr_psi
 
               cnzref=cnz-2.d0*cnz_psi
               cnrref=cnr-2.d0*cnr_psi
-              write(*,*)'reflect2 cnzref,cnrref',cnzref,cnrref
+cyup              write(*,*)'reflect2 cnzref,cnrref',cnzref,cnrref
 
 	      cnpsi=-pp*(dpsidz*cnzref+dpsidr*cnrref)
 	      cnteta=pp*(-dpsidz*cnrref+dpsidr*cnzref)
 c	      write(*,*)'after	reflect	cnzref,cnrref,cnpsi,cnteta',
 c     1	      cnzref,cnrref,cnpsi,cnteta
-          write(*,*)'reflection point'
+cyup          write(*,*)'reflection point'
 
       return
       end
@@ -482,20 +482,20 @@ c-------------------------------------------------------------------
       include 'five.i'
       include 'limit.i'
 
-      write(*,*)'in zpzmlim r,ip,im',r,ip,im
+cyup      write(*,*)'in zpzmlim r,ip,im',r,ip,im
 
       imm=1
       ipp=1
       if(r.gt.rpl(ip)+1.d-13)then
-        write(*,*)'in zpzmlim r.gt.rpl(ip)'
-        write(*,*)'r,rpl(ip)',r,rpl(ip)
-	stop ' bound.f in zpzmlim'
+        WRITE(*,*)'in zpzmlim r.gt.rpl(ip)'
+        WRITE(*,*)'r,rpl(ip)',r,rpl(ip)
+        STOP ' bound.f in zpzmlim'
       endif
 
       if(r.lt.rpl(1)-1.d-13)then
-        write(*,*)'in zpzmlim r.lt.rpl(1)'
-        write(*,*)'r,rpl(1)',r,rpl(1)
-	stop ' bound.f in zpzmlim'
+        WRITE(*,*)'in zpzmlim r.lt.rpl(1)'
+        WRITE(*,*)'r,rpl(1)',r,rpl(1)
+        STOP ' bound.f in zpzmlim'
       endif
       do i=1,ip-1
 c         write(*,*)'i,r,rpl(i),rpl(i+1)',i,r,rpl(i),rpl(i+1)

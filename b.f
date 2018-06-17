@@ -1055,7 +1055,7 @@ c            write(*,*)'i,j,r,z,peqd(i,j),res',
 c     &      i,j,r,z,peqd(i,j),res
 c          enddo
 c        enddo
-c        stop 'b.f in b1'
+c        !stop 'b.f in b1'
 
        endif
 c--------------------------------------------------------------

@@ -68,7 +68,7 @@ cSAP120517
 c      integer*2 itb1,itb2,itb3,itb4,itf1,itf2,itf3,itf4,
 c     1itd1,itd2,itd3,itd4
 
-      write(*,*)'in Runge -Kutta drkgs'
+cyup      write(*,*)'in Runge -Kutta drkgs'
 c----------------------------------------------------------------
 c  the program for calculation of the computer time 
 c----------------------------------------------------------------
@@ -80,7 +80,7 @@ c      call gettim(it1,it2,it3,it4)
 c      tstart=it1*3600.00d0+it2*60.00d0+it3*1.00d0+it4*0.01d0
 c----------------------------------------------------------------
       t=prmt(1)
-      write(*,*)'in rk_new t,prmt(1)',t,prmt(1)
+cyup      write(*,*)'in rk_new t,prmt(1)',t,prmt(1)
       tend=prmt(2)
       h=prmt(3)
       prmt(5)=0.d0
@@ -144,7 +144,7 @@ cc	 write(*,*)(up(i),i=1,ndim)
 cc	 read(*,*)
          iflagh=-1
          h=0.5d0*h
-         write(*,*)'in rk1 iboundc=1,h',h
+cyup         write(*,*)'in rk1 iboundc=1,h',h
          go to 10
       end if
 c------------------------------------------------------------------
@@ -328,7 +328,7 @@ c if 2.1
 c            write(*,*)'in rk after output  iflagh, h=',iflagh,h
 	    goto 10
           else
-            write(*,*)'dtstep.gt.10000.0'
+cyup            write(*,*)'dtstep.gt.10000.0'
 c previous Runge-Kutta time step is the reflection point
 c            call reflect(u(1),u(2),u(3),u(4),u(5),cnzref,cnrref)
 c	    u(4)=cnzref
@@ -451,7 +451,7 @@ c     1itd1,itd2,itd3,itd4
 cSAP120517
       real*8 us_total,dels_total,us_total_old
 
-      write(*,*)'in Runge -Kutta !!!'
+cyup      write(*,*)'in Runge -Kutta !!!'
 c----------------------------------------------------------------
 c  the program for calculation time determination
 c----------------------------------------------------------------
@@ -722,7 +722,7 @@ cSm030515
        external fct
 c      integer*2 itb1,itb2,itb3,itb4,itf1,itf2,itf3,itf4,
 c     1itd1,itd2,itd3,itd4
-      write(*,*)'in Runge -Kutta drkgs2!!! prmt',prmt
+cyup      write(*,*)'in Runge -Kutta drkgs2!!! prmt',prmt
 c----------------------------------------------------------------
 c  the program for calculation time determination
 c----------------------------------------------------------------
@@ -1035,7 +1035,7 @@ cSAP120517 for Nicola scattering
       us_total_old=us_total
       us_total=us_total+dels_total
 
-       write(*,*)'rk_new before outpt usold',usold,'us',us
+cyup       write(*,*)'rk_new before outpt usold',usold,'us',us
 c     &           'dels1',dels1
 c      write(*,*)'rk prmt(6),delh',prmt(6),delh
 c      write(*,*)'rk prmt(7),prmt(7)+delh*prmt(6)',
@@ -1053,8 +1053,8 @@ c      write(*,*)'rk delh,prmt(6),prmt(7)',delh,prmt(6),prmt(7)
 
       if(us.gt.(prmt(7)+delh*prmt(6))) then
 
-        write(*,*)'1 us >prmt(7)+delh*prmt(6) us,prmt(7),prmt(6)',
-     &  us,prmt(7),prmt(6)
+cyup        write(*,*)'1 us >prmt(7)+delh*prmt(6) us,prmt(7),prmt(6)',
+cyup     &  us,prmt(7),prmt(6)
 
 c-------trajectory jumped past the output point us > prmt(7)+delh*prmt(6)
 c-------We will reduse the time step to get the point close to the given output point 
@@ -1066,7 +1066,7 @@ c        write(*,*)'i_delh_1',i_delh_1
         if (i_delh_1.ne.1) hnew=h*(prmt(7)+delh*prmt(6)-usold)/(dels1)
         i_delh_1=1
 
-        write(*,*)'hold,hnew,usold,us',hold,hnew,usold,us
+cyup        write(*,*)'hold,hnew,usold,us',hold,hnew,usold,us
 c        write(*,*)'prmt(7)+delh*prmt(6)',prmt(7)+delh*prmt(6)
 c        write(*,*)'prmt(7)+delh*prmt(6)-usold',
 c     &            prmt(7)+delh*prmt(6)-usold
@@ -1080,7 +1080,7 @@ c       go back (to the previous time step) to start of the Runge-Kutta procedur
 	   u(i)=startu(i)
         enddo
 c------ one step Runge-Kutta procedure    
-        write(*,*)'rk_new before drkgs0 hnew,u(1),u(2)',hnew,u(1),u(2)
+cyup        write(*,*)'rk_new before drkgs0 hnew,u(1),u(2)',hnew,u(1),u(2)
         call drkgs0(hnew,u,deru,ndim,fct,aux)
 c        write(*,*)'0 rk_new after drkgs0 u(1),u(2)',u(1),u(2)
 
@@ -1111,7 +1111,7 @@ cSAP120517 for Nicola scattering
       us_total_old=us_total
       us_total=us_total+dels_total ! the total distance after
                                    ! one step with h=hnew
-      write(*,*)'i_delh,usold,dels1,us',i_delh,usold,dels1,us
+cyup      write(*,*)'i_delh,usold,dels1,us',i_delh,usold,dels1,us
  
 c      write(*,*)'rk 2 bef call output us,dels1',us,dels1
 c      write(*,*)'ur,u(2)',ur,u(2)
@@ -1122,24 +1122,24 @@ c      write(*,*)'uz,u(1)',uz,u(1)
       if(us.lt.(prmt(7)+delh*prmt(6))) then 
 c--------hnew is too shot to jump past prmt(7)+delhprmt(6).
 c        Now we will increase hnew.
-          write(*,*)' hold,hnew',hold,hnew
+cyup          write(*,*)' hold,hnew',hold,hnew
           hnew=0.5d0*(hold+hnew)
-          write(*,*)'increase hnew hnew,hold',hnew,hold
+cyup          write(*,*)'increase hnew hnew,hold',hnew,hold
           goto 20      
        endif
  60   continue
-      write(*,*)'rk_new before outp us,u(1),u(2)',us,u(1),u(2)
+cyup      write(*,*)'rk_new before outp us,u(1),u(2)',us,u(1),u(2)
       call outp(us,u,deru,ihlf,ndim,prmt,iflagh,iraystop,
 cSAP100202
 c     &i_go_to_previous_output_step)
 cSAP120517
      &i_go_to_previous_output_step,us_total,us_total_old )
-      write(*,*)'rk_new.f in drkgs2 after outp us',us
+cyup      write(*,*)'rk_new.f in drkgs2 after outp us',us
 
        if (i_go_to_previous_output_step.eq.1) then
-          write(*,*)'in rk_new.f i_go_to_previous_output_step',
-     &                           i_go_to_previous_output_step
-          write(*,*)'in rk_new.f us',us
+cyup          write(*,*)'in rk_new.f i_go_to_previous_output_step',
+cyup     &                           i_go_to_previous_output_step
+cyup          write(*,*)'in rk_new.f us',us
           goto 10
        endif
 c       write(*,*)'rk_new aft outp iraystop',iraystop
@@ -1165,7 +1165,7 @@ c----------------------------------------------------------------------
           t=t-h
           h=h*0.5d0
 	  dtstep=prmt(3)/h
-	  write(*,*)'ray is outside the plasma after correction'
+cyup	  write(*,*)'ray is outside the plasma after correction'
 c------------------------------------------------------------------
 	  if (dtstep.lt.100.d0)then
 c if 2.1
@@ -1175,7 +1175,7 @@ c            write(*,*)'in rk after output 2.1  iflagh, h=',iflagh,h
 	    enddo
 	    goto 10
           else
-            write(*,*)'dtstep.gt.100.0'
+cyup            write(*,*)'dtstep.gt.100.0'
 	    do i=1,ndim
 	      u(i)=startu(i)
 	    enddo
@@ -1307,7 +1307,7 @@ c      write(*,*)'ok1 rkadap'
         call rk5step(y,y0,n,x,h,prmt(4),yscal,hdid,hnext,func,hmax)
         if((x-prmt(2))*(prmt(2)-prmt(1)) .GE. 0.d0) then 
           flag=1
-          write(*,*)'ok end rkadap x,prmt(2)',x,prmt(2)
+cyup          write(*,*)'ok end rkadap x,prmt(2)',x,prmt(2)
           return
         end if
         us=us+dsqrt((uz-y0(1))**2+(ur-y0(2))**2)
@@ -1332,7 +1332,7 @@ cSAP120517
 c        call outp(x,y0,dery,ihlf,n,prmt,iflagh,iraystop)
 c        write(*,*)'rk_new after outp iraystop',iraystop
         if (iraystop.eq.1) then
-          write(*,*)'rk_new iraystop=1 goto 200'
+cyup          write(*,*)'rk_new iraystop=1 goto 200'
           goto 200
         endif
 
@@ -1607,7 +1607,7 @@ c-----local
       gam=gamma1(u(1),u(2),u(3),u(4),u(5),u(6))
       hamiltonian=hamilt1(u(1),u(2),u(3),u(4),u(5),u(6))
       
-      write(*,*)'hamiltonian',hamiltonian
+cyup      write(*,*)'hamiltonian',hamiltonian
 c-----------------------------------
 c      ds=dsin(gam)
 c      dc=dcos(gam)

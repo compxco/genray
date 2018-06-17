@@ -102,17 +102,17 @@ cSAP091201  for spline functions from zcuinx coeff2 coeff1,terp2p, terp1
 c     work area 
       real*8, pointer :: wk_zpsi(:) !1:3*max(npsi,nteta1)+1
      
-      write(*,*)'indexrho in rhospl=',indexrho
+cyup      write(*,*)'indexrho in rhospl=',indexrho
 
 c---------------------------------------------------
 c     allocate pointer wk_zpsi
 c--------------------------------------------------
       n_work_zpsi=1+3*max0(npsi,nteta1)
-      write(*,*)'rhospl npsi,nteta1,n_work_zpsi',
-     &npsi,nteta1,n_work_zpsi
+cyup      write(*,*)'rhospl npsi,nteta1,n_work_zpsi',
+cyup     &npsi,nteta1,n_work_zpsi
 
       allocate( wk_zpsi(1:n_work_zpsi),STAT=istat)
-      write(*,*)'rhospl after allocate wk_zpsi istat',istat
+cyup      write(*,*)'rhospl after allocate wk_zpsi istat',istat
 c---------------------------------------------------------------
       hteta=arteta(2)-arteta(1)
       hpsi=arpsi(2)-arpsi(1)
@@ -164,21 +164,21 @@ c     idm must be .ge. npsi
       idm=npsi 
       call bcast(wk_zpsi,0.d0,SIZE(wk_zpsi))
 
-      write(*,*)'rhospl before  coeff2_Sm(zpsi)'
+cyup      write(*,*)'rhospl before  coeff2_Sm(zpsi)'
 
       call coeff2_Sm(npsi,arpsi,nteta1,arteta,zpsi,zpsi_psps,zpsi_thth,
      &               zpsi_pspsthth,idm,ibd,wk_zpsi,npsi)
 
       call bcast(wk_zpsi,0.d0,SIZE(wk_zpsi)) 
 
-      write(*,*)'rhospl before  coeff2_Sm(rpsi)'
+cyup      write(*,*)'rhospl before  coeff2_Sm(rpsi)'
 
       call coeff2_Sm(npsi,arpsi,nteta1,arteta,rpsi,rpsi_psps,rpsi_thth,
      &               rpsi_pspsthth,idm,ibd,wk_zpsi,npsi)
-      write(*,*)'rhospl after oeff2_Sm(rpsi)'
+cyup      write(*,*)'rhospl after oeff2_Sm(rpsi)'
 c---------------------------------------------------------
       deallocate (wk_zpsi,STAT=istat)
-      write(*,*)'rhospl after deallocate wk_zpsi istat',istat
+cyup      write(*,*)'rhospl after deallocate wk_zpsi istat',istat
 c--------------------------------------------------------------------
 c     spline coefficients for z(psi,teta) r(psi,teta) were created
 c--------------------------------------------------------------------
@@ -202,12 +202,12 @@ c------------------------------------------------------------------
      1           ,crminpsi)
 
 ctest
-      write(*,*)'in rhospl.f'
+cyup      write(*,*)'in rhospl.f'
 c      write(*,*)'rmin_psi(psimag)',rmin_psi(psimag)
 c      write(*,*)'rmax_psi(psimag)',rmax_psi(psimag)
 c      write(*,*)'xma',xma
-      write(*,*)'psilim,psimag',psilim,psimag
-      write(*,*)'arpsi',arpsi
+cyup      write(*,*)'psilim,psimag',psilim,psimag
+cyup      write(*,*)'arpsi',arpsi
 c      stop 'rhospl.f'
 cendtest
 c--------------------------------------------------------------------
@@ -307,7 +307,7 @@ c------------------------------------------------------------------------
 c             poloidal length of the last magnetic surface in m
               totlength=pollength(npsi)
               totlength=totlength*r0x
-              write(*,*)'rhospl totlength m',totlength
+cyup              write(*,*)'rhospl totlength m',totlength
 c------------------------------------------------------------------------
               do 200 j=1,npsi
 

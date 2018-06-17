@@ -101,10 +101,10 @@ c      rho_max=0.8d0
       write (iout3, 2010) psimx, psimn
 
       if(nthpp0<nthp0) then
-        write(*,*)' bavorb1: nthpp0<nthp0' 
-        write(*,*)'it should be nthpp0 >= nthp0'
-        write(*,*)'nthpp0, nthp0',nthpp0, nthp0
-        stop
+        WRITE(*,*)' bavorb1: nthpp0<nthp0' 
+        WRITE(*,*)'it should be nthpp0 >= nthp0'
+        WRITE(*,*)'nthpp0, nthp0',nthpp0, nthp0
+        STOP
       endif
 
       do nth = 1, nthp0 + 1
@@ -194,13 +194,13 @@ c            endif
 c            if (n_psi.gt.8) rho_in=0.08d0+(n_psi-8)*(1.d0-0.08d0)*0.5d0   
     
             if (rho_in.gt.1.d0) then
-               write(*,*)'adj_orbit.f  subroutine bavorb1 rho_in.gt.1'
-               write(*,*)'n_psi=',n_psi,'rho_in=',rho_in
-               write(*,*)'it should be for adj calculations rho_in.le.1'
-               write(*,*)'Please change setting of small radius of '
-               write(*,*)'of the adj flux surface rho_in in'
-               write(*,*)' subroutine bavorb1 and recompile the code'
-               stop 'in adj_orbit.f'
+               WRITE(*,*)'adj_orbit.f  subroutine bavorb1 rho_in.gt.1'
+               WRITE(*,*)'n_psi=',n_psi,'rho_in=',rho_in
+               WRITE(*,*)'it should be for adj calculations rho_in.le.1'
+               WRITE(*,*)'Please change setting of small radius of '
+               WRITE(*,*)'of the adj flux surface rho_in in'
+               WRITE(*,*)' subroutine bavorb1 and recompile the code'
+               STOP 'in adj_orbit.f'
             endif
 
 c-----------------------------------------------------------------------
@@ -415,7 +415,7 @@ c
 c 2010 format(4(2x,e24.16))
 c 2020 format(5(2x,e24.16))
 
-c      stop 'end of  bavorb1'
+c      'end of  bavorb1'
       return
       end !subroutine bavorb1
 
@@ -602,7 +602,7 @@ c      if (npsi0>npsis .or. nthp0>nthp00-1) then
 c         write (iout4, *) 'npsi0 or nthp0 is too large in bavorbt'
 c         write (iout4, *) npsi0, nthp0
 c         write (iout4, *) npsis, nthp00
-c         stop
+c         !stop
 c      endif
       ii = 1
       pthets = ii

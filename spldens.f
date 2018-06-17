@@ -115,6 +115,7 @@ cSm050202 changed mbx=1 it removed the negative temperature at plasma edge
       fxb=0.0d0
 c------------------------------------------------
 c     test dens1(i,k)
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       do k=1,nbulk
          write(*,*)'------------ spldens1 species#k=',k
 	 do i=1,ndens
@@ -135,6 +136,7 @@ c     test dens1(i,k)
 	 enddo
 	 !pause !!!
       enddo
+      endif ! outprint
 c     end test dens1(i,k)
 c-----------------------------------------------
       
@@ -264,6 +266,7 @@ c--------------------------------------------------------------------
 
 c----------------------------------------------------------------------
 c for test
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'spldens test'
       write(*,*)'ndens,nbulk',ndens,nbulk
       do i=1,nbulk
@@ -305,6 +308,7 @@ c	   write(*,*) i,j,dens1(j,i),sdens,densa
 c           write(*,*)'ddensa,ddnsrho',ddensa,ddnsrho(rhoj,i)
 	enddo
       enddo
+      endif ! outprint
 cendtest
 c-------------------------------------------------------------------
 c     calculation of the spline coefficients for zeff

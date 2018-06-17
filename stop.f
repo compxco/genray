@@ -1,6 +1,6 @@
       subroutine STOP(x,i)
       character x*50
-      write(*,*)'x'
+      WRITE(*,*)'x'
       stop
       return
       end

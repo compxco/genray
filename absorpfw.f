@@ -170,21 +170,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 l1=(1-p)/yi
 	 l2=(1+p)/yi+1
 	 if(l2.gt.98) then
-	   write(*,*)'in absorpwf l2>98 it should increase
+	   WRITE(*,*)'in absorpwf l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpwf' 
-	   stop
+	   STOP
 	 endif !l2=98
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpwf l1>98 it should increase
+     	   WRITE(*,*)'in absorpwf l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpwf' 
-	   stop
+	   STOP
 	 endif ! l1=98
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpwf l1<-98 it should increase
+     	   WRITE(*,*)'in absorpwf l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpwf' 
-	   stop
+	   STOP
 	 endif !l1=-98
 
 	 do l=l1,l2
@@ -386,21 +386,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 l1=(1-p)/yi
 	 l2=(1+p)/yi+1
 	 if(l2.gt.98) then
-	   write(*,*)'in absorpf1 l2>98 it should increase
+	   WRITE(*,*)'in absorpf1 l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpf1 l1>98 it should increase
+     	   WRITE(*,*)'in absorpf1 l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpf1 l1<-98 it should increase
+     	   WRITE(*,*)'in absorpf1 l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
 	 do l=l1,l2
@@ -715,21 +715,21 @@ cSAP091015
            write(*,*)'l2,l1,cnpar,vi/cvac,yi,p',
      &                l2,l1,cnpar,vi/cvac,yi,p
 
-	   write(*,*)'in absorpfd l2>98 it should increase
+	   WRITE(*,*)'in absorpfd l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpfd l1>98 it should increase
+     	   WRITE(*,*)'in absorpfd l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpfd l1<-98 it should increase
+     	   WRITE(*,*)'in absorpfd l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
 	 do l=l1,l2
@@ -1050,21 +1050,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 c         write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
 
 	 if(l2.gt.98) then
-	   write(*,*)'in absorpfw_pinsker l2>98 it should increase
+	   WRITE(*,*)'in absorpfw_pinsker l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpfw_pinsker l1>98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpfw_pinsker l1<-98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
          cnprim_s(i)=0.d0
@@ -1395,21 +1395,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
          write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
 
 	 if(l2.gt.98) then
-	   write(*,*)'in absorpfw_pinsker l2>98 it should increase
+	   WRITE(*,*)'in absorpfw_pinsker l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpfw_pinsker l1>98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpfw_pinsker l1<-98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
          cnprim_s(i)=0.d0
@@ -2021,21 +2021,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
          write(*,*)'absorpfw_pinsker2 l1,l2,1/yi',l1,l2,1./yi
 
 	 if(l2.gt.98) then
-	   write(*,*)'in absorpfw_pinsker2 l2>98 it should increase
+	   WRITE(*,*)'in absorpfw_pinsker2 l2>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.gt.98) then
-     	   write(*,*)'in absorpfw_pinsker2 l1>98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker2 l1>98 it should increase
      1	   the parameter nb>100 in the subroutine absorpfd' 
-	   stop
+	   STOP
 	 endif 
 
 	 if(l1.lt.-98) then
-     	   write(*,*)'in absorpfw_pinsker2 l1<-98 it should increase
+     	   WRITE(*,*)'in absorpfw_pinsker2 l1<-98 it should increase
      1	   the parameter nb>100 in the subroutine absorpf1' 
-	   stop
+	   STOP
 	 endif 
 
          cnprim_s(i)=0.d0
@@ -2423,23 +2423,23 @@ cSAP091015
            write(*,*)'absorpfd_091016: l2,l1,cnpar,vi/cvac,yi,p',
      &                l2,l1,cnpar,vi/cvac,yi,p
 
-	   write(*,*)'absorpfd_091016: l2>nb-2   increase
+	   WRITE(*,*)'absorpfd_091016: l2>nb-2   increase
      1	   the parameter nb>200 in the subroutine absorpfd_091016' 
-	   stop
+	   STOP
 	 endif 
 cSAP091016
 c	 if(l1.gt.98) then
 	 if(l1.gt.nb-2) then
-     	   write(*,*)'absorpfd_091016: l1>nb-2   increase
+     	   WRITE(*,*)'absorpfd_091016: l1>nb-2   increase
      1	   the parameter nb>200 in the subroutine absorpfd_091016' 
-	   stop
+	   STOP
 	 endif 
 cSAP091016
 c	 if(l1.lt.-98) then
 	 if(l1.lt.-(nb-2)) then
-     	   write(*,*)'absorpfd_091016: l1<-(nb02)   increase
+     	   WRITE(*,*)'absorpfd_091016: l1<-(nb02)   increase
      1	   the parameter nb>200 in the subroutine absorpfd_091016' 
-	   stop
+	   STOP
 	 endif 
 
 	 do l=l1,l2

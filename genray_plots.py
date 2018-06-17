@@ -52,14 +52,14 @@ ergtkev=1.6022e-09
 # Set to 0 for automatic setting
 # (In this case Rmin,Rmax,Zmin,Zmax will be found from eqdsk, if present
 #  and will be used for plots)
-Rmin_plot=120 # 400.
-Rmax_plot=240 # 850. # just any guess [cm] 
-Zmin_plot=-100 #-400.
-Zmax_plot=+100 #500. # just any guess [cm] 
-#Rmin_plot=0.
-#Rmax_plot=0. 
-#Zmin_plot=0.
-#Zmax_plot=0.
+#Rmin_plot=5 #120 # 400.
+#Rmax_plot=90 #240 # 850. # just any guess [cm] 
+#Zmin_plot=-70 #-100 #-400.
+#Zmax_plot=+70 #+100 #500. # just any guess [cm] 
+Rmin_plot=0.
+Rmax_plot=0. 
+Zmin_plot=0.
+Zmax_plot=0.
 
 
 e0 = time.time()  # elapsed time since the epoch
@@ -71,7 +71,7 @@ c0 = time.clock() # total cpu time spent in the script so far
 #eqdsk_name='eqdsk_NSTX'
 #eqdsk_name='eqdsk_ITER_sym'
 #eqdsk_name='eqdsk_H24'
-#eqdsk_name='g1060728011.01100'
+#eqdsk_name='g1060728011.01100' # test7
 #eqdsk_name='140358R01_350ms'  # for PPPL/IPS/Poli test
 #eqdsk_name='12028Z33_ps.geqdsk' # PPPL Jin Chen
 
@@ -85,6 +85,10 @@ eqdsk_name='g7777.002001'  # KAERI/S.Ho Kim  LH case 2017 07/19
 #eqdsk_name='g113544.00325_mod'  # /test4/
 #eqdsk_name='g1060728011.01100'  # /test7/ (LHCD)
 #eqdsk_name='g106270.02500'      # /test6/ multi-rays EC
+#eqdsk_name='eqdsk_pegasus'
+#eqdsk_name='equilib_diiid.dat' # for Lohr/fast-run-test
+
+#eqdsk_name='eqdsk_240rays'
 
 #------------------------------------------
 # Open the genray netcdf file; specify name:
@@ -102,9 +106,9 @@ eqdsk_name='g7777.002001'  # KAERI/S.Ho Kim  LH case 2017 07/19
 #filenm='iter_lh60s_helicon800.nc'        # 800MHz no shift
 #filenm='iter_lh60s_helicon800shift1m.nc' #800MHz with antenna vert. shift 1m down
 
-filenm='genray_kstar_lhsw.nc'  # KAERI/S.Ho Kim  LH case 2017 07/19
-#filenm='genray.nc'  
-
+#filenm='genray_kstar_lhsw.nc'  # KAERI/S.Ho Kim  LH case 2017 07/19
+filenm='genray.nc'  
+filenm='genray_kstar_1ray.nc'
 
 
 #==================================================================
@@ -486,6 +490,10 @@ if Zmax_plot==0:
 else:
     zmax=Zmax_plot
 
+Rmin_plot=xmin
+Rmax_plot=xmax
+Zmin_plot=zmin
+Zmax_plot=zmax
 print 'Rmin_plot,Rmax_plot=', Rmin_plot,Rmax_plot
 print 'Zmin_plot,Zmax_plot=', Zmin_plot,Zmax_plot  
 print '----------------------------------------'
@@ -888,7 +896,7 @@ if i_eqdsk==1: # Plot resonance layers for electrons or ions
         level0= ceil(WWci0)
     qm=  charge[isp]/mass[isp]  # q/m     
     WWc= f/abs(28e5*qm*B)  # omega/omega_c
-    level_mn= 2 #max(1,level0-50)
+    level_mn= 1 #max(1,level0-50)
     level_mx= 40 #level_mn+100
     levels=np.arange(level_mn,level_mx,1)
     CS=plt.contour(R,Z,WWc,levels,linewidths=3,cmap=plt.cm.jet)
@@ -1061,7 +1069,7 @@ q2m= charge[0]**2/mass[0]
 plt.subplot(231) #-------------------------
 plt.hold(True)
 plt.grid(True)
-plt.title('$|\omega_{ce}/\omega|$  $along$ $rays$',y=1.03)
+plt.title('$|\omega_{ce}/\omega|$ $along$ $rays$',y=1.03)
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
     if remainder(i,6)==1: col='g'
@@ -1082,7 +1090,7 @@ plt.axis('off')
 plt.subplot(233) #-------------------------
 plt.hold(True)
 plt.grid(True)
-plt.title('$(\omega_{pe}/\omega)^2$  $along$ $rays$',y=1.03)
+plt.title('$(\omega_{pe}/\omega)^2$ $along$ $rays$',y=1.03)
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
     if remainder(i,6)==1: col='g'
@@ -1442,9 +1450,12 @@ title(txt,x=1.5)
 plt.hold(True)
 plt.grid(True)
 plt.ylabel('$<j_{||}>/P_e$  $(A/m^2/W)$')
+j_P_min= 10*np.min(s_cur_den_parallel[:])/powtot_e
 j_P_max= 10*np.max(s_cur_den_parallel[:])/powtot_e
-axis([0.,rhomax, 0., 1.02*j_P_max])
-if  j_P_max< 0.01:
+j_P_min=min(j_P_min,0)
+j_P_max=max(j_P_max,0)
+axis([0.,rhomax, 1.02*j_P_min, 1.02*j_P_max])
+if  (j_P_max>0 and j_P_max<0.01):
     plt.yticks([0.0, 0.001, 0.002, 0.003, 0.004]) #, 0.005, 0.006, 0.007, 0.008])
 plt.plot(rho_bin_center,10*s_cur_den_parallel/powtot_e,'r',linewidth=linw*2)
 # s_cur_den_parallel is in A/cm^2, powtot_e is in kW,

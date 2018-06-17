@@ -164,7 +164,8 @@ c-----externals
 
       real*4 time_loop_ifreq_1,time_loop_ifreq_2,time_loop_ifreq,
      +time_before_rk,time_after_rk,time_rk,
-     +time_genray_1,time_genray_2,
+     +time_drkgs2_1,time_drkgs2_2,
+     +time_genray_1,time_genray_1a,time_before_1st_ray,time_genray_2,
      +time_emission_2,
      +time_emission_1
 c------------------------------------------------------------
@@ -215,7 +216,7 @@ c for test lsc approach
 CMPIINSERTPOSITION INITIALIZATION      
           
       if (myrank.eq.0) then
-         call cpu_time(time_genray_1)
+         call cpu_time(time_genray_1) ! very beginning
       endif  !On myrank.eq.0 
 
 c---------------------------------------------------
@@ -366,6 +367,10 @@ c     for: feqd, psi -magnetic field functions
 c          zpllim(r),zminlim (r) - limmiter boundary
 c---------------------------------------------------------------
 CWRITE       write(*,*)' genray.f before call equilib'
+      if (myrank.eq.0) then
+      call cpu_time(time_genray_1a) !read input,allocation; just before equilib
+      endif  !On myrank.eq.0 
+
       call equilib
 CWRITE       write(*,*)' genray.f after call equilib'
 CWRITE       write(*,*)'NR',NR
@@ -875,18 +880,19 @@ c     Initialize arrays for Runge-Kutta subroutine
       call arrays(ndim,deru,prmt,ihlf)
 
 c-----------------------------------------------------------------
-      if (isolv.eq.1) then
-CWRITE       write(*,*)'the runge-kutta solution of 6 hamiltonian equations
-CWRITE      +with correction which gives hamiltonian conservation'
-CWRITE       write(*,*)'accuracy of the hamiltonian conservation
-CWRITE      +in correction procedure epscor=',prmt(4)
-      endif
-
-      if (isolv.eq.2) then
-CWRITE       write(*,*)'the runge-kutta solution of 5 hamiltonian equations
-CWRITE      +and the solution of the dispersion relation for the sixth
-CWRITE      +ray variable'
-      endif
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
+        if (isolv.eq.1) then
+        write(*,*)'the runge-kutta solution of 6 hamiltonian equations
+     +  with correction which gives hamiltonian conservation'
+        write(*,*)'accuracy of the hamiltonian conservation
+     +  in correction procedure epscor=',prmt(4)
+        endif
+        if (isolv.eq.2) then
+        write(*,*)'the runge-kutta solution of 5 hamiltonian equations
+     +  and the solution of the dispersion relation for the sixth
+     +  ray variable'
+        endif
+      endif ! outprint
 
       if (nray.gt.nraya) then
          if(myrank.eq.0)then
@@ -900,14 +906,14 @@ CWRITE      +ray variable'
          WRITE(*,*)'genray.f: nray=',nray,'nraymax=',nraymax
          WRITE(*,*)'nray>nraymax. Increase nraymax in param.i'
          endif
-         STOP
+         STOP ! at all cores
       endif
       if(ncone.gt.nconea)then
          if(myrank.eq.0)then
          WRITE(*,*)'genray.f: ncone=',ncone,'nconea=',nconea
          WRITE(*,*)'ncone>nconea. Increase nconea in param.i'
          endif
-         STOP
+         STOP ! at all cores
       endif
       if(n_mesh_disk_radial_bin.gt.n_mesh_disk_radial_bin_a)then
          if(myrank.eq.0)then
@@ -918,7 +924,7 @@ CWRITE      +ray variable'
          WRITE(*,*)'n_mesh_disk_radial_bin>n_mesh_disk_radial_bin_a. 
      +   Increase n_mesh_disk_radial_bin_a  in param.i'
          endif
-         STOP
+         STOP ! at all cores
       endif
 
 c
@@ -931,18 +937,20 @@ c-----Construct names of .txt and .nc ray data files
  1002 format(a,".nc")
 c
       if( myrank.eq.0 ) then !----------------------------myrank=0
-c     open text file for 3d FP code
-      if(rayop.eq."text" .or. rayop.eq."both") then
-         i_=92
-         open(i_,file=trim(filetxt))
-      endif
+      
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
+c       open text file for 3d FP code
+          if(rayop.eq."text" .or. rayop.eq."both") then
+             i_=92
+             open(i_,file=trim(filetxt))
+          endif
 c-----preparing data for output mnemonic.txt and mnemonic.nc file
 CWRITE       write(*,*)'in genray.f before write3d1 nray',nray
-      call write3d1(nray)      
+          call write3d1(nray)      
 CWRITE       write(*,*)'in genray.f sub after write3d1 nrayl=',nrayl
-c----------------------------------------------------------------
-c-----open PGplot
-      call plotinit
+      endif ! outnetcdf
+      
+      call plotinit ! open PGplot
 
 c-----plot magnetic field contours to plot.ps file
       n_r=100
@@ -978,7 +986,7 @@ c      max_plot_freq200.d0
       call plot_fcefuh(z_freq,r_freq,alpha_freq,beta_freq,dist_freq,
      +nsteps_freq,n_ec_harmonics_freq,npar_freq,max_plot_freq)
 c         stop 'genray.f after plot_fcefuh'
-      endif
+      
 c---------------------------------------------------------------
 c     plot fig.1 for Ehst-Karney efficiency
 c
@@ -995,6 +1003,7 @@ c      D(ReN_perp,ImN_perp) at given RZ N_parallel points
 c      and stopped the code
 c-------------------------------------------------------------
 CWRITE       write(*,*)'in genray.f point_plot_disp=',point_plot_disp
+         endif ! iplot_b
 
       If(point_plot_disp.eq.'rz_nparallel') then        
          call plot_disp_D_at_RZ_n_parallel_points     
@@ -1064,6 +1073,7 @@ CWRITE       write(*,*)'genray.f before plot_1_ADJ_Karney'
          call plot_1_ADJ_Karney
 CWRITE       write(*,*)'genray.f after plot_1_ADJ_Karney'
 
+
          goto 101
 ctest efficiency fo LH case
          clight=2.99792458d10     !light speed [cm/sec]
@@ -1107,6 +1117,9 @@ CWRITE      +iray,arzu0(iray),arru0(iray),arphiu0(iray)
       power_launched=0.d0
 
 CMPIINSERTPOSITION BARRIER
+      if(myrank.eq.0) then  ! MPI
+         call cpu_time(time_before_1st_ray)
+      endif  !On myrank=0 MPI
 
 
       do 21 iray=1,nray    ! <<<<==== MAIN LOOP
@@ -1165,7 +1178,8 @@ c for Nazikian case !070802
 c           if (ifreq.gt.2) id=2
 
 CMPIINSERTPOSITION DETERMINERANK
-      
+
+      write(*,*)
       write(*,*) '  iray,ifreq,nray,myrank ============= ', 
      +              iray,ifreq,nray,myrank
        
@@ -1280,10 +1294,19 @@ c                 4th order Runge-Kutta with variable time step,
 c                          time step can be reduce or enlarge                
 CWRITE       write(*,*)'genray.f before  drkgs2 ioxm.ndim',
 CWRITE      +ioxm,ndim
+         if(myrank.eq.0)then
+            call cpu_time(time_drkgs2_1)
+         endif
+         !-------------------------------------------------
          call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
      +   i_output)
-                  
-      endif
+         !-------------------------------------------------
+         if(myrank.eq.0)then
+            call cpu_time(time_drkgs2_2)
+            WRITE(*,*)'iray, time_drkgs2:', 
+     +       iray,time_drkgs2_2-time_drkgs2_1
+         endif
+      endif ! irkmeth=2
       endif ! isolv.eq.1
           
       if (isolv.eq.2) then
@@ -1339,6 +1362,7 @@ c------------------------------------------------------------------
 c           creation of the file: genray.bin for xdraw
 c           input data from common blocks gr.cb and write
 c           write(*,*)'in genray before call mk_graph iray',iray
+      if(outxdraw.eq.'enabled')then ! YuP[2018-01-17] Added
       if (i_emission.eq.0) then
          call mk_graph(iray,nray,ifreq)       
          call mk_gr3d(iray,nray)
@@ -1357,6 +1381,7 @@ CWRITE       write(*,*)'genray. f (i_emission.eq.1) before mk_graph'
          call mk_graph(iray,nray,ifreq)
 CWRITE       write(*,*)'genray.f after call mk_graph'
       endif 
+      endif ! outxdraw
 c--------------------------------------------------------------------
 c           calculation of power(array spower(NR)) and
 c           current(array scurrent(NR)) radial profiles
@@ -1511,9 +1536,11 @@ c---------------------------------------------------------------------
 c             writing ray data to mnemonic.txt and/or 
 c             saving data for mnemonic.nc
 c-------------------------------------------------------------------  
-         write(*,*)'in genray.f before write3d irayl=',irayl
-         call write3d  ! save ray data; from myrank=0 only !
-         write(*,*)'in genray.f  after write3d irayl=',irayl         
+         if(outnetcdf.eq.'enabled')then !YuP[2018-01-17]
+          write(*,*)'in genray.f before write3d irayl=',irayl
+          call write3d  ! save ray data; from myrank=0 only !
+          write(*,*)'in genray.f  after write3d irayl=',irayl  
+         endif ! outnetcdf       
               
          if (i_emission.eq.1) then
          if (nfreq.gt.1) then
@@ -1541,7 +1568,9 @@ c-----------------------------------------------------------------------
 c                put emission data in writencdf.i
 c-----------------------------------------------------------------------
 CWRITE       write(*,*)'genray.f before put_emission_in_writencdf_i'
+         if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
          call put_emission_in_writencdf_i(ifreq,iray) 
+         endif
 CWRITE       write(*,*)'genray.f after put_emission_in_writencdf_i'
          endif ! (i_emission.eq.1)
 c------------------------------------------------------------
@@ -1725,18 +1754,20 @@ c               call plot_log_fe_param(n_radii_f_plots_ar(i))
       endif ! i_lsc_approach.eq.1
 c-------end lsc ----------------------------------------
 
-      if(rayop.eq."text" .or. rayop.eq."both") then
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added ------------
+      
+        if(rayop.eq."text" .or. rayop.eq."both") then
 c--------close file for 3d FP code
-         close(i_)
-      endif
+          close(i_)
+        endif
 
 CWRITE       write(*,*)'genray: powtot_e,powtot_i',powtot_e,powtot_i
-      if(rayop.eq."netcdf" .or. rayop.eq."both") then
+        if(rayop.eq."netcdf" .or. rayop.eq."both") then
 c         write(*,*)'read before wrtnetcdf(1)'
 c          read(*,*)
- 110  continue
+c 110  continue
 
-      call wrtnetcdf(1)
+        call wrtnetcdf(1)
 CWRITE       write(*,*)'genray.f after  wrtnetcdf(1)'
 c--------it will write data to nc file in one ray point
 c        at number of point is=80 and
@@ -1744,9 +1775,9 @@ c        at number of ray iray=1
 
 CWRITE       write(*,*)'before wrtnetcdf`_one_ray_point(1,80,1)'
 
-      call wrtnetcdf_one_ray_point(1,80,1)
+        call wrtnetcdf_one_ray_point(1,80,1)
     
-      call wrtnetcdf(0)              
+        call wrtnetcdf(0)              
 CWRITE       write(*,*)'genray.f after  wrtnetcdf(0)' 
 
 c--------it will write data to nc file in one ray point
@@ -1754,49 +1785,48 @@ c        at number of point is=80 and
 c        at number of ray iray=1
 CWRITE       write(*,*)'before wrtnetcdf_one_ray_point(0,80,1)'
 
-      call wrtnetcdf_one_ray_point(0,80,1)
+        call wrtnetcdf_one_ray_point(0,80,1)
 
 CWRITE       write(*,*)'genray.f afterwrtnetcdf_one_ray_point(0,80,1)'
-
-
 c-------------------------------------------------------------
 c        writesw peqdsk and r,z eqdsk mesh to existing 
 c           netcdf file
 c-------------------------------------------------------------
-      call netcdf_eqdsk_data(trim(filenc))
+        call netcdf_eqdsk_data(trim(filenc))
 c-------------------------------------------------------------
-      if ((n_wall.ne.0).or.(max_limiters.ne.0)) then
+        if ((n_wall.ne.0).or.(max_limiters.ne.0)) then
 c-----------writes wall and limiter coordinates to existing 
 c           netcdf file
 CWRITE       write(*,*)'genray.f before netcdf_wall_lim_data filenc',
 CWRITE      +filenc 
           call wrtnetcdf_wall_limiter_data(trim(filenc))
-      endif
+        endif
       
-      endif ! rayop=
+        endif ! rayop=
 CWRITE       write(*,*)'genray: powtot_e,powtot_i',powtot_e,powtot_i
   
-      if ((istart.eq.2).or.(istart.eq.3)) then
+        if ((istart.eq.2).or.(istart.eq.3)) then
 c--------write ray starting coordinates in filenc.nc file
 CWRITE       write(*,*)'genray.f before wrtnetcdf_grill_launch filenc',
 CWRITE      +filenc
           call wrtnetcdf_grill_launch(trim(filenc))
-      endif
-
-      if (istart.eq.1) then
+        endif
+        if (istart.eq.1) then
 c--------write ray starting coordinates in filenc.nc file
 CWRITE       write(*,*)'genray.f before wrtnetcdf_EC_launch filenc',
 CWRITE      +filenc
 c         write(*,*)'read before wrtnetcdf_EC_launch'
 c         read(*,*)
-         call wrtnetcdf_EC_launch(trim(filenc))
+          call wrtnetcdf_EC_launch(trim(filenc))
 c         write(*,*)'read after wrtnetcdf_EC_launch'
 c         read(*,*)
-      endif
+        endif
 
-      if(myrank.eq.0)then ! MPI write from rank=0 only !
-         close(i1_)
-      endif ! myrank=0 MPI
+        if(myrank.eq.0)then ! MPI write from rank=0 only !
+           close(i1_)
+        endif ! myrank=0 MPI
+      
+      endif ! outnetcdf ------------------------------------------------
 
 cSAP091030
       if(ionetwo.eq.1) then
@@ -1864,6 +1894,7 @@ c--------plot to the plot.ps file power and CD density radial profiles
 
 
 CWRITE       write(*,*)'genray.f, partner=',partner
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
       if (partner.eq.'genray_profs_in.txt' 
      +.or. partner.eq.'genray_profs_in.nc' 
      +.or. partner.eq.'genray_profs_out.nc') then
@@ -1884,17 +1915,20 @@ c               currtot is the total toroidal RF current
      +   powtot_s,powtott,currtot) 
          endif ! myrank=0 MPI
       endif ! partner=
+      endif ! outnetcdf
 
 c--------------------------------------------------------------------
 c     Output power and current density profiles at radius rho
 c--------------------------------------------------------------------
-
+      if(outxdraw.eq.'enabled')then ! YuP[2018-01-17] Added
       if(ionetwo.eq.1) then
 CWRITE       write(*,*)'genray.f before mk_gronetwo ionetwo',ionetwo
          call mk_gronetwo
          call mk_gronetwo_1
       endif
+      endif ! outxdraw
 
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
       if(myrank.eq.0)then
 CWRITE       write(*,*)'genray.f before wrtnetcdf_prof 1'
          call wrtnetcdf_prof(trim(filenc),1)
@@ -1902,6 +1936,7 @@ CWRITE       write(*,*)'genray.f before wrtnetcdf_prof 0'
          call wrtnetcdf_prof(trim(filenc),0)
 CWRITE       write(*,*)'genray.f after wrtnetcdf_prof 0'
       endif ! myrank=0
+      endif ! outnetcdf
 
 c--------------------------------------------------------------------
 c     creates some data for drawing
@@ -1915,6 +1950,7 @@ CWRITE       write(*,*)'genray after mkgrtool'
 c--------------------------------------------------------------------
 c     write dielectric tensor to mnemonic.nc file
 c--------------------------------------------------------------------
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
       if (dielectric_op.eq.'enabled') then
 c         write(*,*)'read before wrtnetcdf_eps'
 c         read(*,*)
@@ -1922,6 +1958,7 @@ c         read(*,*)
 c         write(*,*)'read after wrtnetcdf_eps'
 c         read(*,*)
       endif
+      endif ! outnetcdf
 
 c--------------------------------------------------------------------
 c     write emission data to mnemonic.nc file
@@ -1939,12 +1976,14 @@ c         enddo
 c        enddo
 c        write(*,*)'read before wrtnetcdf_emission'
 c        read(*,*)
-         call wrtnetcdf_emission(trim(filenc),nray)
+         if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
+           call wrtnetcdf_emission(trim(filenc),nray)
 CWRITE       write(*,*)'genray.f after wrtnetcdf_emission filenc=',
 CWRITE      +filenc
-         call wrtnetcdf_emission_spectrum(trim(filenc))
+           call wrtnetcdf_emission_spectrum(trim(filenc))
 CWRITE       write(*,*)'genray.f after wrtnetcdf_emission_spectrum filenc='
 CWRITE      +,filenc
+         endif ! outnetcdf
          call read_nc(trim(filenc))
 CWRITE       write(*,*)'genray.f after read_nc'
       endif
@@ -1957,15 +1996,24 @@ c            write(*,*)'genray.f iray.ifreq,iray_status_nc(iray,ifreq)',
 c     &                          iray,ifreq,iray_status_nc(iray,ifreq)
 c          enddo
 c      enddo
-
+      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
       call writencdf_iray_status(trim(filenc))
+      endif
 c-------------------------------------------------------------------
 CWRITE       write(*,*)'nrayelt_o_cutoff', nrayelt_o_cutoff
 c                             
 c  
       call cpu_time(time_genray_2)
+      
+      WRITE(*,'(a,1pd15.6)') 'CPU time from t_just_before_equilib=',
+     +              time_genray_2-time_genray_1a
+     
+      WRITE(*,'(a,1pd15.6)') 'CPU time from t_just_before_1st_ray=',
+     +              time_genray_2-time_before_1st_ray
+     
       WRITE(*,1003) time_genray_2-time_genray_1
- 1003 format('genray.f runtime [sec] ',1pd14.5)
+ 1003 format('CPU TOTAL runtime [sec] ',1pd15.6)
+ 
       WRITE(*,1004)
  1004 format('genray.f: Normal end of program')
 c-----close PGgplot 

@@ -364,7 +364,7 @@ c      do i=1,n_wall
 c        write(*,*)'i,thetapol_wall(i),rho_wall(i),r_wall(i),z_wall(i)',
 c     &             i,thetapol_wall(i),rho_wall(i),r_wall(i),z_wall(i)       
 c      enddo
-c      stop 'wall_limiter_theta_pol_rho'
+c      !stop 'wall_limiter_theta_pol_rho'
 
  20   continue
 c      goto 10
@@ -458,7 +458,7 @@ c-end test------------------------------------------------------
       enddo !n
 
  10   continue
-c      stop ' wall_limiter_theta_pol_rho'
+c      !stop ' wall_limiter_theta_pol_rho'
       return
       end
   
@@ -858,8 +858,8 @@ c-----------r_m=r_p
             else
 c-------------r_q.eq.xma
               r_k=r_m
-              write(*,*)'r_m.eq.r_p, r_1.eq_r_m'
-              stop ' rho_wall_at_theta_2'
+              WRITE(*,*)'r_m.eq.r_p, r_1.eq_r_m'
+              STOP ' rho_wall_at_theta_2'
             endif
 
          endif
@@ -963,12 +963,12 @@ c-----------add additional wall points
                j=j+1
                
                if (j.gt.n_wall_add_a) then
-                  write(*,*)'in create_fine_wall_mesh'
-                  write(*,*)'j.gt.n_wall_add_a'
-                  write(*,*)'j,n_wall_ad_a',j,n_wall_add_a
-                  write(*,*)'Please increase n_wall_add_a'
-                  write(*,*)'in param.i and recompile the code' 
-                  stop 'create_seldom_mesh_for_chamber_wall_coordinates'
+                  WRITE(*,*)'in create_fine_wall_mesh'
+                  WRITE(*,*)'j.gt.n_wall_add_a'
+                  WRITE(*,*)'j,n_wall_ad_a',j,n_wall_add_a
+                  WRITE(*,*)'Please increase n_wall_add_a'
+                  WRITE(*,*)'in param.i and recompile the code' 
+                  STOP 'create_seldom_mesh_for_chamber_wall_coordinates'
                endif 
                r_wall_add(j,m)=r_wall(i)+
      &                 delta_r_wall*h_add_wall*k/delta_length_wall
@@ -1002,8 +1002,8 @@ c-------------add additional limiter points
                  j=j+1
                
                  if (j.gt.n_wall_add_a) then
-                    write(*,1000)
-            stop 'create_fine_mesh_for_chamber_wall_limiter_coordinates'
+                    WRITE(*,1000)
+            STOP 'create_fine_mesh_for_chamber_wall_limiter_coordinates'
                  endif
  
                  r_wall_add(j,m)=r_limiter(i,m)+
@@ -1021,7 +1021,7 @@ c-------------add additional limiter points
 
 
       write(*,*)'max_limiters,n_wall_add',max_limiters,n_wall_add
-c      stop 'create_fine_mesh_for_chamber_wall_limiter_coordinates' 
+c      !stop 'create_fine_mesh_for_chamber_wall_limiter_coordinates' 
       return
       end
        
@@ -1264,32 +1264,32 @@ c     check parameter dens_nwka value
 c------------------------------------------------------------------
       if (dens_nwka.lt.(1+3*nxeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_density_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_density_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_density_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nxeqd_add_a)'
 c         write(*,*)'and recompile code'  
          write(*,*)'**************************************' 
-         stop
+         STOP
       endif
 
       if (dens_nwka.lt.(1+3*nyeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_density_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_density_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_density_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nyeqd_add_a)'
 c         write(*,*)'and recompile code'  
          write(*,*)'**************************************' 
-         stop
+         STOP
       endif
       
 c-----creates 2D spline coefficients for density_r_z functions
@@ -1965,7 +1965,7 @@ c        enddo
 
       enddo !m
           
-c      stop 'add_horizontal_limiter_walls'
+c      !stop 'add_horizontal_limiter_walls'
 
       return
       end

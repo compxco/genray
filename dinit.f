@@ -2,9 +2,9 @@
 
 
 c        **********************_dinit_mr************************
-c        *                        -                           *
-c        * this subroutine reads the data from genray.in     *
-c        ******************************************************
+c        *                        -                            *
+c        * this subroutine reads the data from genray.in       *
+c        *******************************************************
 c
 c-------------------------dinit_mr---------------------------------
 c        It creates data for multiple ray case. 
@@ -124,20 +124,22 @@ c       These arrays will be in common /fourb/ in file fourb.i
       endif
 
 c------------------------------------------------------------------------
-      write(*,*)'dinit_mr: Absorption'
+cyup      write(*,*)'dinit_mr: Absorption'
 c------------------------------------------------------------------------
 c     iabsorp=Imag(N_perp)
 c     (imaginary part of the perpendicular refructive index)
 c-------------------------------------------------------------------------
-      write(*,*)'dinit_mr: iabsorp=',iabsorp
+cyup      write(*,*)'dinit_mr: iabsorp=',iabsorp
 c     iabsorp=1 for EC waves from Mazzucato solver
 c     iabsorp=2 for LH waves
 c     iabsorp=3 for FW waves
 c-----------------------------------------------------
-
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'dinit_mr:  n_relt_harm1',n_relt_harm1
       write(*,*)'dinit_mr:  n_relt_harm',n_relt_harm
       write(*,*)'dinit_mr:  n_relt_harma',n_relt_harma
+      endif ! outprint
+      
       if (n_relt_harm1.eq.9999)then
         n_relt_harm1=-n_relt_harm
         n_relt_harm2= n_relt_harm
@@ -166,7 +168,7 @@ cSm060313
          stop 'in dinit_mr' 
       endif
       
-      write(*,*)'dinit_mr:  1 nbulk=',nbulk 
+cyup      write(*,*)'dinit_mr:  1 nbulk=',nbulk 
       do i=1,nbulk 
         if ((i_salphal(i).ne.1).and.(i_salphal(i).ne.0)) then
           write(*,*)'(i_salphal(i).ne.1).or.(i_salphal(i).ne.0)'
@@ -192,12 +194,18 @@ cSm060313
 
 
 c$$$      endif
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'dinit_mr:  Plasma parameters'
       write(*,*)'dinit_mr:  izeff=',izeff
       do i=1,nbulk
          write(*,*)'dinit_mr: i,temp_scale(i),den_scale(i)',
      .   i,temp_scale(i),den_scale(i)
       enddo 
+      do i=1,nbulk
+         write(*,*)'dinit_mr: i, dmas(i)',i,dmas(i) 
+         ! dmas(i)=Mass(i)/Mass_electron
+      enddo
+      endif ! outprint
 
       do i=1,nbulk
          te0(i)=ate0(i)
@@ -248,7 +256,7 @@ c	    stop
 	 endif
          if (nbulk.gt.2) nbulk1=nbulk-2
       endif !izeff
-      write(*,*)'nbulk1=',nbulk1
+cyup      write(*,*)'nbulk1=',nbulk1
 c------------------------------------------------------------------
       h=1.d0/(ndens-1)
       do i=1,ndens
@@ -258,7 +266,9 @@ c------------------------------------------------------------------
 c     The parameters for the density fluctuations
 c     /varden/
 c------------------------------------------------------------------
-      if(idens.eq.0) then        
+      if(idens.eq.0) then      
+      
+       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'dinit_mr:  Analytical radial profiles'
 c-dense_(i)=(dense0(i)-denseb(i))*(1-rho**rn1de(i))**rn2de(i)+denseb(i)
 c------------------------------------------------------------------\     
@@ -281,6 +291,8 @@ c------------------------------------------------------------------\
 	 do i=1,nbulk1
 	   write(*,*)'dinit_mr: i, dense0(i)',i,dense0(i)
 	 enddo
+	 
+	 endif ! outprint
 
 c--------creation the array dens1(ndensa,nbulka)
 cSm080118
@@ -298,23 +310,24 @@ cSm080118
 
 	       if (((izeff.eq.0).or.(izeff.eq.3)).and.(i.eq.1)) then
 	          dens1(k,1)=0.d0
-		  do j=2,nbulk
-		    dens1(k,1)=dens1(k,1)+charge(j)*dens1(k,j)
-		  enddo
+                do j=2,nbulk
+                dens1(k,1)=dens1(k,1)+charge(j)*dens1(k,j)
+                enddo
 	       else
 	          dens1(k,i)=(dense0(i)-denseb(i))*
      1	                     (1-rho**rn1de(i))**rn2de(i)+denseb(i)
 cSm070426
 c-----------------multiply density profiles by den_scale
-                  dens1(k,i)=dens1(k,i)*den_scale(i)
+                dens1(k,i)=dens1(k,i)*den_scale(i)
+                if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
                   write(*,*)'dinit_mr:  i,k,dens1(k,i)',i,k,dens1(k,i)
-                write(*,*)'dense0(i),denseb(i),rho,rn1de(i),rn2de(i)',
-     *          dense0(i),denseb(i),rho,rn1de(i),rn2de(i)
-      
+                  write(*,*)'dense0(i),denseb(i),rho,rn1de(i),rn2de(i)',
+     *            dense0(i),denseb(i),rho,rn1de(i),rn2de(i)
+                endif ! outprint
                endif
             enddo
          enddo
-	 write(*,*)'dinit_mr: end of analytical density profiles input'
+cyup	 write(*,*)'dinit_mr: end of analytical density profiles input'
 
 c------------------------------------------------------------------         
 c         /tpopprof/
@@ -341,23 +354,22 @@ c----------------------------------------------------------
 cTemperature
 ctempe_(i)=(te0(i)-teb(i))*(1-rho**rn1te(i))**rn2te(i)+teb(i)
 c-----------------------------------------------------------
-	 do i=1,nbulk
-           write(*,*)'dinit_mr: i, te0(i)',i,te0(i)	
-           write(*,*)'dinit_mr: i, teb(i)',i,teb(i)
-	 enddo
-
-	 do i=1,nbulk
-	   write(*,*)'dinit_mr: i, rn1te(i)',i,rn1te(i)
-	 enddo
-
-	 do i=1,nbulk
-	   write(*,*)'dinit_mr: i, rn2te(i)',i,rn2te(i)
-	 enddo
-
+       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
+         do i=1,nbulk
+          write(*,*)'dinit_mr: i, te0(i)',i,te0(i)	
+          write(*,*)'dinit_mr: i, teb(i)',i,teb(i)
+         enddo
+         do i=1,nbulk
+          write(*,*)'dinit_mr: i, rn1te(i)',i,rn1te(i)
+         enddo
+         do i=1,nbulk
+          write(*,*)'dinit_mr: i, rn2te(i)',i,rn2te(i)
+         enddo
          do i=1,nbulk
           write(*,*)'dinit_mr: i,tp0(i),tpb(i)',i,tp0(i),tpb(i)
           write(*,*)'dinit_mr: rn1tp(i),rn2tp(i)',rn1tp(i),rn2tp(i)
          enddo
+       endif ! outprint
 
 c------- creation of array temp1(ndensa,nbulka)
 	 do i=1,nbulk
@@ -373,8 +385,8 @@ c--------------multiply temperature profiles by temp_scale
 10	 continue         
 
 
-         write(*,*)'dinit_mr: zeff0,zeffb,rn1zeff,rn2zeff'
-         write(*,*)zeff0,zeffb,rn1zeff,rn2zeff
+cyup         write(*,*)'dinit_mr: zeff0,zeffb,rn1zeff,rn2zeff'
+cyup         write(*,*)zeff0,zeffb,rn1zeff,rn2zeff
 	 if(((izeff.eq.1).or.(izeff.eq.2)).or.(izeff.eq.4)) then
 c           the given analytical Zeff profile
 c-------------------------------------------
@@ -388,11 +400,13 @@ c           the creation of array zeff1(ndens)
 	 endif
 
 	 if((izeff.eq.0).or.(izeff.eq.3)) then
+	    if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 	    write(*,*)'dinit_mr: izeff=1 zeff will be calculated using 
      1 the given ions densities'
+          endif ! outprint
 	 endif
       endif ! idens analytical
-      write(*,*)'dinit_mr:  partner=',partner
+cyup      write(*,*)'dinit_mr:  partner=',partner
 c--------------------------------------------------------------------
       if (partner.eq.'genray_profs_in.txt' .or. 
      1    partner.eq.'genray_profs_in.nc') then
@@ -421,14 +435,16 @@ c        write(*,*)'dmas',dmas
 c        dmas(1)=1.d0
 c--------multiply density profiles by den_scale(i)
          do i=1,nbulk
+            if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
             write(*,*)'dinit_mr: i,temp_scale(i)',i,temp_scale(i)
+            endif ! outprint
             do k=1,ndens               
                dens1(k,i)=dens1(k,i)*den_scale(i)
                temp1(k,i)=temp1(k,i)*temp_scale(i)
             enddo
         enddo
          
-        write(*,*)'*******************************************'
+cyup        write(*,*)'*******************************************'
         go to 20   !   <<<<<==========
       endif
 c------------------------------------
@@ -438,15 +454,15 @@ c        spline approximation of the density, temperature, zeff,
 c        tpop=T_perp/T_parallel, vflow
 c        radial profiles
 c        input of the arrays on the radial mesh	from dtzprof.dat
-
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'dinit_mr: idens=1: Before mult by den_scale'
          write(*,*)'nbulka,ndensa,nbulk,ndens',nbulka,ndensa,nbulk,ndens
-c--------------------------------------------------------------
          do i=1,nbulk
            write(*,*)'i',i,'dens1(k,i)'
            write(*,'(a,2i4,e12.4)')'dens1=',i,1,    dens1(1,i)
            write(*,'(a,2i4,e12.4)')'dens1=',i,ndens,dens1(ndens,i)
          enddo
+         endif ! outprint
          !pause !!!
 cSm070426 
 c---------multiply density profiles by den_scale(i)
@@ -458,18 +474,20 @@ cBh080102          do i=i1,nbulk
          enddo
         
 c 21      format(5e16.9)
-	 write(*,*)'dinit_mr: nbulk1',nbulk1,'ndens',ndens
+cyup	 write(*,*)'dinit_mr: nbulk1',nbulk1,'ndens',ndens
 	 if ((izeff.eq.0).or.(izeff.eq.3)) then
 	   i1=2
 	 else
 	   i1=1
 	 endif
 
+       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'dinit_mr: idens=1:  After mult by den_scale'
          do i=i1,nbulk1
 	    write(*,*)'i',i,'dens1(k,i)'
 	    write(*,*)(dens1(k,i),k=1,ndens)
-	 enddo
+         enddo
+       endif ! outprint
          
 c----------------------------------------------------------
 c        calculation of the electron density from
@@ -485,8 +503,10 @@ cSmirnov/00/05/26
            enddo
          endif
 
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'dinit_mr:  dens1(k,1)'
          write(*,*)(dens1(k,1),k=1,ndens)
+         endif ! outprint
 
 cSm070426 
 c--------multiply temperature profiles by temp_scale
@@ -500,41 +520,38 @@ c               write(*,*)'temp1(k,i)',temp1(k,i)
             enddo
          enddo
 
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          do i=1,nbulk
-	    write(*,*)'i',i,'temp1(k,i)'
+            write(*,*)'i',i,'temp1(k,i)'
             write(*,*) (temp1(k,i),k=1,ndens)
-	 enddo
-
+         enddo
 c---------tpoptab
          do i=1,nbulk
-	    write(*,*)'i',i,'tpop1(k,i)'
+            write(*,*)'i',i,'tpop1(k,i)'
             write(*,*) (tpop1(k,i),k=1,ndens)
-	 enddo
-
+         enddo
 c--------vflowtab
          do i=1,nbulk
-	    write(*,*)'i',i,'vflow1(k,i)'
+            write(*,*)'i',i,'vflow1(k,i)'
             write(*,*) (vflow1(k,i),k=1,ndens)
-	 enddo
-
-
+         enddo
          write(*,*)'dinit_mr: idens=1:  izeff=',izeff
-
-	 if(((izeff.eq.1).or.(izeff.eq.2)).or.(izeff.eq.4)) then
+         if(((izeff.eq.1).or.(izeff.eq.2)).or.(izeff.eq.4)) then
 c           the given Zeff profile is in the table form
             write(*,*)'dinit_mr: idens=1:  zeff1(k)'
          else
             write(*,*)'dinit_mr: idens=1:  uniform zeff1',zeff1
-	 endif !izeff              
+         endif !izeff              
+         endif ! outprint
       endif ! idens=1
       
 c-----------------------------------------------------------
  20   continue !from:  if (partner.eq.
-      write(*,*)'dinit_mr:  after    20   continue '
+cyup      write(*,*)'dinit_mr:  after    20   continue '
 c------------------------------------------------------------
 c     read the data for emission calculations
 c     /emission/
-       write(*,*)'dinit_mr: i_emission',i_emission
+cyup       write(*,*)'dinit_mr: i_emission',i_emission
       if (i_emission.eq.1) then
 c       if (nfreqa.lt.nfreq) then
 c        write(*,*)'dinit_mr nfreqa<nfreq'
@@ -553,13 +570,13 @@ c        stop
 c       endif
  
        if ((wallr.lt.0.d0).or.(wallr.gt.1.d0)) then
-        write(*,*)'dinit_mr:  it should be {0=< wallr =<1}'
-        write(*,*)'but wallr=',wallr
-        write(*,*)'change wallr in genray.in'
-        stop
+        WRITE(*,*)'dinit_mr:  it should be {0=< wallr =<1}'
+        WRITE(*,*)'but wallr=',wallr
+        WRITE(*,*)'change wallr in genray.in'
+        STOP
        endif         
  
-       write(*,*)'dinit_mr:  i_rrind',i_rrind
+cyup       write(*,*)'dinit_mr:  i_rrind',i_rrind
       endif ! (i_emission.eq.1) 
 c---------------------------------------------------------
 c     read the data for for EC cone vertex coordinates calculations
@@ -573,7 +590,7 @@ c      /ox/
         prmt(3)=-prmt3 !to create the negative time
         i_vgr_ini=+1
         ireflm=1   
-        write(*,*)'dinit_mr:  i_ox.eq.1 prmt(3)',prmt(3)
+cyup        write(*,*)'dinit_mr:  i_ox.eq.1 prmt(3)',prmt(3)
       endif
 
       if(((i_ox.ne.0).and.(i_ox.ne.1)).and.(i_ox.ne.2)) then
@@ -608,8 +625,8 @@ c        set the arrays for v and w
          do i=2,nbulk
             v(i)=v0*charge(i)**2/dmas(i)
             w(i)=w0*charge(i)/dmas(i)
-            write(*,*)'dinit_mr:  i charge(i),dmas(i),v(i),w(i)'
-     +      ,i,charge(i),dmas(i),v(i),w(i)
+cyup            write(*,*)'dinit_mr:  i charge(i),dmas(i),v(i),w(i)'
+cyup     +      ,i,charge(i),dmas(i),v(i),w(i)
          enddo
       else
 c----------------------------------------------
@@ -653,9 +670,9 @@ c---------------------------------------------------------
 c        calculation of the table for the radial profile zeff1(ndens)
          call zeffcalc
 c        zeff1(ndens) is in common six.i
-	 do i=1,ndens
-	   write(*,*)'i',i,'zeff1(i)',zeff1(i)
-         enddo
+cyup         do i=1,ndens
+cyup         write(*,*)'i',i,'zeff1(i)',zeff1(i)
+cyup         enddo
       endif !izeff=0
 c---------------------------------------------------------
       if(izeff.eq.1) then
@@ -663,53 +680,55 @@ c---------------------------------------------------------
 c        calculation of the table for the ion densities profiles
 c---------------------------------------------------------
          if (nbulk.lt.3) then
-            write(*,*)'dinit_mr: nbulk.lt.3, Zeff must be equal 
+            WRITE(*,*)'dinit_mr: nbulk.lt.3, Zeff must be equal 
      1	charge(2), control it and use the option izeff=0'
-            stop
+            STOP
          else
 c           nbulk.ge.3
 c           calculation of the tables for the radial profile
 c           dens1(ndens,nbulk) and dens1(ndens,nbulk-1)
 	    if( charge(nbulk).eq.charge(nbulk-1)) then
-	      write(*,*)'Warning in dinit_mr: nbulk(.ge.3)=',nbulk
-	      write(*,*)'in dinit: charge(nbulk)=charge(nbulk-1)'
-	      write(*,*)'it is impossible to find the ions densities'
-	      write(*,*)'change charge(nulk) or charge(nbulk-1)'
-	      write(*,*)'it should be charge(nulk)>charge(nbulk-1)'
-	      write(*,*)'or use the option izeff=0'
-	      stop
+	      WRITE(*,*)'Warning in dinit_mr: nbulk(.ge.3)=',nbulk
+	      WRITE(*,*)'in dinit: charge(nbulk)=charge(nbulk-1)'
+	      WRITE(*,*)'it is impossible to find the ions densities'
+	      WRITE(*,*)'change charge(nulk) or charge(nbulk-1)'
+	      WRITE(*,*)'it should be charge(nulk)>charge(nbulk-1)'
+	      WRITE(*,*)'or use the option izeff=0'
+	      STOP
 	    endif
 
             call denscalc
             !pause !!!
 c------------------------------------------------
 c for test
-            do i1=1,nbulk
-               write(*,*)'dinit_mr: after call denscalc i1=',i1
-               do j1=1,ndens
-	          write(*,*)'j1=',j1,'dens1(j1,i1)',dens1(j1,i1)
-               enddo
-	    enddo
-	    do j1=1,ndens
-	       zefftest=0.d0
-	       zion=0.d0
-	       do i1=2,nbulk
-	          if(dens1(j1,1).ne.0.d0) then
-	             zefftest=zefftest+(dens1(j1,i1)/dens1(j1,1))*
-     1                        charge(i1)*charge(i1)
-		     zion=zion+charge(i1)*dens1(j1,i1)/dens1(j1,1)
-		  else
-		     write(*,*)'dinit_mr: dens1(j1,1)=0'
-		     zefftest=zefftest+1.d0*charge(i1)*charge(i1)
-		  endif
-	       enddo
-	       write(*,*)'j1',j1,'zefftest',zefftest,'zion',zion
-	    enddo
+cyup            do i1=1,nbulk
+cyup               write(*,*)'dinit_mr: after call denscalc i1=',i1
+cyup               do j1=1,ndens
+cyup	             write(*,*)'j1=',j1,'dens1(j1,i1)',dens1(j1,i1)
+cyup               enddo
+cyup            enddo
+            
+cyup	    do j1=1,ndens
+cyup	       zefftest=0.d0
+cyup	       zion=0.d0
+cyup	       do i1=2,nbulk
+cyup	          if(dens1(j1,1).ne.0.d0) then
+cyup	             zefftest=zefftest+(dens1(j1,i1)/dens1(j1,1))*
+cyup     1                        charge(i1)*charge(i1)
+cyup		     zion=zion+charge(i1)*dens1(j1,i1)/dens1(j1,1)
+cyup		  else
+cyup		     write(*,*)'dinit_mr: dens1(j1,1)=0'
+cyup		     zefftest=zefftest+1.d0*charge(i1)*charge(i1)
+cyup		  endif
+cyup	       enddo
+cyup	       write(*,*)'j1',j1,'zefftest',zefftest,'zion',zion
+cyup	    enddo
 c end test
 c------------------------------------------------
 
 	 endif ! nbulk
       endif ! izeff=1
+      
       if (izeff.eq.3) then
 	 do i=1,nbulk
 	    do k=1,ndens
@@ -717,15 +736,16 @@ c------------------------------------------------
 	       psi=psi_rho(rho)
 	       denstot=dens1(k,1)
 	       do ii=2,nbulk
-		  denstot=denstot+dens1(k,ii)
+             denstot=denstot+dens1(k,ii)
 	       enddo
 	       temp1(k,i)=prespsi(psi)/denstot/(1.6d3)
+	       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 	       write(*,*)'dinit_mr:  izeff=3,k,rho',k,rho
 	       write(*,*)'prespsi(psi),denstot',prespsi(psi),denstot
 	       write(*,*)'in dinit i,temp1(k,i)',i,temp1(k,i)
 	       write(*,*)'in dinit i,dens1(k,i)',i,dens1(k,i)
 	       write(*,*)'in dinit i,dens1(k,1)',i,dens1(k,1)
-
+	       endif ! outprint
 	    enddo
 	 enddo
       endif !izeff=3
@@ -763,10 +783,12 @@ cSAP090801
 	    enddo
 	    prestest=temp1(j,1)*dens1(j,1)+stini
 	    zefftest=szi2ni/dens1(j,1)
+	    if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 	    write(*,*)'dinit_mr:  izeff=4,j,rho',j,rho
 	    write(*,*)'pressure,prestest',pressure,prestest
 	    write(*,*)'zeff,zefftest',zeff1(j),zefftest
 	    write(*,*)'dens1(j,1),szini',dens1(j,1),szini
+	    endif ! outprint
 	  enddo !j
 c test izeff=4	end
 	endif !nbulk.ge.3
@@ -778,8 +800,9 @@ c     creation of the density,temperature,zeff and
 c     tpop, vflow
 c     spline coefficients
       call spldens1
-      write(*,*)'dinit_mr:  after spldens1'
+cyup      write(*,*)'dinit_mr:  after spldens1'
 c-----test printing density,temperature,zeff
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       do j=1,ndens
          write(*,*)'j,rhom(j)',j,rhom(j)
          do i=1,nbulk
@@ -789,6 +812,7 @@ c-----test printing density,temperature,zeff
      &     i,den_test,tem_test
          enddo
       enddo
+      endif ! outprint
 c------------------------------------------------------------
 c     Reading or creation the non-maxwellian electron distribution
 c     for the calculation the anti-hermitian relativistic tensor
@@ -805,24 +829,26 @@ c               distribution with three temperatures in  three energy ranges.
 c               Generally much faster than i_diskf=4.
 c----------------------------------------------------
       initial=1
-      write(*,*)'dinit_mr:  before dskin i_diskf=',i_diskf
+cyup      write(*,*)'dinit_mr:  before dskin i_diskf=',i_diskf
       call dskin(initial,energy,pitch,rho,fdist,dfdx,dfdpitch,
      .           dfdp,1) 
-      write(*,*)'dinit_mr aft dskin non-Maxwellian distribution was set'
+cyup      write(*,*)'dinit_mr aft dskin non-Maxwellian distribution was set'
 
 c---------------------------------------------------------
       if (istart.eq.1) then
 c-----------EC wave-----------
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'dinit_mr: ncone=',ncone
            write(*,*)'zst=',(zst(i),i=1,ncone),
      1        'rst=',(rst(i),i=1,ncone),
      1        'phist=',(phist(i),i=1,ncone)
-	    write(*,*)'dinit_mr: betast=',(betast(i),i=1,ncone),
+           write(*,*)'dinit_mr: betast=',(betast(i),i=1,ncone),
      1          'alfast=',(alfast(i),i=1,ncone)
-	    write(*,*)'dinit_mr: na1=', na1,'na2=',na2,
+           write(*,*)'dinit_mr: na1=', na1,'na2=',na2,
      1           'powtot=',(powtot(i),i=1,ncone)
-	    write(*,*)'dinit_mr: alpha1=', alpha1,
+           write(*,*)'dinit_mr: alpha1=', alpha1,
      1           'alpha2=',(alpha2(i),i=1,ncone)
+           endif ! outprint
       endif
       if (istart.eq.2) then
 c-----------LH and FW---------
@@ -850,18 +876,18 @@ c      xst=rst*dcos(phist)
 c      yst=rst*dsin(phist)
 c-----------------------------------------------------------
 c   printing of total magnetic field on the magnetic axis (for control)
-      write(*,*)'dinit_mr:  yma,xma',yma,xma
+cyup      write(*,*)'dinit_mr:  yma,xma',yma,xma
       bmod=b(yma,xma,0.d0)
-      write(*,*)'dinit_mr: magn. field on the magnetic axis bmag=',bmod
+cyup      write(*,*)'dinit_mr: magn. field on the magnetic axis bmag=',bmod
       psi_mag=psif(yma,xma)
-      write(*,*)'dinit_mr: psi on the magnetic axis psi_mag=',psi_mag
-       write(*,*)'dinit_mr:  istart,nray=',istart, nray
+cyup      write(*,*)'dinit_mr: psi on the magnetic axis psi_mag=',psi_mag
+cyup       write(*,*)'dinit_mr:  istart,nray=',istart, nray
 ctest
       if ((i_emission.eq.0).or.(nfreq.eq.1)) then
 c--------no emission or only one frequency in the emission calculations   
          xi=x(yma,xma,0.d0,1)
          yi=y(yma,xma,0.d0,1)
-         write(*,*)'dinit_mr:  at magnetic axis Xe,Ye ',xi,yi
+cyup         write(*,*)'dinit_mr:  at magnetic axis Xe,Ye ',xi,yi
 c---------------------------------------------------------------
 c     the creation the data for the contours X_e=const,Y_e=const
 c     B_tot,B_tor, B_pol on the plate (rho,theta) 
@@ -885,9 +911,11 @@ c     with normalized  Sum(i=1,nray)delpw0(i)=1
 c---------------------------------------------------------------
       if (istart.eq.1) then
 c---------EC waves---------------------------------
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'dinit_mr:  istart=',istart
          write(*,*)'dinit_mr:  raypatt=',raypatt
          write(*,*)'dinit_mr:  ncone=',ncone
+         endif ! outprint
 
          nray1=1                ! Counter for position in ray arrays
          do icone=1,ncone
@@ -897,16 +925,16 @@ c---------EC waves---------------------------------
             else ! .eq.toray - defined below as tetan=betast(icone)/trnspi
                tetan=betast(icone) ! just for printout
             endif
-            write(*,*)'alpha1,na1,na2,alpha2,phist,alfast,tetan',
-     1           alpha1(icone),na1,na2,alpha2(icone),phist(icone),
-     1           alfast(icone),tetan
+cyup            write(*,*)'alpha1,na1,na2,alpha2,phist,alfast,tetan',
+cyup     1           alpha1(icone),na1,na2,alpha2(icone),phist(icone),
+cyup     1           alfast(icone),tetan
      
 c            if (raypatt.ne.'toray') then
             if (raypatt.eq.'genray') then
                alpha1(icone)=alpha1(icone)*trnspi
                alpha2(icone)=alpha2(icone)*trnspi
                tetan=0.5d0*pi-betast(icone) !Polar angle (radians)
-               write(*,*)'in dinit_mr before cone_ec'
+cyup               write(*,*)'in dinit_mr before cone_ec'
                call cone_ec(alpha1(icone),na1,na2,alpha2(icone),
      1              phist(icone),alfast(icone),tetan,powtot(icone),nray,
      1              alphaj(nray1),betaj(nray1),powj(nray1))
@@ -915,18 +943,18 @@ c            if (raypatt.ne.'toray') then
                   rstj(i)=rst(icone)
                   phistj(i)=phist(icone)
                enddo
-               write(*,*)'in dinit_mr after cone_ec: nray',nray
-               do i=nray1,(nray1-1)+nray
-                  write(*,*)' i,powj(i)',i,powj(i)
-                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
-               enddo
+cyup               write(*,*)'in dinit_mr after cone_ec: nray',nray
+cyup               do i=nray1,(nray1-1)+nray
+cyup                  write(*,*)' i,powj(i)',i,powj(i)
+cyup                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
+cyup               enddo
             endif
             
             if(raypatt.eq.'toray') then
                alfast(icone)=alfast(icone)/trnspi
                tetan=betast(icone)/trnspi
-               write(*,*)'dinit_mr:  bef raypat: tetan,alfast',
-     1              tetan,alfast(icone)
+cyup               write(*,*)'dinit_mr:  bef raypat: tetan,alfast',
+cyup     1              tetan,alfast(icone)
                call raypat(tetan,alfast(icone),alpha1(icone),cr,nray_in,
      1              gzone,mray,betaj(nray1),alphaj(nray1))
                
@@ -946,20 +974,20 @@ c                  write(*,*)'zstj(i),rstj(i)=',
 c     +            zstj(i),rstj(i)
                enddo
                
-               do i=nray1,(nray1-1)+nray
-                  write(*,*)'Raypat ray starting angles (degrees):'
-                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
-               enddo
+cyup               do i=nray1,(nray1-1)+nray
+cyup                  write(*,*)'Raypat ray starting angles (degrees):'
+cyup                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
+cyup               enddo
                do i=nray1,(nray1-1)+nray
                   powj(i)=(powtot(icone)/nray)*1.e13
                   alphaj(i)=alphaj(i)*trnspi
                   betaj(i)=(90.-betaj(i))*trnspi
                enddo
-               write(*,*)'in dinit_mr after raypat powj(i)'
-               do i=nray1,(nray1-1)+nray
-                  write(*,*)' i,powj(i)',i,powj(i)
-                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
-               enddo
+cyup               write(*,*)'in dinit_mr after raypat powj(i)'
+cyup               do i=nray1,(nray1-1)+nray
+cyup                  write(*,*)' i,powj(i)',i,powj(i)
+cyup                  write(*,*)' i,betaj(i),alphaj(i)',i,betaj(i),alphaj(i)
+cyup               enddo
             endif               !(On raypatt)
              
             if (raypatt.eq.'diskdisk') then
@@ -969,13 +997,13 @@ c           stop 'dinit.f after disk_to_disk_rays_initial_launching_dat'
 
             if (raypatt.eq.'diskbeam') then
 
-               write(*,*)'dinit_mr:  before'
-               write(*,*)'disk_beam_rays_initial_launching_data'
+cyup               write(*,*)'dinit_mr:  before'
+cyup               write(*,*)'disk_beam_rays_initial_launching_data'
 
                call disk_beam_rays_initial_launching_data(nray)
 
-               write(*,*)'dinit_mr:  after'
-               write(*,*)'disk_beam_rays_initial_launching_data'
+cyup               write(*,*)'dinit_mr:  after'
+cyup               write(*,*)'disk_beam_rays_initial_launching_data'
 
             endif !diskdisk
 c            stop 'dinit.f after disk_beam_rays_initial_launching_dat'           
@@ -985,14 +1013,14 @@ cSAP050831            powtott=powtott+powtot(icone)
             nray1=nray1+nray
          enddo                  !(On icone)
          nray=nray1-1
-        write(*,*)'dinit_mr: after EC starting conditions, total nray=',
-     1        nray
+cyup        write(*,*)'dinit_mr: after EC starting conditions, total nray=',
+cyup     1        nray
       endif                     !(On istart.eq.1, EC)
 
       if (istart.eq.2) then
 c---------LH or WF----------
-	  write(*,*)'dinit_mr: before grill_lh '
-	  write(*,*)'ngrilla,ngrill,xma,yma',ngrilla,ngrill,xma,yma
+cyup	  write(*,*)'dinit_mr: before grill_lh '
+cyup	  write(*,*)'ngrilla,ngrill,xma,yma',ngrilla,ngrill,xma,yma
 	  !pause
 c--------------------------------------------------------------
           call grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
@@ -1015,7 +1043,7 @@ cSAP111030
 cSm050309
 c     1    i_grill_pol_mesh,i_grill_npar_ntor_npol_mesh)
 
-	   write(*,*)'dinit_mr: after grill nray=',nray
+cyup	   write(*,*)'dinit_mr: after grill nray=',nray
 
 c          do iray=1,nray         
 c             write(*,*)'iray,arzu0(iray),arru0(iray),arphiu0(iray)',
@@ -1053,9 +1081,9 @@ cSAP050510	  x0=1.d0
 c          theta=0.d0   !poloidal angle  (degree)
 c          theta=-30.d0
           theta=thgrill(1)
-          write(*,*)'dinit before owconvr theta=',theta
+cyup          write(*,*)'dinit before owconvr theta=',theta
           call owconvr (theta,x0,rhoconv,zconv,rconv)
-    	  write(*,*)'dinit_mr: rhoconv,zconv,rconv',rhoconv,zconv,rconv
+cyup    	  write(*,*)'dinit_mr: rhoconv,zconv,rconv',rhoconv,zconv,rconv
 	  rhopsi0(1)=rhoconv
           phiconv=0.d0
           bmod=b(zconv,rconv,phiconv)
@@ -1064,17 +1092,17 @@ c          theta=-30.d0
 c---------calculation of the optimal value N_parallel_optimal
 c         for O_X mode conversion
 	  cnparopt=dsqrt(yconv/(1.d0+yconv))
-    	  write(*,*)'dinit_mr: xconv,yconv,cnparopt',xconv,yconv,cnparopt
+cyup    	  write(*,*)'dinit_mr: xconv,yconv,cnparopt',xconv,yconv,cnparopt
 c         write(*,*)'dinit old value of rhopsi0(1)',rhopsi0(1) 
 	  rhopsi0(1)=rhoconv
-          write(*,*)'dinit_mr: new rhopsi0(1)',rhopsi0(1) 
-          write(*,*)'dinit_mr: old anmin(1),anmax(1)',anmin(1),anmax(1)
+cyup          write(*,*)'dinit_mr: new rhopsi0(1)',rhopsi0(1) 
+cyup          write(*,*)'dinit_mr: old anmin(1),anmax(1)',anmin(1),anmax(1)
           anmin(1)=cnparopt-0.01d0 
           anmax(1)=cnparopt+0.01d0 
-          write(*,*)'dinit_mr: new anmin(1),anmax(1)',anmin(1),anmax(1)
+cyup          write(*,*)'dinit_mr: new anmin(1),anmax(1)',anmin(1),anmax(1)
 c---------------------------------------------------------------
-          write(*,*)'dinit_mr: before grill_lh ngrilla,ngrill',
-     1    ngrilla,ngrill
+cyup          write(*,*)'dinit_mr: before grill_lh ngrilla,ngrill',
+cyup     1    ngrilla,ngrill
           call grill_lh(rhopsi0,ngrilla,ngrill,thgrill,phigrill,
      1    height,nthin,nthinmax,
      1    anmin,anmax,nnkpar,powers,powtott,
@@ -1155,8 +1183,10 @@ c      stop
 c      write(*,*)'in dinit_mr i_diskf',i_diskf
 
 c-----allocate pointers at writencdf.i and write_i
-      write(*,*)'dinit_mr:  before ainalloc_writencdf nray',nray
+cyup      write(*,*)'dinit_mr:  before ainalloc_writencdf nray',nray
+      !if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
       call ainalloc_writencdf_i(nray)
+      !endif ! outnetcdf
 cBH130508      call ainalloc_write_i(nray)
  
       if ((i_emission.gt.0).and.(nfreq.gt.1)) then
@@ -1168,16 +1198,16 @@ c---------------------------------------------
          bmod=b(yma,xma,0.d0) !TL
          freqncy0=28.0*b0*bmod !GHZ
          hfreq=(freq01-freq00)/dfloat(nfreq-1)
-         write(*,*)'dinit_mr: bmod,b0,freq01,freq00,nfreq,hfreq',
-     +   bmod,b0,freq01,freq00,nfreq,hfreq
-         write(*,*)'dinit_mr: freqncy0',freqncy0
+cyup         write(*,*)'dinit_mr: bmod,b0,freq01,freq00,nfreq,hfreq',
+cyup     +   bmod,b0,freq01,freq00,nfreq,hfreq
+cyup         write(*,*)'dinit_mr: freqncy0',freqncy0
 
          do ifreq=1,nfreq
 c-----------set the array for the frequencies
             wfreq(ifreq)=freqncy0*(freq00+hfreq*(ifreq-1))  
          enddo
 
-         write(*,*)'dinit_mr: nfreq',nfreq
+cyup         write(*,*)'dinit_mr: nfreq',nfreq
 c--------choose the frequency wfreq(ifre0) most close to the central
 c        second harmonic 2*freqncy0
          ifreq0=1
@@ -1187,9 +1217,9 @@ c        second harmonic 2*freqncy0
                delt=dabs(wfreq(ifreq)-2.d0*freqncy0)
                ifreq0=ifreq
             endif
-            write(*,*)'dinit_mr:  ifreq,wfreq(ifreq)',ifreq,wfreq(ifreq)
+cyup            write(*,*)'dinit_mr:  ifreq,wfreq(ifreq)',ifreq,wfreq(ifreq)
          enddo
-         write(*,*)'dinit_mr: ifreq0,wfreq(ifreq0)',ifreq0,wfreq(ifreq0)
+cyup         write(*,*)'dinit_mr: ifreq0,wfreq(ifreq0)',ifreq0,wfreq(ifreq0)
       endif
 
       return ! dinit_mr: 
@@ -1294,12 +1324,12 @@ c      if (i_ox.eq.1) then
 c      endif
       if (istart.eq.1) then
 c--------EC wave
-         write(*,*)' bef plasmray zst,rst,phist,alfast,betast',
-     1	 zst,rst,phist,alfast,betast
+cyup         write(*,*)' bef plasmray zst,rst,phist,alfast,betast',
+cyup     1	 zst,rst,phist,alfast,betast
          call plasmray(zst,rst,phist,alfast,betast,
      1                  zu0,ru0,phiu0,iraystop)
-         write(*,*)'in dinit_1ray after plasmaray zu0=',zu0,'ru0=',ru0,
-     1   'phiu0=',phiu0,'iraystop=',iraystop
+cyup         write(*,*)'in dinit_1ray after plasmaray zu0=',zu0,'ru0=',ru0,
+cyup     1   'phiu0=',phiu0,'iraystop=',iraystop
          if (iraystop.eq.1) then
 	    return
          end if
@@ -1310,23 +1340,23 @@ c        the shift of the initial point inside the plasma from the boundary
 cSAP091127
          phi=0.d0
          bmod=b(z,r,phi)
-         write(*,*)'befor edgcor z,r,rho',z,r,rho
+cyup         write(*,*)'befor edgcor z,r,rho',z,r,rho
          call edgcor(z,r,zu0,ru0)
 c        end of the shift
-	 write(*,*)'in dinit_1ray after initial point shift'
+cyup	 write(*,*)'in dinit_1ray after initial point shift'
 c	 write(*,*)'ru0,zu0',ru0,zu0
 cSAP091127
 cRobtAndre140412         bmod=b(z0,r0,phi)  BH: but no effective change.
          bmod=b(zu0,ru0,phi)
 cRobtAndre140412         write(*,*)'after edgcor z0,r0,rho',z0,r0,rho
-         write(*,*)'after edgcor z0,r0,rho',zu0,ru0,rho
+cyup         write(*,*)'after edgcor z0,r0,rho',zu0,ru0,rho
 c	 -------------------------------
 c        nx,ny,nz in start point
          cnzst=dsin(betast)
          cnxst=dcos(betast)*dcos(alfast+phist)
          cnyst=dcos(betast)*dsin(alfast+phist)
 
-         write(*,*)'dinit betast,alfast+phist',betast,alfast+phist
+cyup         write(*,*)'dinit betast,alfast+phist',betast,alfast+phist
 c         write(*,*)'cnxst=',cnxst,'cnyst=',cnyst,'cnzst=',cnzst
 c----------------------------------------------------------------
 	 bmod=b(zu0,ru0,phiu0)
@@ -1337,11 +1367,11 @@ c        in the initial point (zu0,ru0,phiu0) for ECR wave
 c-----------------------------------------------------------------
 c         write(*,*)'in dinit_1ray before ninit_ec bz,br,bphi,bmod'
 c         write(*,*)bz,br,bphi,bmod
-         write(*,*)'dinit_1ray cnxst,cnyst,cnzst',cnxst,cnyst,cnzst
-         write(*,*)'dinit_1ray dsqrt(cnxst**2+cnyst**2+cnzst**2)',
-     &dsqrt(cnxst**2+cnyst**2+cnzst**2)
+cyup         write(*,*)'dinit_1ray cnxst,cnyst,cnzst',cnxst,cnyst,cnzst
+cyup         write(*,*)'dinit_1ray dsqrt(cnxst**2+cnyst**2+cnzst**2)',
+cyup     &dsqrt(cnxst**2+cnyst**2+cnzst**2)
          call ninit_ec(zu0,ru0,phiu0,cnxst,cnyst,cnzst,cnteta,cnphi)
-	 write(*,*)' after ninit_ec cnteta,cnphi',cnteta,cnphi
+cyup	 write(*,*)' after ninit_ec cnteta,cnphi',cnteta,cnphi
 
       endif
 
@@ -1351,16 +1381,18 @@ c--------LH and FW wave, OX-conversion pt.
          ru0=rst
          phiu0=phist
          bmod=b(zu0,ru0,phiu0)
+         xe=x(zu0,ru0,phiu0,1)
+         ye=y(zu0,ru0,phiu0,1)
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)' in dinit_1ray istart=',istart
          write(*,*)'magnetic field in initial point'
          write(*,*)'bmod =',bmod,'zu0,ru0,phiu0',zu0,ru0,phiu0
          write(*,*)'in dinit_1ray ksi_nperp', ksi_nperp
 ctest for initial conditions
-	 xe=x(zu0,ru0,phiu0,1)
-	 ye=y(zu0,ru0,phiu0,1)
          write(*,*)'dinit_1ray initia values xe,ye,uh'
          write(*,*)xe,ye,dsqrt(xe+ye*2)
          write(*,*)'dinit_1ray: istart,ioxm',  istart,ioxm
+         endif ! outprint
 cendtest
       end if
 c--------------------------------------------------------------
@@ -1387,8 +1419,10 @@ c      write(*,*)'in dinit1_ray btheta0',btheta0,'bphi',bphi,'bmod',bmod
 c      write(*,*)'in dinit1_ray cnpat1,cnpar2',cnpar1,cnpar2
 c Smirnov 961210 end
 c-------------------------------------------------------------------
+       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
        write(*,*)'in 1ray cnpar1',cnpar1,'cnteta',cnteta,'cnphi',cnphi
        write(*,*)'i_rho_find_hot_nperp_roots',i_rho_find_hot_nperp_roots
+       endif ! outprint
 c---------------------------------------------------------------
       if (i_rho_find_hot_nperp_roots.eq.1) then
 c-----------------------------------------------------------------
@@ -1398,7 +1432,7 @@ c       hot plasma dispersdion function D_hot(npar) has three roots.
 c       The vector rho^ is starting at the edge point (r_edge,z_edge,phi_edge),
 c       and directed to the magnetic axis O(xma,yma,phi_edge)
 c-------------------------------------------------------------------
-       write(*,*)'dinit.f r,z,phi,cnpar1', r,z,phi,cnpar1
+cyup       write(*,*)'dinit.f r,z,phi,cnpar1', r,z,phi,cnpar1
  
         call rho_ini_hot_nperp_roots(r,z,phi,cnpar1)     
 c     &  rho_ini,z_ini,r_ini)
@@ -1409,9 +1443,11 @@ c------------------------------------------------------------------
 c-------------------------------------------------------------
 c     fit the initial value of rho_ini fort LH or FW cutoff
 c--------------------------------------------------------------
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'dinit.f i_rho_cutoff ',i_rho_cutoff
       write(*,*)'cnteta,cnphi',cnteta,cnphi  
       write(*,*)'dinit.f before i_rho_cutoff=1 z,r',z,r
+      endif ! outprint
       if (i_rho_cutoff.eq.1) then
          costheta=(r-xma)/dsqrt((z-yma)**2+(r-xma)**2)
          sintheta=(z-yma)/dsqrt((z-yma)**2+(r-xma)**2)
@@ -1431,9 +1467,9 @@ cSAP091017
 cSAP091026
          n_toroidal=cnphi
 
-         write(*,*)'dinit_1ray before rho_ini i_n_poloidal,n_theta_pol'
-     &   ,i_n_poloidal,n_theta_pol
-         write(*,*)'cnteta,cnphi',cnteta,cnphi
+cyup         write(*,*)'dinit_1ray before rho_ini i_n_poloidal,n_theta_pol'
+cyup     &   ,i_n_poloidal,n_theta_pol
+cyup         write(*,*)'cnteta,cnphi',cnteta,cnphi
 
          call rho_ini_LHFW(theta,phi,cnpar1,
 cSAP091026
@@ -1442,14 +1478,14 @@ c     &   i_n_poloidal,n_theta_pol,cnphi,
      &   rho_ini,z_ini,r_ini,cntheta_ini,cnphi_ini,
      &   i_rho_ini_LHFW_found)
 
-         write(*,*)'dinit.f after rho_ini_LHFW i_rho_ini_LHFW_found=',
-     &              i_rho_ini_LHFW_found
+cyup         write(*,*)'dinit.f after rho_ini_LHFW i_rho_ini_LHFW_found=',
+cyup     &              i_rho_ini_LHFW_found
 
          if (i_rho_ini_LHFW_found.eq.1) then
 c-----------cutoff point with new z,r coordinates was found
             z=z_ini 
             r=r_ini
-            write(*,*)'dinit.f after  rho_ini_LHFW z,r',z,r
+cyup            write(*,*)'dinit.f after  rho_ini_LHFW z,r',z,r
          else
 c-----------cutoff point was not found
             write(*,*)'cutoff point was not found'
@@ -1466,48 +1502,48 @@ c     &cntheta_ini,cnphi_ini
          cnphi_ini=cnphi
       endif
 
-      write(*,*)'dinit.f after rho_ini_LHFW,cntheta_ini,cnphi_ini',
-     &cntheta_ini,cnphi_ini
+cyup      write(*,*)'dinit.f after rho_ini_LHFW,cntheta_ini,cnphi_ini',
+cyup     &cntheta_ini,cnphi_ini
 
 c--------------------------------------------------------------------
 c     cninit solves the dispersion relation N=N(n_par)
 c     Then subroutine calculates the initial components
 c     of the refractive index  cnz,cnr,cm
 c---------------------------------------------------------
-      write(*,*)'dinit z,r,phi,cnpar1,cntheta_ini,cnphi_ini',
-     &z,r,phi,cnpar1,cntheta_ini,cnphi_ini
+cyup      write(*,*)'dinit z,r,phi,cnpar1,cntheta_ini,cnphi_ini',
+cyup     &z,r,phi,cnpar1,cntheta_ini,cnphi_ini
 
 cBH070123 start
       psi=fpsi(r,z)
       rho=rhopsi(psi)
       bmod=b(z,r,phi)
 !      Rho= 9.535660582E-01  Saveliev starting condition (temporary)
-      write(*,*)'dinit r,z,rho,dens,temp ',r,z,rho,densrho(rho,1),
-     +          temperho(rho,1)
+cyup      write(*,*)'dinit r,z,rho,dens,temp ',r,z,rho,densrho(rho,1),
+cyup     +          temperho(rho,1)
 
 cSAP090518
       do i=1,nbulk
-        write(*,*)'dinit i',i
+cyup        write(*,*)'dinit i',i
         dens_i=dense(z,r,phi,i)
-        write(*,*)'dinit i,dens_i',i,dens_i
+cyup        write(*,*)'dinit i,dens_i',i,dens_i
       enddo
       x_e=x(z,r,phi,1)
       y_e=y(z,r,phi,1)
-      write(*,*)'x_e,y_e',x_e,y_e
+cyup      write(*,*)'x_e,y_e',x_e,y_e
 
       if(nbulk.ge.2) then
         x_2=x(z,r,phi,2)
         y_2=y(z,r,phi,2)
-        write(*,*)'x_2,y_2',x_2,y_2
+cyup        write(*,*)'x_2,y_2',x_2,y_2
       endif
 
       if (nbulk.ge.3)then
         x_3=x(z,r,phi,3) 
         y_3=y(z,r,phi,3)
-        write(*,*)'x_3,y_3',x_3,y_3
+cyup        write(*,*)'x_3,y_3',x_3,y_3
       endif
 
-      write(*,*)'cnpar1',cnpar1
+cyup      write(*,*)'cnpar1',cnpar1
 c      w_cut_d_w_p=y_2-x_e/(y_e*(cnpar1**2-1))
 c      w_cut_d_w_m=-y_2+x_e/(y_e*(cnpar1**2-1))
 c      write(*,*)'w_cut_d_w_p',w_cut_d_w_p
@@ -1517,11 +1553,11 @@ c      eps_p_g=1.d0+(x_e/y_e)/(1+y_2)
 c      write(*,*)'eps_m_g,eps_p_g',eps_m_g,eps_p_g
       if(nbulk.eq.2) then
          w_lh_d_w=dsqrt(x_2)
-         write(*,*)'w_lh_d_w',w_lh_d_w
+cyup         write(*,*)'w_lh_d_w',w_lh_d_w
        endif
        if(nbulk.eq.3) then
          w_lh_d_w=dsqrt(x_2+x_3)
-         write(*,*)'w_lh_d_w',w_lh_d_w
+cyup         write(*,*)'w_lh_d_w',w_lh_d_w
        endif
 cBH070123 end
 
@@ -1530,9 +1566,9 @@ ctest
       ioxm_n_npar=1
        call nper_npar_ioxm_n_npar(2,z,r,phi,cnpar1,
      & cnper,iraystop) ! ioxm_n_npar will be set in one.i
-      write(*,*)'iraystop,ioxm_n_npar,cnper',iraystop,ioxm_n_npar,cnper
+cyup      write(*,*)'iraystop,ioxm_n_npar,cnper',iraystop,ioxm_n_npar,cnper
 
-      write(*,*)'dinit.f subroutine dinit_1ray ifreq_write',ifreq_write
+cyup      write(*,*)'dinit.f subroutine dinit_1ray ifreq_write',ifreq_write
 
       if(iraystop.eq.0) then
          wn_perp_ioxm_p(ifreq_write)=cnper
@@ -1543,11 +1579,11 @@ ctest
        ioxm_n_npar=-1
        call nper_npar_ioxm_n_npar(2,z,r,phi,cnpar1,
      & cnper,iraystop) ! ioxm_n_npar will be set in one.i
-      write(*,*)'iraystop,ioxm_n_npar,cnper',iraystop,ioxm_n_npar,cnper
+cyup      write(*,*)'iraystop,ioxm_n_npar,cnper',iraystop,ioxm_n_npar,cnper
 
-      write(*,*)'dinit.f subroutine dinit_1ray nfreq',nfreq
+cyup      write(*,*)'dinit.f subroutine dinit_1ray nfreq',nfreq
 
-      write(*,*)'dinit.f subroutine dinit_1ray ifreq_write',ifreq_write
+cyup      write(*,*)'dinit.f subroutine dinit_1ray ifreq_write',ifreq_write
 
       if(iraystop.eq.0) then
          wn_perp_ioxm_m(ifreq_write)=cnper
@@ -1556,7 +1592,7 @@ ctest
       endif
       ioxm_n_npar= ioxm_n_npar_loc
 
-      write(*,*)'dinit.f i_look_roots',i_look_roots
+cyup      write(*,*)'dinit.f i_look_roots',i_look_roots
       if (i_look_roots.eq.1)then   
 c-----------------------------------------------------------------
 c       plot ReD_hot(nperp) at given npar
@@ -1653,13 +1689,14 @@ c------------------------------------------------------
            cnper =-1.d0
         endif
 
-        write(*,*)'dinit.f  before wave_normal_surface'
+cyup        write(*,*)'dinit.f  before wave_normal_surface'
        
-        call wave_normal_surface(z,r,phi,cnpar1,cnper,0.d0,n_gam,ib)
+        ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+        call wave_normal_surface(z,r,phi,cnpar1,cnper,0.d0,n_gam,ibmx)
 
-        write(*,*)'dinit.f  before wave_ray_normal_surface'
+cyup        write(*,*)'dinit.f  before wave_ray_normal_surface'
 
-        call wave_ray_normal_surface(z,r,phi,cnpar1,cnper,0.d0,n_gam,ib)
+      call wave_ray_normal_surface(z,r,phi,cnpar1,cnper,0.d0,n_gam,ibmx)
                
       endif
 
@@ -1671,8 +1708,8 @@ c     1            cnz,cnr,cm,iraystop)
          return
       end if
 
-      write(*,*)'dinit after cninit cn**2',cnz**2+cnr**2+(cm/r)**2,
-     &'cn=',dsqrt(cnz**2+cnr**2+(cm/r)**2)
+cyup      write(*,*)'dinit after cninit cn**2',cnz**2+cnr**2+(cm/r)**2,
+cyup     &'cn=',dsqrt(cnz**2+cnr**2+(cm/r)**2)
 
       cn2p=cnz**2+cnr**2+cnphi**2
 cSm030513
@@ -1680,7 +1717,7 @@ c      cn2=cnz**2+cnr**2+cnphi**2
       cnphi_loc=cm/r
       cn2=cnz**2+cnr**2+cnphi_loc**2
       cnper=dsqrt(cn2-cnpar1**2)
-      write(*,*)'in dinit cn2',cn2,'cnper,cnpar1',cnper,cnpar1
+cyup      write(*,*)'in dinit cn2',cn2,'cnper,cnpar1',cnper,cnpar1
 
 ctest_launch
 c       z= 0.1364802434874849 !theta= 58.62661361694336
@@ -1717,13 +1754,13 @@ cend_test
 
       bmod=b(z,r,phi)
       gam=gamma1(z,r,phi,cnz,cnr,cm)
-      write(*,*)'1ray before d=hamilt1'
-      write(*,*)'z,r,phi before d=hamilt1 z,r,phi',z,r,phi
-      write(*,*)'z,r,phi before d=hamilt1 cnz,cnr,cm',cnz,cnr,cm
+cyup      write(*,*)'1ray before d=hamilt1'
+cyup      write(*,*)'z,r,phi before d=hamilt1 z,r,phi',z,r,phi
+cyup      write(*,*)'z,r,phi before d=hamilt1 cnz,cnr,cm',cnz,cnr,cm
 
       dh=hamilt1(z,r,phi,cnz,cnr,cm)
 
-      write(*,*)'dinit_1ray after d=hamilt1 dh=',dh
+cyup      write(*,*)'dinit_1ray after d=hamilt1 dh=',dh
 c The check of the Hamiltonian value for the found initial conditions.
       epshamin=1.d-6
       epshamin=1.d-2
@@ -1738,9 +1775,9 @@ c         return
 c      endif
 c-------------------------------------------------------------------
 
-      write(*,*)'before outinit'
+cyup      write(*,*)'before outinit'
       call outinit(u)
-      write(*,*)'in dinit_1ray after call outini nrayelt= ',nrayelt
+cyup      write(*,*)'in dinit_1ray after call outini nrayelt= ',nrayelt
       irefl=0
 c      cnz=-0.5166646619861239d0 
 c      cnr=-0.7701078676733518d0 
@@ -1750,18 +1787,22 @@ c      cnr=-0.7701078676733518d0
       u(4)=cnz
       u(5)=cnr
       u(6)=cm
+      
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'dinit_1ray before prep3d powini',powini
       write(*,*)'dinit_1ray before prep3d u',u
-
       write(*,*)'dinit_1ray before prep3d xma,yma',xma,yma
+      endif ! outprint
   
       call prep3d(0.0,u,deru,iraystop)
 
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'initial data'
       write(*,*)'z=',z,'r=',r,'phi=',phi
       write(*,*)'cnz=',cnz,'cnr=',cnr,'cm=',cm
       write(*,*)'rho=',rho
       write(*,*)'x_e=',x(z,r,phi,1),'y_e=',y(z,r,phi,1)
+      endif ! outprint
 c-----------------------------------------------------------
 c     check the group velocity
 c-----------------------------------------------
@@ -1775,7 +1816,7 @@ c-----------------------------------------------
       v_gr_rho=(dpdzd*deru(1)+dpdrd*deru(2))/
      &              dsqrt(dpdzd**2+dpdrd**2)
 
-      write(*,*)'v_gr,v_gr_rho',v_gr,v_gr_rho
+cyup      write(*,*)'v_gr,v_gr_rho',v_gr,v_gr_rho
 
 c-----the angle between grad_psi and n_perp
 c     vector_n_perp=vector_n-vector_n_par
@@ -1811,12 +1852,11 @@ c      write(*,*)'cnper_test',cnper_test
       cos_ksi_test=(cnper_z*dpdzd+cnper_r*dpdrd)/
      &                      (dsqrt(dpdzd**2+dpdrd**2)*cnper_test)
    
+      cos_ksi_vg=v_gr_rho/v_gr
       
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'cos_ksi_test,dcos(ksi_nperp*pi/180.d0)',
      &           cos_ksi_test,dcos(ksi_nperp*pi/180.d0)
-
-      cos_ksi_vg=v_gr_rho/v_gr
-
       write(*,*)'cos_ksi_vg',cos_ksi_vg
       write(*,*)'*******ksi_vg is the angle between group velocity'
       write(*,*)'and grad(psi) [degree].'
@@ -1828,16 +1868,20 @@ cRobtAndre140421      write(*,*)'ksi_nperp,dacos(cos_ksi_test)',
 cRobtAndre140421     &           ksi_nperp,dacos(cos_ksi_test)
       write(*,*)'ksi_nperp,dacos(cos_ksi_test)',
      &           ksi_nperp,dacos(min(1.d0,cos_ksi_test))
+      endif ! outprint
 
 c-----safety factor calculations
       psi_initial=psi_rho(rho)
       q_initial=qsafety_psi(psi_initial)
+      b_av=b_average(psi_initial)
+      
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'psi_initial,q_initial',psi_initial,q_initial
       write(*,*)'b(z,r,phi)',b(z,r,phi)
-      b_av=b_average(psi_initial)
       write(*,*)'b_average(psi_initial)',b_av
-c     stop 'dinit_1ray'
       write(*,*)'end dinit_1ray'
+      endif ! outprint
+      
       return
       end
 
@@ -2468,12 +2512,12 @@ c-----input
       do  i=2,nbulk
          v(i)=v0*charge(i)**2/dmas(i)
          w(i)=w0*charge(i)/dmas(i)
-         write(*,*)'dinit.f set_freq: i charge(i),dmas(i),v(i),w(i)'
-     +   ,i,charge(i),dmas(i),v(i),w(i)
+cyup         write(*,*)'dinit.f set_freq: i charge(i),dmas(i),v(i),w(i)'
+cyup     +   ,i,charge(i),dmas(i),v(i),w(i)
       enddo
 
  10   continue
-      write(*,*)'in set_freq ifreq,frqncy',ifreq,frqncy
+cyup      write(*,*)'in set_freq ifreq,frqncy',ifreq,frqncy
 
       return
       end
@@ -2661,46 +2705,46 @@ c-----allocate pointers in emissa_no_nml.i
 
       zero=0.d0
 
-      write(*,*)'in ainalloc_emissa_no_nml_i nrelta4)',nrelta4
+cyup      write(*,*)'in ainalloc_emissa_no_nml_i nrelta4)',nrelta4
 
       allocate( cx_z(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_z istat',istat
+cyup      write(*,*)'after allocate cx_z istat',istat
       call bcast(cx_z,zero,SIZE(cx_z))
 
       allocate( tr_z(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_z istat',istat
+cyup      write(*,*)'after allocate tr_z istat',istat
       call bcast(tr_z,zero,SIZE(tr_z))
 
       allocate( cx_r(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_r istat',istat
+cyup      write(*,*)'after allocate cx_r istat',istat
       call bcast(cx_r,zero,SIZE(cx_r))
 
       allocate( tr_r(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_r istat',istat
+cyup      write(*,*)'after allocate tr_r istat',istat
       call bcast(tr_r,zero,SIZE(tr_r))
 
       allocate( cx_phi(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_phi istat',istat
+cyup      write(*,*)'after allocate cx_phi istat',istat
       call bcast(cx_phi,zero,SIZE(cx_phi))
 
       allocate( tr_phi(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_phi istat',istat
+cyup      write(*,*)'after allocate tr_phi istat',istat
       call bcast(tr_phi,zero,SIZE(tr_phi))
 
       allocate( cx_cnz(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_cnz istat',istat
+cyup      write(*,*)'after allocate cx_cnz istat',istat
       call bcast(cx_cnz,zero,SIZE(cx_cnz))
 
       allocate( tr_cnz(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cnzc istat',istat
+cyup      write(*,*)'after allocate  tr_cnzc istat',istat
       call bcast(tr_cnz,zero,SIZE(tr_cnz))
 
       allocate( cx_cnr(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate   cx_cnr istat',istat
+cyup      write(*,*)'after allocate   cx_cnr istat',istat
       call bcast(cx_cnr,zero,SIZE(cx_cnr))
 
       allocate( tr_cnr(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate    tr_cnr istat',istat
+cyup      write(*,*)'after allocate    tr_cnr istat',istat
       call bcast(tr_cnr,zero,SIZE(tr_cnr))
 
       allocate( cx_cm(1:nrelta4),STAT=istat)
@@ -2708,113 +2752,113 @@ c-----allocate pointers in emissa_no_nml.i
       call bcast(cx_cm,zero,SIZE(cx_cm))
 
       allocate( tr_cm(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate   tr_cm istat',istat
+cyup      write(*,*)'after allocate   tr_cm istat',istat
       call bcast(tr_cm,zero,SIZE(tr_cm))
 
 c-----for ebw-x mode ray part 
 
       allocate( cx_z_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_z_x  istat',istat
+cyup      write(*,*)'after allocate  cx_z_x  istat',istat
       call bcast(cx_z_x,zero,SIZE(cx_z_x))
 
       allocate( tr_z_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_z_x  istat',istat
+cyup      write(*,*)'after allocate tr_z_x  istat',istat
       call bcast(tr_z_x,zero,SIZE(tr_z_x))
 
       allocate( cx_r_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_r_x  istat',istat
+cyup      write(*,*)'after allocate cx_r_x  istat',istat
       call bcast(cx_r_x,zero,SIZE(cx_r_x))
 
       allocate( tr_r_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_r_x istat',istat
+cyup      write(*,*)'after allocate  tr_r_x istat',istat
       call bcast(tr_r_x,zero,SIZE(tr_r_x))
 
       allocate( cx_phi_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_phi_x istat',istat
+cyup      write(*,*)'after allocate cx_phi_x istat',istat
       call bcast(cx_phi_x,zero,SIZE(cx_phi_x))
 
       allocate( tr_phi_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_phi_x istat',istat
+cyup      write(*,*)'after allocate tr_phi_x istat',istat
       call bcast(tr_phi_x,zero,SIZE(tr_phi_x))
 
       allocate( cx_cnz_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate cx_cnz_x istat',istat
+cyup      write(*,*)'after allocate cx_cnz_x istat',istat
       call bcast(cx_cnz_x,zero,SIZE(cx_cnz_x))
 
       allocate( tr_cnz_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cnz_x istat',istat
+cyup      write(*,*)'after allocate  tr_cnz_x istat',istat
       call bcast(tr_cnz_x,zero,SIZE(tr_cnz_x))
 
       allocate( cx_cnr_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_cnr_x istat',istat
+cyup      write(*,*)'after allocate  cx_cnr_x istat',istat
       call bcast(cx_cnr_x,zero,SIZE(cx_cnr_x))
 
       allocate( tr_cnr_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cnr_x istat',istat
+cyup      write(*,*)'after allocate  tr_cnr_x istat',istat
       call bcast(tr_cnr_x,zero,SIZE(tr_cnr_x))
 
       allocate( cx_cm_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_cm_x  istat',istat
+cyup      write(*,*)'after allocate  cx_cm_x  istat',istat
       call bcast(cx_cm_x,zero,SIZE(cx_cm_x))
 
       allocate( tr_cm_x(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate tr_cm_x  istat',istat
+cyup      write(*,*)'after allocate tr_cm_x  istat',istat
       call bcast(tr_cm_x,zero,SIZE(tr_cm_x))
 
 c-----for o mode ray part     
 
       allocate( cx_z_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_z_o  istat',istat
+cyup      write(*,*)'after allocate  cx_z_o  istat',istat
       call bcast(cx_z_o,zero,SIZE(cx_z_o))
 
       allocate( tr_z_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate   tr_z_o  istat',istat
+cyup      write(*,*)'after allocate   tr_z_o  istat',istat
       call bcast(tr_z_o,zero,SIZE(tr_z_o))
 
       allocate( cx_r_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_r_o  istat',istat
+cyup      write(*,*)'after allocate  cx_r_o  istat',istat
       call bcast(cx_r_o,zero,SIZE(cx_r_o))
 
       allocate( tr_r_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_r_o  istat',istat
+cyup      write(*,*)'after allocate  tr_r_o  istat',istat
       call bcast(tr_r_o,zero,SIZE(tr_r_o))
 
       allocate( cx_phi_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_phi_o istat',istat
+cyup      write(*,*)'after allocate  cx_phi_o istat',istat
       call bcast(cx_phi_o,zero,SIZE(cx_phi_o))
 
       allocate( tr_phi_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_phi_o  istat',istat
+cyup      write(*,*)'after allocate  tr_phi_o  istat',istat
       call bcast(tr_phi_o,zero,SIZE(tr_phi_o))
 
       allocate( cx_cnz_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_cnz_o  istat',istat
+cyup      write(*,*)'after allocate  cx_cnz_o  istat',istat
       call bcast(cx_cnz_o,zero,SIZE(cx_cnz_o))
 
       allocate( tr_cnz_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cnz_o istat',istat
+cyup      write(*,*)'after allocate  tr_cnz_o istat',istat
       call bcast(tr_cnz_o,zero,SIZE(tr_cnz_o))
 
       allocate( cx_cnr_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_cnr_o istat',istat
+cyup      write(*,*)'after allocate  cx_cnr_o istat',istat
       call bcast(cx_cnr_o,zero,SIZE(cx_cnr_o))
 
       allocate( tr_cnr_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cnr_o istat',istat
+cyup      write(*,*)'after allocate  tr_cnr_o istat',istat
       call bcast(tr_cnr_o,zero,SIZE(tr_cnr_o))
 
       allocate( cx_cm_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  cx_cm_o istat',istat
+cyup      write(*,*)'after allocate  cx_cm_o istat',istat
       call bcast(cx_cm_o,zero,SIZE(cx_cm_o))
 
       allocate( tr_cm_o(1:nrelta4),STAT=istat)
-      write(*,*)'after allocate  tr_cm_o istat',istat
+cyup      write(*,*)'after allocate  tr_cm_o istat',istat
       call bcast(tr_cm_o,zero,SIZE(tr_cm_o))
  
 c----- 
-      write(*,*)'jx_kin',jx_kin
+cyup      write(*,*)'jx_kin',jx_kin
       allocate( kinetic_energy_kev(1:jx_kin),STAT=istat)
-      write(*,*)'after allocate  kinetic_energy_kev istat',istat
+cyup      write(*,*)'after allocate  kinetic_energy_kev istat',istat
       call bcast( kinetic_energy_kev,zero,SIZE( kinetic_energy_kev))
 
       return
@@ -2943,143 +2987,143 @@ c-----locals
       compl_zero=dcmplx(zero,zero)
    
       allocate( ws_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate ws_nc istat',istat
+cyup      write(*,*)'after allocate ws_nc istat',istat
       call bcast(ws_nc,zero,SIZE(ws_nc))
 
       allocate( seikon_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate seikon_nc istat',istat
+cyup      write(*,*)'after allocate seikon_nc istat',istat
       call bcast(seikon_nc,zero,SIZE(seikon_nc))
 
       allocate( spsi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate spsi_nc istat',istat
+cyup      write(*,*)'after allocate spsi_nc istat',istat
       call bcast(spsi_nc,zero,SIZE(spsi_nc))
 
       allocate( wr_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wr_nc istat',istat
+cyup      write(*,*)'after allocate  wr_nc istat',istat
       call bcast(wr_nc,zero,SIZE(wr_nc))
 
       allocate( wphi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate wphi_nc istat',istat
+cyup      write(*,*)'after allocate wphi_nc istat',istat
       call bcast(wphi_nc,zero,SIZE(wphi_nc))
 
       allocate( wz_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate wz_nc istat',istat
+cyup      write(*,*)'after allocate wz_nc istat',istat
       call bcast(wz_nc,zero,SIZE(wz_nc))
 
       allocate( wnpar_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wnpar_nc istat',istat
+cyup      write(*,*)'after allocate  wnpar_nc istat',istat
       call bcast(wnpar_nc,zero,SIZE(wnpar_nc))
 
       allocate( wnper_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wnper_nc istat',istat
+cyup      write(*,*)'after allocate  wnper_nc istat',istat
       call bcast(wnper_nc,zero,SIZE(wnper_nc))
 
       allocate( delpwr_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-c      write(*,*)'after allocate  delpwr_nc istat',istat
+ccyup      write(*,*)'after allocate  delpwr_nc istat',istat
       call bcast(delpwr_nc,zero,SIZE(delpwr_nc))
 
       allocate( sdpwr_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  sdpwr_nc istat',istat
+cyup      write(*,*)'after allocate  sdpwr_nc istat',istat
       call bcast(sdpwr_nc,zero,SIZE(sdpwr_nc))
 
       allocate( wdnpar_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wdnpar_nc istat',istat
+cyup      write(*,*)'after allocate  wdnpar_nc istat',istat
       call bcast(wdnpar_nc,zero,SIZE(wdnpar_nc))
 
       allocate( fluxn_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  fluxn_nc istat',istat
+cyup      write(*,*)'after allocate  fluxn_nc istat',istat
       call bcast(fluxn_nc,zero,SIZE(fluxn_nc))
 
       allocate( sbtot_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate sbtot_nc istat',istat
+cyup      write(*,*)'after allocate sbtot_nc istat',istat
       call bcast(sbtot_nc,zero,SIZE(sbtot_nc))
 
       allocate( sb_z_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  sb_z_nc istat',istat
+cyup      write(*,*)'after allocate  sb_z_nc istat',istat
       call bcast(sb_z_nc,zero,SIZE(sb_z_nc))
 
       allocate( sb_r_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  sb_r_nc istat',istat
+cyup      write(*,*)'after allocate  sb_r_nc istat',istat
       call bcast(sb_r_nc,zero,SIZE(sb_r_nc))
 
       allocate( sb_phi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  sb_phi_nc istat',istat
+cyup      write(*,*)'after allocate  sb_phi_nc istat',istat
       call bcast(sb_phi_nc,zero,SIZE(sb_phi_nc))
       
       allocate( sene_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate sene_nc istat',istat
+cyup      write(*,*)'after allocate sene_nc istat',istat
       call bcast(sene_nc,zero,SIZE(sene_nc))
 
       allocate( ste_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  ste_nc istat',istat
+cyup      write(*,*)'after allocate  ste_nc istat',istat
       call bcast(ste_nc,zero,SIZE(ste_nc))
       
       allocate( szeff_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate szeff_nc istat',istat
+cyup      write(*,*)'after allocate szeff_nc istat',istat
       call bcast(szeff_nc,zero,SIZE(szeff_nc))
 
       allocate( salphac_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  salphac_nc istat',istat
+cyup      write(*,*)'after allocate  salphac_nc istat',istat
       call bcast(salphac_nc,zero,SIZE(salphac_nc))
 
       allocate( salphal_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  salphal_nc istat',istat
+cyup      write(*,*)'after allocate  salphal_nc istat',istat
       call bcast(salphal_nc,zero,SIZE(salphal_nc))
       
       allocate( salphas_nc(1:nrelta,1:nray*nfreq,1:nbulk),STAT=istat)
-      write(*,*)'after allocate  salphas_nc istat',istat
+cyup      write(*,*)'after allocate  salphas_nc istat',istat
       call bcast(salphas_nc,zero,SIZE(salphas_nc))
       
       allocate( vgr_z_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate vgr_z_nc istat',istat
+cyup      write(*,*)'after allocate vgr_z_nc istat',istat
       call bcast(vgr_z_nc,zero,SIZE(vgr_z_nc))
                      
       allocate( vgr_r_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate vgr_r_nc istat',istat
+cyup      write(*,*)'after allocate vgr_r_nc istat',istat
       call bcast(vgr_r_nc,zero,SIZE(vgr_r_nc))
             
       allocate( vgr_phi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate vgr_phi_nc istat',istat
+cyup      write(*,*)'after allocate vgr_phi_nc istat',istat
       call bcast(vgr_phi_nc,zero,SIZE(vgr_phi_nc))
             
       allocate( flux_z_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate flux_z_nc istat',istat
+cyup      write(*,*)'after allocate flux_z_nc istat',istat
       call bcast(flux_z_nc,zero,SIZE(flux_z_nc))
             
       allocate( flux_r_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-       write(*,*)'after allocate flux_r_nc istat',istat
+cyup      write(*,*)'after allocate flux_r_nc istat',istat
       call bcast(flux_r_nc,zero,SIZE(flux_r_nc))
        
       allocate( flux_phi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate flux_phi_nc istat',istat
+cyup      write(*,*)'after allocate flux_phi_nc istat',istat
       call bcast(flux_phi_nc,zero,SIZE(flux_phi_nc))
             
       allocate( wn_r_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wn_r_nc istat',istat
+cyup      write(*,*)'after allocate  wn_r_nc istat',istat
       call bcast(wn_r_nc,zero,SIZE(wn_r_nc))
       
       allocate( wn_z_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-       write(*,*)'after allocate  wn_z_nc istat',istat
+cyup      write(*,*)'after allocate  wn_z_nc istat',istat
       call bcast(wn_z_nc,zero,SIZE(wn_z_nc))
             
       allocate( wn_phi_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  wn_phi_nc istat',istat
+cyup      write(*,*)'after allocate  wn_phi_nc istat',istat
       call bcast(wn_phi_nc,zero,SIZE(wn_phi_nc))
       
       allocate( transm_ox_nc(1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  transm_ox_nc istat',istat
+cyup      write(*,*)'after allocate  transm_ox_nc istat',istat
       call bcast(transm_ox_nc,zero,SIZE(transm_ox_nc))
       
       allocate( cn_par_optimal_nc(1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cn_par_optimal_nc istat',istat
+cyup      write(*,*)'after allocate  cn_par_optimal_nc istat',istat
       call bcast(cn_par_optimal_nc,zero,SIZE(cn_par_optimal_nc))
       
       allocate( cnpar_ox_nc(1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cnpar_ox_nc istat',istat
+cyup      write(*,*)'after allocate  cnpar_ox_nc istat',istat
       call bcast(cnpar_ox_nc,zero,SIZE(cnpar_ox_nc))
       
       allocate( cn_b_gradpsi_nc(1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cn_b_gradpsi_nc istat',istat
+cyup      write(*,*)'after allocate  cn_b_gradpsi_nc istat',istat
       call bcast(cn_b_gradpsi_nc,zero,SIZE(cn_b_gradpsi_nc))
 
       if (i_emission.eq.1) then
@@ -3278,42 +3322,42 @@ c--------emission data--------------------------
 c------------------plasma profiles VS r at z=0  ------------------    
 
       allocate( w_dens_vs_r_nc(1:NR,1:nbulk),STAT=istat)
-      write(*,*)'after allocate w_dens_vs_r_nc istat',istat
+cyup      write(*,*)'after allocate w_dens_vs_r_nc istat',istat
       call bcast( w_dens_vs_r_nc,zero,SIZE( w_dens_vs_r_nc))
 
       allocate( w_temp_vs_r_nc(1:NR,1:nbulk),STAT=istat)
-      write(*,*)'after allocate  w_temp_vs_r_nc istat',istat
+cyup      write(*,*)'after allocate  w_temp_vs_r_nc istat',istat
       call bcast( w_temp_vs_r_nc,zero,SIZE( w_temp_vs_r_nc))
 
       allocate( w_zeff_vs_r_nc(1:NR),STAT=istat)
-      write(*,*)'after allocate   w_zeff_vs_r_nc istat',istat
+cyup      write(*,*)'after allocate   w_zeff_vs_r_nc istat',istat
       call bcast( w_zeff_vs_r_nc,zero,SIZE( w_zeff_vs_r_nc))
 
       allocate( w_r_densprof_nc(1:NR),STAT=istat)
-      write(*,*)'after allocate   w_r_densprof_nc istat',istat
+cyup      write(*,*)'after allocate   w_r_densprof_nc istat',istat
       call bcast( w_r_densprof_nc,zero,SIZE( w_r_densprof_nc))
 
 c--------------------------------------------------------------
       allocate( w_eff_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  w_eff_nc istat',istat
+cyup      write(*,*)'after allocate  w_eff_nc istat',istat
       call bcast( w_eff_nc,zero,SIZE( w_eff_nc))
 
       allocate( w_theta_pol_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate   w_theta_pol_nc istat',istat
+cyup      write(*,*)'after allocate   w_theta_pol_nc istat',istat
       call bcast( w_theta_pol_nc,zero,SIZE( w_theta_pol_nc))
 
 c-----electric field complex polarization
 
       allocate( cwexde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cwexde_nc istat',istat
+cyup      write(*,*)'after allocate  cwexde_nc istat',istat
       call ccast(cwexde_nc,zero,SIZE( cwexde_nc))
 
       allocate( cweyde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cweyde_nc istat',istat
+cyup      write(*,*)'after allocate  cweyde_nc istat',istat
       call ccast(cweyde_nc,zero,SIZE( cweyde_nc))
 
       allocate( cwezde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-      write(*,*)'after allocate  cwezde_nc istat',istat
+cyup      write(*,*)'after allocate  cwezde_nc istat',istat
       call ccast(cwezde_nc,zero,SIZE( cwezde_nc))
 
       if (dielectric_op.eq.'enabled') then
@@ -3358,16 +3402,16 @@ c--------write dielectric tensor elements
       endif
 c----------------------------      
       allocate( i_ox_conversion_nc(1:nray*nfreq),STAT=istat)
-      write(*,*) 'after allocate  i_ox_conversion_nc istat=',istat
+cyup      write(*,*) 'after allocate  i_ox_conversion_nc istat=',istat
       call ibcast(i_ox_conversion_nc,0,SIZE( i_ox_conversion_nc))
 
-      write(*,*) 'ainalloc_writencdf nray=',nray,'nfreq',nfreq
+cyup      write(*,*) 'ainalloc_writencdf nray=',nray,'nfreq',nfreq
       allocate( nrayelt_nc(1:nray*nfreq),STAT=istat)
-      write(*,*) 'after allocate nrayelt_nc istat=',istat
+cyup      write(*,*) 'after allocate nrayelt_nc istat=',istat
       call ibcast(nrayelt_nc,0,SIZE( nrayelt_nc))
 c-------------------------------------------------------------
       allocate(iray_status_nc(1:nray,1:nfreq),STAT=istat)
-      write(*,*) 'after allocate iray_status istat=',istat
+cyup      write(*,*) 'after allocate iray_status istat=',istat
       call ibcast(iray_status_nc,0,SIZE(iray_status_nc))
 
       return
@@ -3440,7 +3484,7 @@ c-----real*8
       allocate( fmass(1:ngen),STAT=istat)
       call bcast(fmass,zero,SIZE(fmass))
 
-      write(*,*)'before  allocate f iya,jx,lrz,ngen',iya,jx,lrz,ngen
+cyup      write(*,*)'before  allocate f iya,jx,lrz,ngen',iya,jx,lrz,ngen
 
       allocate( f(1:iya,1:jx,1:lrz,1:ngen),STAT=istat)
       call bcast(f,zero,SIZE(f))
@@ -3465,7 +3509,7 @@ c-----integer*4
 c-----allocate pointers in spline_distrib.i
       call ainalloc_spline_distrib_i
 
-      write(*,*)'dskin.i and spline_distrib.i was allocated'
+cyup      write(*,*)'dskin.i and spline_distrib.i was allocated'
 
       return
       end
@@ -3676,58 +3720,58 @@ c-----locals
  
       zero=0.d0
 
-      write(*,*)'in ainalloc_adj_no_nml_i npsi0',npsi0
+cyup      write(*,*)'in ainalloc_adj_no_nml_i npsi0',npsi0
      
       allocate(psis(1:npsi0),STAT=istat)
       call bcast(psis,zero,SIZE(psis))
-      write(*,*)'in ainalloc_adj_no_nml_i after psis istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after psis istat',istat
 
-      write(*,*)'in ainalloc_adj_no_nml_i npsi0,nthp0',npsi0,nthp0
+cyup      write(*,*)'in ainalloc_adj_no_nml_i npsi0,nthp0',npsi0,nthp0
       allocate(cxc(1:nthp0+1,1:npsi0),STAT=istat)
       call bcast(cxc,zero,SIZE(cxc))
-      write(*,*)'in ainalloc_adj_no_nml_i after cxc istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after cxc istat',istat
 
       allocate(czc(1:nthp0+1,1:npsi0),STAT=istat)
       call bcast(czc,zero,SIZE(czc))
-      write(*,*)'in ainalloc_adj_no_nml_i after czc istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after czc istat',istat
 
       allocate(bbar(1:npsi0),STAT=istat)
       call bcast(bbar,zero,SIZE(bbar))
-      write(*,*)'in ainalloc_adj_no_nml_i after bbar istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after bbar istat',istat
 
 c      write(*,*)'in ainalloc_adj_no_nml_i imax_chi',imax_chi
 c      allocate(th0a(1:imax_chi),STAT=istat)
 c      call bcast(th0a,zero,SIZE(th0a))
 c      write(*,*)'in ainalloc_adj_no_nml_i after th0a istat',istat
 
-      write(*,*)'in ainalloc_adj_no_nml_i nmax_chi',nmax_chi
+cyup      write(*,*)'in ainalloc_adj_no_nml_i nmax_chi',nmax_chi
       allocate(ua(1:nmax_chi),STAT=istat)
       call bcast(ua,zero,SIZE(ua))
-      write(*,*)'in ainalloc_adj_no_nml_i after ua istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after ua istat',istat
 
       allocate(dene_chi(1:npsi0),STAT=istat)
       call bcast(dene_chi,zero,SIZE(dene_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after dene_ch istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after dene_ch istat',istat
 
       allocate(teme_chi(1:npsi0),STAT=istat)
       call bcast(teme_chi,zero,SIZE(teme_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after teme_ch istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after teme_ch istat',istat
 
       allocate(zi_chi(1:npsi0),STAT=istat)
       call bcast(zi_chi,zero,SIZE(zi_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after zi_ch istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after zi_ch istat',istat
 
       allocate(chi_3d(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(chi_3d,zero,SIZE(chi_3d))
-      write(*,*)'in ainalloc_adj_no_nml_i after ch_3d istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after ch_3d istat',istat
 
       allocate(bmin_chi(1:npsi0),STAT=istat)
       call bcast(bmin_chi,zero,SIZE(bmin_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after bmim_chi istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after bmim_chi istat',istat
 
       allocate(bmax_chi(1:npsi0),STAT=istat)
       call bcast(bmax_chi,zero,SIZE(bmax_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after bmax_chi istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after bmax_chi istat',istat
 
 c      allocate(umax_chi(1:npsi0),STAT=istat)
 c      call bcast(umax_chi,zero,SIZE(umax_chi))
@@ -3735,58 +3779,58 @@ c      write(*,*)'in ainalloc_adj_no_nml_i after umax_chi istat',istat
 
       allocate(chi_tt(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(chi_tt,zero,SIZE(chi_tt))
-      write(*,*)'in ainalloc_adj_no_nml_i after chi_tt istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after chi_tt istat',istat
 
       allocate(chi_uu(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(chi_uu,zero,SIZE(chi_uu))
-      write(*,*)'in ainalloc_adj_no_nml_i after chi_uu istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after chi_uu istat',istat
 
       allocate(chi_ttuu(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(chi_ttuu,zero,SIZE(chi_ttuu))
-      write(*,*)'in ainalloc_adj_no_nml_i after chi_ttuu istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after chi_ttuu istat',istat
 
 c      allocate(th0max_chi(1:npsi0),STAT=istat)
 c      call bcast(th0max_chi,zero,SIZE(th0max_chi))
-c      write(*,*)'in ainalloc_adj_no_nml_i after th0max_chi istat',istat
+ccyup      write(*,*)'in ainalloc_adj_no_nml_i after th0max_chi istat',istat
 
       allocate(th0a_chi(1:imax_chi,1:npsi0),STAT=istat)
       call bcast(th0a_chi,zero,SIZE(th0a_chi))
-      write(*,*)'in ainalloc_adj_no_nml_i after th0a_chi istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after th0a_chi istat',istat
 
       allocate(thetae_1(0:nthp0-1),STAT=istat)
       call bcast(thetae_1,zero,SIZE(thetae_1))
-      write(*,*)'in ainalloc_adj_no_nml_i after thetae_1 istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after thetae_1 istat',istat
 
       allocate(ba_2d(0:nthp0-1,1:npsi0),STAT=istat)
       call bcast(ba_2d,zero,SIZE(ba_2d))
-      write(*,*)'in ainalloc_adj_no_nml_i after ba_2 istat',istat
+cyup      write(*,*)'in ainalloc_adj_no_nml_i after ba_2 istat',istat
 
       allocate(d_chi_d_theta(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(d_chi_d_theta,zero,SIZE(d_chi_d_theta))
-      write(*,*)'ainalloc_adj_no_nml_i after d_chi_d_theta istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i after d_chi_d_theta istat',istat
 
       allocate(d_chi_d_u(1:imax_chi,1:nmax_chi,1:npsi0),STAT=istat)
       call bcast(d_chi_d_u,zero,SIZE(d_chi_d_u))
-      write(*,*)'ainalloc_adj_no_nml_i after d_chi_d_u istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i after d_chi_d_u istat',istat
 
       allocate(Q_safety_adj(1:npsi0),STAT=istat)
       call bcast(Q_safety_adj,zero,SIZE(Q_safety_adj))
-      write(*,*)'ainalloc_adj_no_nml_i after Q_safety_adj istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i after Q_safety_adj istat',istat
 
       allocate(sigma_E_adj(1:npsi0),STAT=istat)
       call bcast(sigma_E_adj,zero,SIZE(sigma_E_adj))
-      write(*,*)'ainalloc_adj_no_nml_i after sigma_E_adj istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i after sigma_E_adj istat',istat
 
       allocate(dens_averaged_ar(1:npsi0),STAT=istat)
       call bcast(dens_averaged_ar,zero,SIZE(dens_averaged_ar))
-      write(*,*)'ainalloc_adj_no_nml_i aft dens_averaged_ar istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i aft dens_averaged_ar istat',istat
 
-      write(*,*)'npsi0',npsi0
+cyup      write(*,*)'npsi0',npsi0
       allocate(rho_adj(1:npsi0),STAT=istat)
       call bcast(rho_adj,zero,SIZE(rho_adj))
-      write(*,*)'ainalloc_adj_no_nml_i after rho_adj istat',istat
+cyup      write(*,*)'ainalloc_adj_no_nml_i after rho_adj istat',istat
 
-      write(*,*)'in ainalloc_adj_no_nml_i before end'
+cyup      write(*,*)'in ainalloc_adj_no_nml_i before end'
       return
       end
 
@@ -3805,112 +3849,112 @@ c-----locals
 c-----input 
       integer nray !number of rays
 
-      write(*,*)'in lsc_approach_no_nml nv_lsc_ql_lh', nv_lsc_ql_lh
+cyup      write(*,*)'in lsc_approach_no_nml nv_lsc_ql_lh', nv_lsc_ql_lh
 
       allocate(rho_bin_lsc(1:n_psi_TSC+1),STAT=istat)
       call bcast(rho_bin_lsc,zero,SIZE(rho_bin_lsc))
-      write(*,*)'in lsc_approach_no_nml aft (rho_bin_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft (rho_bin_lsc istat',
+cyup     &istat 
     
       allocate(rho_bin_center_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(rho_bin_center_lsc,zero,SIZE(rho_bin_center_lsc))
-      write(*,*)'in lsc_approach_no_nml aft (rho_bin_center_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft (rho_bin_center_lsc istat',
+cyup     &istat 
 
       allocate(binvol_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(binvol_lsc,zero,SIZE(binvol_lsc))
-      write(*,*)'in lsc_approach_no_nml aft binvol_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft binvol_lsc istat',
+cyup     &istat 
 
 
       allocate(binarea_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(binarea_lsc,zero,SIZE(binarea_lsc))
-      write(*,*)'in lsc_approach_no_nml aft binarea_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft binarea_lsc istat',
+cyup     &istat 
 
 
 cSAP100122 NR-1 ->  n_psi_TSC
 c      allocate(v_te_bin_center_lsc(1:NR-1),STAT=istat)
       allocate(v_te_bin_center_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(v_te_bin_center_lsc,zero,SIZE(v_te_bin_center_lsc))
-      write(*,*)'in lsc_approach_no_nml aft v_te_bin_center_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft v_te_bin_center_lsc istat',
+cyup     &istat 
 
 c      allocate(tau_n_bin_center_lsc(1:NR-1),STAT=istat)
       allocate(tau_n_bin_center_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(tau_n_bin_center_lsc,zero,SIZE(tau_n_bin_center_lsc))
-      write(*,*)'in lsc_approach_no_nml aft tau_n_bin_center_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft tau_n_bin_center_lsc istat',
+cyup     &istat 
 
 c      allocate(del_s_pol_bin_lsc(1:NR-1),STAT=istat
       allocate(del_s_pol_bin_lsc(1:n_psi_TSC),STAT=istat)
       call bcast(del_s_pol_bin_lsc,zero,SIZE(del_s_pol_bin_lsc))
-      write(*,*)'in lsc_approach_no_nml after del_s_pol_bin_lsc',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml after del_s_pol_bin_lsc',
+cyup     &istat 
 
-      write(*,*)'in lsc_approach_no_nml bef allcate v_par_mesh_lsc
-     &nv_lsc_ql_lh',nv_lsc_ql_lh
+cyup      write(*,*)'in lsc_approach_no_nml bef allcate v_par_mesh_lsc
+cyup     &nv_lsc_ql_lh',nv_lsc_ql_lh
       allocate(v_par_mesh_lsc(-nv_lsc_ql_lh : nv_lsc_ql_lh),STAT=istat)
       call bcast(v_par_mesh_lsc,zero,SIZE(v_par_mesh_lsc))
-      write(*,*)'in lsc_approach_no_nml after v_par_mesh_lsc istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml after v_par_mesh_lsc istat',
+cyup     &istat 
 
 c      allocate(d_ql_lsc_lh_ar(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(d_ql_lsc_lh_ar(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(d_ql_lsc_lh_ar,zero,SIZE(d_ql_lsc_lh_ar))
-      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar istat',
+cyup     &istat
 
       allocate(d_ql_lsc_lh_ar_loc(-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(d_ql_lsc_lh_ar_loc,zero,SIZE(d_ql_lsc_lh_ar_loc))
-      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar_loc istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar_loc istat',
+cyup     &istat
 
 c      allocate(integral_fe_lsc(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(integral_fe_lsc(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh)
      &,STAT=istat)
       call bcast(integral_fe_lsc,zero,SIZE(integral_fe_lsc))
-      write(*,*)'in lsc_approach_no_nml after integral_fe_lsc istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after integral_fe_lsc istat',
+cyup     &istat
 
 c      allocate(fe_lsc(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(fe_lsc(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(fe_lsc,zero,SIZE(fe_lsc))
-      write(*,*)'in lsc_approach_no_nml after fe_lsc istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after fe_lsc istat',
+cyup     &istat
 
 c       allocate(d_fe_dv_lsc(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(d_fe_dv_lsc(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(d_fe_dv_lsc,zero,SIZE(d_fe_dv_lsc))
-      write(*,*)'in lsc_approach_no_nml after d_fe_dv_lsc istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after d_fe_dv_lsc istat',
+cyup     &istat
 
 c      allocate(d_ql_lsc_lh_ar_old(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(d_ql_lsc_lh_ar_old
      &(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(d_ql_lsc_lh_ar_old,zero,SIZE(d_ql_lsc_lh_ar_old))
-      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar_old istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after d_ql_lsc_lh_ar_old istat',
+cyup     &istat
 
 c      allocate(fe_lsc_old(1:NR-1,-nv_lsc_ql_lh:nv_lsc_ql_lh),
       allocate(fe_lsc_old(1:n_psi_TSC,-nv_lsc_ql_lh:nv_lsc_ql_lh),
      &STAT=istat)
       call bcast(fe_lsc_old,zero,SIZE(fe_lsc_old))
-      write(*,*)'in lsc_approach_no_nml after fe_lsc_old istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml after fe_lsc_old istat',
+cyup     &istat
 
-      write(*,*)'in lsc_approach_no_nml bef allocate delpwr_nc_old_lsc,
-     &nrelta,nrayl,nfreq',nrelta,nrayl,nfreq
+cyup      write(*,*)'in lsc_approach_no_nml bef allocate delpwr_nc_old_lsc,
+cyup     &nrelta,nrayl,nfreq',nrelta,nrayl,nfreq
 
       allocate( delpwr_nc_old_lsc(1:nrelta,1:nrayl*nfreq),STAT=istat)
-      write(*,*)'after allocate  delpwr_nc_old_lsc istat',istat
+cyup      write(*,*)'after allocate  delpwr_nc_old_lsc istat',istat
       call bcast(delpwr_nc_old_lsc,zero,SIZE(delpwr_nc_old_lsc))
-      write(*,*)'in lsc_approach_no_nml before end'
+cyup      write(*,*)'in lsc_approach_no_nml before end'
 
 c-----for E_DC profile calculations
 
@@ -3929,38 +3973,38 @@ c     &istat
 
       allocate(j_rf_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(j_rf_TSC_1D,zero,SIZE(j_rf_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft j_rf_TSC_1D istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft j_rf_TSC_1D istat',
+cyup     &istat 
 
       allocate(d_j_rf_d_Edc_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(d_j_rf_d_Edc_TSC_1D,zero,SIZE(d_j_rf_d_Edc_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft d_j_rf_d_Edc_TSC_1D istat',
-     &istat 
+cyup      write(*,*)'in lsc_approach_no_nml aft d_j_rf_d_Edc_TSC_1D istat',
+cyup     &istat 
 
       allocate(d_ln_j_rf_d_ln_Edc_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(d_ln_j_rf_d_ln_Edc_TSC_1D,zero,
      &SIZE(d_ln_j_rf_d_ln_Edc_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft d_ln_j_rf_d_ln_Edc_TSC_1D
-     & istat',istat
+cyup      write(*,*)'in lsc_approach_no_nml aft d_ln_j_rf_d_ln_Edc_TSC_1D
+cyup     & istat',istat
 
     
       allocate(power_dens_watt_m3_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(power_dens_watt_m3_TSC_1D,zero,
      &SIZE(power_dens_watt_m3_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft power_densTSC_1D istat',
-     &istat
+cyup      write(*,*)'in lsc_approach_no_nml aft power_densTSC_1D istat',
+cyup     &istat
 
       allocate(CD_dens_no_Edc_a_m2_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(CD_dens_no_Edc_a_m2_TSC_1D,zero,
      &SIZE(CD_dens_no_Edc_a_m2_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft CD_dens_no_Edc_a_m2_TSC_1D
-     &istat',istat
+cyup      write(*,*)'in lsc_approach_no_nml aft CD_dens_no_Edc_a_m2_TSC_1D
+cyup     &istat',istat
 
       allocate(CD_dens_small_Edc_a_m2_TSC_1D(1:n_psi_TSC),STAT=istat)
       call bcast(CD_dens_small_Edc_a_m2_TSC_1D,zero,
      &SIZE(CD_dens_small_Edc_a_m2_TSC_1D))
-      write(*,*)'in lsc_approach_no_nml aft CD_dens_small_Edc_a_m2_TSC_1D
-     &istat',istat
+cyup      write(*,*)'in lsc_approach_no_nml aft CD_dens_small_Edc_a_m2_TSC_1D
+cyup     &istat',istat
 
       return
       end
@@ -3979,77 +4023,77 @@ c-----locals
     
       zero=0.d0
 
-      write(*,*)'in ainalloc_fourb_i'
+cyup      write(*,*)'in ainalloc_fourb_i'
 
       allocate(rr_add(1:nxeqd_add),STAT=istat)
       call bcast(rr_add,zero,SIZE(rr_add))
-      write(*,*)'in ainalloc_fourb_i after rr_add istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after rr_add istat',istat
 
       allocate(zz_add(1:nyeqd_add),STAT=istat)
       call bcast(zz_add,zero,SIZE(zz_add))
-      write(*,*)'in ainalloc_fourb_i after zz_add istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after zz_add istat',istat
 
       allocate(distance_to_wall(1:nxeqd_add,
      &1:nyeqd_add,0:max_limiters),STAT=istat)
       call bcast(distance_to_wall,zero,SIZE(distance_to_wall))
-      write(*,*)'in ainalloc_fourb_i after distance_to_wall istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after distance_to_wall istat',istat
 
       allocate(density_r_z(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
       call bcast(density_r_z,zero,SIZE(density_r_z))
-      write(*,*)'in ainalloc_fourb_i after density_r_z istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after density_r_z istat',istat
 
       allocate(density_r_z_rr(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
       call bcast(density_r_z_rr,zero,SIZE(density_r_z_rr))
-      write(*,*)'in ainalloc_fourb_i after &density_r_z_rr istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after &density_r_z_rr istat',istat
 
       allocate(density_r_z_zz(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
       call bcast(density_r_z_zz,zero,SIZE(density_r_z_zz))
-      write(*,*)'in ainalloc_fourb_i after &density_r_z_zz istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after &density_r_z_zz istat',istat
 
       allocate(density_r_z_rrzz(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
       call bcast(density_r_z_rrzz,zero,SIZE(density_r_z_rrzz))
-      write(*,*)'in ainalloc_fourb_i aft &density_r_z_rrzz istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft &density_r_z_rrzz istat',istat
 
       allocate(temperature_r_z(1:nxeqd_add,1:nyeqd_add,1:nbulk),
      &STAT=istat)
       call bcast(temperature_r_z,zero,SIZE(temperature_r_z))
-      write(*,*)'in ainalloc_fourb_i after temperature_r_z istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i after temperature_r_z istat',istat
 
       allocate(temperature_r_z_rr(1:nxeqd_add,1:nyeqd_add,1:nbulk),
      &STAT=istat)
       call bcast(temperature_r_z_rr,zero,SIZE(temperature_r_z_rr))
-      write(*,*)'in ainalloc_fourb_i aft temperature_r_z_rr istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft temperature_r_z_rr istat',istat
 
       allocate(temperature_r_z_zz(1:nxeqd_add,1:nyeqd_add,1:nbulk),
      &STAT=istat)
       call bcast(temperature_r_z_zz,zero,SIZE(temperature_r_z_zz))
-      write(*,*)'in ainalloc_fourb_i aft temperature_r_z_zz istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft temperature_r_z_zz istat',istat
 
       allocate(temperature_r_z_rrzz(1:nxeqd_add,1:nyeqd_add,1:nbulk),
      &STAT=istat)
       call bcast(temperature_r_z_rrzz,zero,SIZE(temperature_r_z_rrzz))
-      write(*,*)'in ainalloc_fourb_i after temperature_r_z_rrzz istat',
-     &istat
+cyup      write(*,*)'in ainalloc_fourb_i after temperature_r_z_rrzz istat',
+cyup     &istat
 
       allocate(zeff_r_z(1:nxeqd_add,1:nyeqd_add),STAT=istat)
       call bcast(zeff_r_z,zero,SIZE(zeff_r_z))
-      write(*,*)'in ainalloc_fourb_i aft zeff_r_z istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft zeff_r_z istat',istat
 
       allocate(zeff_r_z_rr(1:nxeqd_add,1:nyeqd_add),STAT=istat)
       call bcast(zeff_r_z_rr,zero,SIZE(zeff_r_z_rr))
-      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_rr istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_rr istat',istat
 
       allocate(zeff_r_z_zz(1:nxeqd_add,1:nyeqd_add),STAT=istat)
       call bcast(zeff_r_z_zz,zero,SIZE(zeff_r_z_zz))
-      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_zz istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_zz istat',istat
 
       allocate(zeff_r_z_rrzz(1:nxeqd_add,1:nyeqd_add),STAT=istat)
       call bcast(zeff_r_z_rrzz,zero,SIZE(zeff_r_z_rrzz))
-      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_rrzz istat',istat
+cyup      write(*,*)'in ainalloc_fourb_i aft zeff_r_z_rrzz istat',istat
 
       return
       end

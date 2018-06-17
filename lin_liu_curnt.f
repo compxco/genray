@@ -49,7 +49,7 @@ c      use real_mod
 !     eps = inverse aspect ratio of the flux surface of interest
 !     npara = parallel index of refraction
 !     nperp = Real part of perpendicular index of refraction
-!     omode = +1.0 for O-mode and -1.0 for x-mode 
+!     omode = +1.0 for O-mode and -1.0 for x-mode  [YuP: Not used?]
 !     cefldx = the x-component of the wave electric field (COMPLEX)
 !     cefldy = the y-component                            (COMPLEX)
 !     cefldy = the z-component                            (COMPLEX)
@@ -119,7 +119,7 @@ c      use real_mod
 !     variables of wave characteristics:
       yval=yy
       nharm=lh
-      omodev=omode
+      omodev=omode  ! [YuP: Not used?]
       enz=npara
       enzsq=enz*enz
       sgnnz=dsign(1.0d0,npara)

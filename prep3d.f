@@ -233,10 +233,12 @@ c     bmod,bz,br,bphi (Tl)
 
      
 ctest
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 c      write(*,*)'prep3d u',u(1),u(2),u(3),u(4),u(5),u(6)
       write(*,*)'prep3d cnpar,cnper,dsqrt(cnpar**2+cnper**2) ',
      &                  cnpar,cnper,dsqrt(cnpar**2+cnper**2)
 c       write(*,*)'prep3d iabsorp',iabsorp
+      endif ! outprint
 cendtest
 
 cSAP100210 these lines were put here  for LCS absorption calcullations
@@ -279,10 +281,12 @@ c-------------------------------------------------------------
         dens_e=dense(z,r,phi,1)
         z_eff=zeff(z,r,phi)
 
+        if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
         write(*,*)'rho,temp_e,dens_e,z_eff',rho,temp_e,dens_e,z_eff
         do i=2,nbulk
         write(*,*)'i,tempiar(i)',i,tempiar(i)
         enddo
+        endif ! outprint
 
         if (iabsorp.eq.3) then   !ends at line 520
 c----------FW absorption
@@ -312,8 +316,10 @@ c           I_n) calcul
            call absorpfd_091016(z,r,phi,cnpar,cnper,temp_e,dens_e,
      &                   tempiar,
      1                   nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'after absorpfd_091016 cnprim_s',cnprim_s
            write(*,*)'aft absorpfd:cnprim_e,cnprim_i',cnprim_e,cnprim_i
+           endif ! outprint
 cBH050222:  Following two subroutine calls are testing of Pinsker-
 cBH050222:  Porkolab expressions and generalizations, by Smirnov
 cBh050222:  while at CompX, Jan-Feb, 2005.
@@ -360,12 +366,16 @@ cSAP081111
               cnprim=cnprim_e !only electron absorption
            endif 
 
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'aft absorpfd:cnprim_e,cnprim_i,cnprim_cl,cnprim',
      1               cnprim_e,cnprim_i,cnprim_cl,cnprim
+           endif ! outprint
 c           write(*,*)'cnprim_s(1:nbulka)',cnprim_s
             if (cnprim.lt.0.d0) then
+             if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
              write(*,*)'Warning cnprim <0 cnprim=',cnprim
              write(*,*)'The code wil use abs(cnprim)'
+             endif ! outprint
              cnprim=dabs(cnprim) 
              cnprim_e=dabs(cnprim_e)
              cnprim_i=dabs(cnprim_i)
@@ -422,17 +432,23 @@ c            write(*,*)'t_av_ar(i)[eV]',t_av_ar(i)
               enddo
            enddo
            
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
         write(*,*)'w_ceps1',w_ceps(1,1,is),w_ceps(1,2,is),w_ceps(1,3,is)
         write(*,*)'w_ceps2',w_ceps(2,1,is),w_ceps(2,2,is),w_ceps(2,3,is)
         write(*,*)'w_ceps3',w_ceps(3,1,is),w_ceps(3,2,is),w_ceps(3,3,is)
+           endif ! outprint
+           
            k4 = 4.19d7                   !constant for elec therm vel
            c = 3.0d10 
-           write(*,*)'d=',d
            vt=k4*dsqrt(2.0d0*t_av_ar(1)/dmas(1)) !vt= sqrt(2.0*kT[eV]/mass)
                                                  !    cm/sec 
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
+           write(*,*)'d=',d
            write(*,*)'k4,t_av_ar(1),dmas(1),cnpar,c,vt',
      &     k4,t_av_ar(1),dmas(1),cnpar,c,vt
            write(*,*)'y0',c/(cnpar*vt)
+           endif ! outprint
+           
  11        continue
 cendtest_ono
 
@@ -440,20 +456,28 @@ cSAP081216----------------------------------------------
 c           if (is.eq.81) then
            if (is.eq.1000000) then
 c------------ test N_perp and polarization in one given ray point WF case
+              if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
               write(*,*)'is=81'
               write(*,*)'cnpar,cnper',cnpar,cnper
               write(*,*)'cex,cey,cez',cex,cey,cez
+              endif ! outprint
               call npernpar(z,r,phi,cnpar,cnper2p,cnper2m)
+              if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
               write(*,*)'cnper2p,cnper2m',cnper2p,cnper2m
+              endif ! outprint
               if (cnper2p.ge.0.d0) then
                  cnper_p=dsqrt(cnper2p)
+                 if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
                  write(*,*)'cnper_p,cnper',cnper_p,cnper
+                 endif ! outprint
               endif
 cSAP090122
 c              if (cnperp2m.ge.0.d0) then
               if (cnper2m.ge.0.d0) then
                  cnper_m=dsqrt(cnper2m)
+                 if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
                  write(*,*)'cnper_m,cnper',cnper_m,cnper
+                 endif ! outprint
               endif
 
 
@@ -522,10 +546,10 @@ c-----------end test
 
 	if (iabsorp.eq.2) then
 c----------LH absorption
-           write(*,*)'prep3d.f i_lsc_approach',i_lsc_approach
+cyup           write(*,*)'prep3d.f i_lsc_approach',i_lsc_approach
 
            if (i_lsc_approach.eq.1) then
-             write(*,*)'prep3d before LH_absorption_LSC'
+cyup             write(*,*)'prep3d before LH_absorption_LSC'
 c     &       ,'z,r,phi,cnpar,cnper,cnz,cnr,cm',
 c     &       z,r,phi,cnpar,cnper,cnz,cnr,cm
               
@@ -541,7 +565,7 @@ c     &       z,r,phi,cnpar,cnper,cnz,cnr,cm
      &             reps, d_f_e_nonmaxw_d_v_lsc,
      &             wdnpar(is-1),cnprim_e)
                 endif
-                write(*,*)'LH LSC new nonmaxw cnprim_e', cnprim_e  
+cyup                write(*,*)'LH LSC new nonmaxw cnprim_e', cnprim_e  
   
 c                call LH_absorption_LSC_maxwellian(z,r,phi,cnpar,
 c     &                  cnper,cnz,cnr,cm,reps,cnprim_e)
@@ -550,10 +574,12 @@ c                write(*,*)'LH maxw cnprim_e', cnprim_e
                  cnprim_i=0.d0
                  cnprim_cl=0.d0
               else
+                if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
                 write(*,*)'WARNING in prep3d rho>1 rho=',rho 
                 write(*,*)'in this case LH_absorption_LSC can not work'
                 write(*,*)'and the subroutine absorplh will be used'
                 write(*,*)'for absorption calculations'
+                endif ! outprint
                 call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
      1                  ,bz,br,bphi,nbulk,bmod,frqncy,z_eff,
      1                   cnprim_e,cnprim_i,cnprim_cl)
@@ -562,7 +588,7 @@ c                write(*,*)'LH maxw cnprim_e', cnprim_e
               call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
      1                  ,bz,br,bphi,nbulk,bmod,frqncy,z_eff,
      1                   cnprim_e,cnprim_i,cnprim_cl)
-              write(*,*)'LH iabsorp_2 cnprim_e', cnprim_e
+cyup              write(*,*)'LH iabsorp_2 cnprim_e', cnprim_e
            endif
 
 c           call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
@@ -582,8 +608,8 @@ cSAP081111
              cnprim=cnprim+cnprim_cl
 
 c        cnprim=(cnprim_e+cnprim_i+cnprim_cl)
-        write(*,*)'cnprim_e,cnprim_i,cnprim_cl,cnprim',
-     1             cnprim_e,cnprim_i,cnprim_cl,cnprim
+cyup        write(*,*)'cnprim_e,cnprim_i,cnprim_cl,cnprim',
+cyup     1             cnprim_e,cnprim_i,cnprim_cl,cnprim
 cSAP090403
 c	cnprim_i=cnprim_i+cnprim_cl
 
@@ -607,8 +633,8 @@ c        write(*,*)'perp3d cnper will calculate cnper1,cnprim'
 c        write(*,*)'using the estimation of nperp from cold plasma'
         ihermloc=2
         call cnpermuz(cnpar,ihermloc,z,r,phi,cnper1,cnprim,ioptmaz)
-        write(*,*)'ioptmaz=1 ihermloc,new cnper1,old cnper,new cnprim'
-     *, ihermloc,cnper1,cnper,cnprim
+cyup        write(*,*)'ioptmaz=1 ihermloc,new cnper1,old cnper,new cnprim'
+cyup     *, ihermloc,cnper1,cnper,cnprim
 
         ioptmaz=2 ! estimation of cnper1 from input parameter cnper
 c        cnper1=cnper
@@ -695,11 +721,11 @@ c         ImN_perp=abs(ImD_full/dD_hermitian/dReN_perp))
      .    ,cnparp,cnperp,reps,dd5,ddnp_h,ddnll_h,ddnp)
 c          write(*,*)'prep3d d,ddnp',d,ddnp
           cnprim = dabs(DIMAG(D) / DREAL(ddnp))
-          write(*,*)'cnprim=(ImD/dD/dn_perp)= ',cnprim
+cyup          write(*,*)'cnprim=(ImD/dD/dn_perp)= ',cnprim
 
           call hot_nperp_muller(nbulk,dmas,x_ar,y_ar,t_av_ar,
      &    tpop_ar,vflow_ar,cnparp,cnperp,cnprim)
-          write(*,*)'muller cnprim',cnprim 
+cyup          write(*,*)'muller cnprim',cnprim 
           
           do i=1,3
              do j=1,3
@@ -728,6 +754,7 @@ c---------initial values of Im_N_perp=cnprim Re_N_perp=cnperp
 c          cnper_new=cnperp
 c          cnprim=cnprim_old
 
+          if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
           write(*,*)'prep3d before call solv_nperp_hot cnprim=',cnprim
           write(*,*)'nbulk,dmas,x_ar,y_ar',
      &               nbulk,dmas,x_ar,y_ar
@@ -736,11 +763,12 @@ c          cnprim=cnprim_old
           write(*,*)'vflow_ar',vflow_ar
           write(*,*)'cnparp,cnperp,iter_max,cnper_new,cnprim',
      &               cnparp,cnperp,iter_max,cnper_new,cnprim
+          endif ! outprint
 
           call solv_nperp_hot(nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,
      .    vflow_ar,cnparp,cnperp,iter_max,cnper_new,cnprim)
-          write(*,*)'Newton cnperp,cnper_new,cnprim',
-     .    cnperp,cnper_new,cnprim
+cyup          write(*,*)'Newton cnperp,cnper_new,cnprim',
+cyup     .    cnperp,cnper_new,cnprim
           cnprim_old=cnprim
          
 ctest
@@ -847,13 +875,13 @@ c          to plot.ps file using PGplot
              dmax_i_nperp= 1.d0
              dmin_i_nperp=0.d0
            endif
-           write(*,*)'prep3d.f before map_dhot_nper'
-           write(*,*)'ratio_min_r_nperp,ratio_max_r_nperp,cnper',
-     &     ratio_min_r_nperp,ratio_max_r_nperp,cnper
-           write(*,*)'number_map_points_real_nperp',
-     &     number_map_points_real_nperp
-           write(*,*)'number_map_points_image_nperp',
-     &     number_map_points_image_nperp
+cyup           write(*,*)'prep3d.f before map_dhot_nper'
+cyup           write(*,*)'ratio_min_r_nperp,ratio_max_r_nperp,cnper',
+cyup     &     ratio_min_r_nperp,ratio_max_r_nperp,cnper
+cyup           write(*,*)'number_map_points_real_nperp',
+cyup     &     number_map_points_real_nperp
+cyup           write(*,*)'number_map_points_image_nperp',
+cyup     &     number_map_points_image_nperp
 
            call map_dhot_nper(m_r_nperp,m_i_nperp, 
      .     dmax_r_nperp,dmin_r_nperp,dmax_i_nperp,dmin_i_nperp,
@@ -1055,9 +1083,9 @@ c       call anth_rlt(x_ar(1),ye,t_av_ar(1)*1.d-3,cnparp,cnperp,
         cnprimp=0.d0
         d=dhot_rlt(reps,aK,cnparp,cnperp,cnprimp)
         dham=dreal(d)
-        write(*,*)'reps',reps
-        write(*,*)'aK',aK
-        write(*,*)'d',d
+cyup        write(*,*)'reps',reps
+cyup        write(*,*)'aK',aK
+cyup        write(*,*)'d',d
 	call Ddhot(nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,vflow_ar
      . ,cnparp,cnperp,reps,dd5,ddnp_h,ddnll_h,ddnp)
         
@@ -1065,8 +1093,8 @@ c       call anth_rlt(x_ar(1),ye,t_av_ar(1)*1.d-3,cnparp,cnperp,
 c        cnprim = -DIMAG(D) / DREAL(ddnp)
 
 c	write(*,*)'prep3d forest cnper, relativistic cnprim',cnper,cnprim
-        write(*,*)'dimag(d)',dimag(d)
-        write(*,*)'dreal(ddnp),cnprim',dreal(ddnp),cnprim
+cyup        write(*,*)'dimag(d)',dimag(d)
+cyup        write(*,*)'dreal(ddnp),cnprim',dreal(ddnp),cnprim
 
         cnprim_cl=0.d0
         cnprim_e=cnprim
@@ -1150,15 +1178,15 @@ c     *, ihermloc,cnper1,cnper,cnprim
         ioptmaz=2 ! estimation of cnper1 from input parameter cnper
         cnper1=cnper
         call cnpermuz(cnpar,ihermloc,z,r,phi,cnper1,cnprim,ioptmaz)
-        write(*,*)'prep3d ioptmaz=2 cnper1,cnper,cnprim',
-     +  cnper1,cnper,cnprim
+cyup        write(*,*)'prep3d ioptmaz=2 cnper1,cnper,cnprim',
+cyup     +  cnper1,cnper,cnprim
 
         cnprim_cl=0.d0
         cnprim_e=cnprim
         cnprim_i=0.d0
 
         call aherm(reps,k_aherm)
-        write(*,*)'prep3d ani_herm Muzzucato',k_aherm
+cyup        write(*,*)'prep3d ani_herm Muzzucato',k_aherm
 cend_test_Mazzucato
  40     continue
 
@@ -1253,7 +1281,7 @@ c------ complex dispersion function calculated from the sum of
 c       of the cold electron plasma dielectric tensor eps_h
 c       and the relativistic electron anti-hermition dielectric tensor eps_a
 
-        write(*,*)'prep3d reps',reps
+cyup        write(*,*)'prep3d reps',reps
 
         disp_func=dcold_rlt(reps,aK,cnparp,cnperp)
 
@@ -1269,7 +1297,7 @@ c        write(*,*)'ddnp',ddnp
         cnprim = dabs(DIMAG(disp_func) / DREAL(ddnp))
 	
 c        write(*,*)'iabsorp=7 DIMAG(disp_func)', DIMAG(disp_func)
-        write(*,*)'DREAL(ddnp),cnprim',DREAL(ddnp),cnprim
+cyup        write(*,*)'DREAL(ddnp),cnprim',DREAL(ddnp),cnprim
 
         cnprim_cl=0.d0
         cnprim_e=cnprim
@@ -1292,8 +1320,8 @@ c       It works for id =10,12,13,15 cases.
         call Im_nperp_Westerhof_Tokman(z,r,phi,
      &  cnpar,cnper,cnprim_in,id,cnprim)
 
-        write(*,*)'after Im_nperp_Westerhof_Tokman cnper,cnprim',
-     &  cnper,cnprim
+cyup        write(*,*)'after Im_nperp_Westerhof_Tokman cnper,cnprim',
+cyup     &  cnper,cnprim
 
         cnprim_cl=0.d0
         cnprim_e=cnprim
@@ -1337,8 +1365,8 @@ cSAP08111
 c         cnprim=cnprim_e+cnprim_i
          cnprim_cl=0.d0
         
-         write(*,*)'after absorp_hot cnprim_e,cnprim_i,cnprim_s',
-     &   cnprim_e,cnprim_i,cnprim_s
+cyup         write(*,*)'after absorp_hot cnprim_e,cnprim_i,cnprim_s',
+cyup     &   cnprim_e,cnprim_i,cnprim_s
 c----------------------------------------------------------------
 c        electric field polarization (cex,cey,cez)
 c        calculted  using the hot plasma dielectric tensor
@@ -1375,8 +1403,8 @@ c----------------------------------------------------------------
          cnprim=cnprim_e+cnprim_i
          cnprim_cl=0.d0
         
-         write(*,*)'after absorp_relativist_disp_combined'
-         write(*,*)'cnprim_e',cnprim_e
+cyup         write(*,*)'after absorp_relativist_disp_combined'
+cyup         write(*,*)'cnprim_e',cnprim_e
 
 c----------------------------------------------------------------
 c        electric field polarization (cex,cey,cez)
@@ -1408,7 +1436,7 @@ c        Nelson-Melby if id=11) and projection method
          cnprim=cnprim_e+cnprim_i
          cnprim_cl=0.d0
         
-         write(*,*)'aft absorp_relativist iabsorp=11 cnprim_e',cnprim_e	
+cyup         write(*,*)'aft absorp_relativist iabsorp=11 cnprim_e',cnprim_e	
 c----------------------------------------------------------------
 c        electric field polarization (cex,cey,cez)
 c        calculated using the relativistic dielectric tensor
@@ -1445,16 +1473,18 @@ C******* For initial guess, just search with the real part from before and just
 C******* 0 imaginary part. Usually, if the ray is propagating, the damping
 C******* is low anyway, so it shouldn't be too large imaginary part.
          roots(1)=dcmplx(cnper,0.0d0)
-      write(*,*)'()()(()()(()()initial data'
-      write(*,*)'z=',z,'r=',r,'phi=',phi
-      write(*,*)'cnz=',cnz,'cnr=',cnr,'cm=',cm
-      write(*,*)'rho=',rho
-      print *,'====== is=',is
-      print *,'cnprim: ',cnprim,' cnpar: ',cnpar,' cnper: ',cnper
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
+          write(*,*)'()()(()()(()()initial data'
+          write(*,*)'z=',z,'r=',r,'phi=',phi
+          write(*,*)'cnz=',cnz,'cnr=',cnr,'cm=',cm
+          write(*,*)'rho=',rho
+          print *,'====== is=',is
+          print *,'cnprim: ',cnprim,' cnpar: ',cnpar,' cnper: ',cnper
+         endif ! outprint
 c      cn2=cnz**2+cnr**2+cnphi**2
       cn2=cnz**2+cnr**2+(cm/r)**2
 
-      print *,'cn2=',cn2,' cnper(calculated) ',dsqrt(cn2-cnpar**2)
+cyup      print *,'cn2=',cn2,' cnper(calculated) ',dsqrt(cn2-cnpar**2)
 cSAP091004
 c        if (is.lt.1) then
          if (is.le.1) then
@@ -1466,7 +1496,7 @@ c        if (is.lt.1) then
 C id.eq.11 or id.eq.12, call root-finding using Nelson-Melby dielectric function
          if (id.eq.11 .or. id.eq.12) then
 cSAP091104
-           write(*,*)'prep3d.f before call muller'
+cyup           write(*,*)'prep3d.f before call muller'
 c SAP091216 
            X_e=x(z,r,phi,1)
            Y_e=y(z,r,phi,1)
@@ -1479,7 +1509,7 @@ c SAP091216
      +     itmax,info,ier)
 
 cSAP091104
-           write(*,*)'prep3d.f after call muller'
+cyup           write(*,*)'prep3d.f after call muller'
 
          else
 C id.eq.14 or 15, call fr_func_noeps, using Ram's dielectric function
@@ -1489,15 +1519,17 @@ c-----------print relativistic tensor for testing
             Y_e=y(z,r,phi,1)
             T_e=tempe(z,r,phi,1)  
             cnx=dcmplx(cnper,0.d0)
+            if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
             write(*,*)'Xe,Y_e ',Xe,Y_e
             write(*,*)'cnpar',cnpar
             write(*,*)'cnx',cnx
+            endif ! outprint
             call Disp_Ram(T_e,cnpar,X_e,Y_e,cnx,K,d) !K is in z-y plane
                                !in Stix coordinates
-            write(*,*)'prep3d K',K 
+cyup            write(*,*)'prep3d K',K 
             call herm(K,K_herm)
-            write(*,*)'prep3d K_herm',K_herm
-            write(*,*)'D ',D 
+cyup            write(*,*)'prep3d K_herm',K_herm
+cyup            write(*,*)'D ',D 
 c           end print relativistic tensor for testing
 c-------------------------------------------------------------
 
@@ -1513,7 +1545,7 @@ c-------------------------------------------------------------
 
 C******* To be consistent with all other methods of calculating
 C******* force cnprim and cnper to be positive.
-         print *,'&&&&&&&&&&&& cnprim: ',cnprim,' cnper: ',cnper
+cyup         print *,'&&&&&&&&&&&& cnprim: ',cnprim,' cnper: ',cnper
 
          cnx=dcmplx(cnper,cnprim)
 
@@ -1551,7 +1583,7 @@ cSAP091216
          cnpar_c=cmplx(cnpar,0.d0)    
          call lambda(cnper_c,cnpar_c,reps,eigenvalue)
   
-         write(*,*)'eigenvalue',eigenvalue
+cyup         write(*,*)'eigenvalue',eigenvalue
 
 c         eps=hamilt1(u(1),u(2),u(3),u(4),u(5),u(6))
 c         write(*,*)'in prep3d  epshamilt1=',eps
@@ -1584,7 +1616,7 @@ c----------------------------------------------------------------
 
          call absorpfw_pinsker_1(z,r,phi,cnpar,cnper,temp_e,dens_e,
      &   tempiar,frqncy,nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-         write(*,*)'after absorpfw_pisker_1 cnprim_s',cnprim_s
+cyup         write(*,*)'after absorpfw_pisker_1 cnprim_s',cnprim_s
 
 cSAP080303
 c        if (ion_absorption.eq.'enabled') cnprim=cnprim_e+cnprim_i
@@ -1598,8 +1630,8 @@ cSAP08111
 c         cnprim=cnprim_e+cnprim_i
          cnprim_cl=0.d0
         
-         write(*,*)'after absorpfw_pinsker_1 cnprim_e,cnprim_i,cnprim_s'
-     &   ,cnprim_e,cnprim_i,cnprim_s
+cyup         write(*,*)'after absorpfw_pinsker_1 cnprim_e,cnprim_i,cnprim_s'
+cyup     &   ,cnprim_e,cnprim_i,cnprim_s
 c----------------------------------------------------------------
 c        Calulate the electric field polarization (cex,cey,cez) 
 c        using dielectric tensor reps from S.C.Chiu article 
@@ -1644,7 +1676,7 @@ c----------------------------------------------------------------
 
          call absorpfw_pinsker_2(z,r,phi,cnpar,cnper,temp_e,dens_e,
      &   tempiar,nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-         write(*,*)'after absorpfw_pisker_1 cnprim_s',cnprim_s
+cyup         write(*,*)'after absorpfw_pisker_1 cnprim_s',cnprim_s
 
 cSAP080303
 c        if (ion_absorption.eq.'enabled') cnprim=cnprim_e+cnprim_i 
@@ -1658,8 +1690,8 @@ cSAP080303
 c         cnprim=cnprim_e+cnprim_i
          cnprim_cl=0.d0
         
-         write(*,*)'after absorpfw_pinsker_1 cnprim_e,cnprim_i,cnprim_s'
-     &   ,cnprim_e,cnprim_i,cnprim_s
+cyup         write(*,*)'after absorpfw_pinsker_1 cnprim_e,cnprim_i,cnprim_s'
+cyup     &   ,cnprim_e,cnprim_i,cnprim_s
 c----------------------------------------------------------------
 c        Calulate the electric field polarization (cex,cey,cez) 
 c        using dielectric tensor reps from S.C.Chiu article 
@@ -1752,10 +1784,10 @@ c         write(*,*)'delws',delws
      +           (0.5d0*(r+rold)*(phi-phiold))**2)*r0x*100.d0
 c         write(*,*)'delwsn',delwsn
       end if
-      write(*,*)'is,ws(is)',is,ws(is)
-      write(*,*)'irefl',irefl
+cyup      write(*,*)'is,ws(is)',is,ws(is)
+cyup      write(*,*)'irefl',irefl
 c      if(is.gt.1) write(*,*)'is,wsn(is-1),wsn(is)',is,wsn(is-1),wsn(is)
-      write(*,*)'rho',rho
+cyup      write(*,*)'rho',rho
 
       psi_s=psi_rho(rho)
       q_s=qsafety_psi(psi_s)
@@ -1813,7 +1845,7 @@ c------- flux from the cold plasma
          rnper=cnper
          romega=1/ye
          romegpe=dsqrt(xe)/ye
-        write(*,*)'prep3d before grpde xe,ye',xe,ye
+cyup        write(*,*)'prep3d before grpde xe,ye',xe,ye
          nsigma=ioxm
 c        nsigma=1
 c        nsigma=-1
@@ -1821,6 +1853,11 @@ c        nsigma=-1
      .                   rvgrpdc, redenfac, exde, eyde, ezde)
 c        write(*,*)'+ redenfac',redenfac
          cflown=2.d0*redenfac
+         if(rvgrpdc.le.0.d0)then
+         !YuP[2018-05-23]added: stop the ray when vgrpdc<0 from grpde2()
+            iraystop=1
+            iray_status_one_ray=11 ! means: ray is stopped by fluxn<0
+         endif
 c         write(*,*)'prep3d cold from grpde2 cflown',cflown    
       endif !cold electron plasma flux
     
@@ -1913,7 +1950,7 @@ c----------------------------------------------------------
          call absorp_collisional(temp_e,dens_e,frqncy_l,z_eff,
      &   v_gr_perp,coll_mult,
      &   cnprim_cl)
-         write(*,*)'prep3d cnprim,cnprim_cl',cnprim,cnprim_cl
+cyup         write(*,*)'prep3d cnprim,cnprim_cl',cnprim,cnprim_cl
  2       cnprim=cnprim+cnprim_cl
 cSAP090403
 c         cnprim_e=cnprim_e+cnprim_cl
@@ -1934,8 +1971,8 @@ cSmirnov970101 beg
       ckvipl_i=vratio*cnprim_i/cld
       ckvipl_cl=vratio*cnprim_cl/cld
  
-      write(*,*)'prep3d: ckvipl_e,ckvipl_i,ckvipl_cl',
-     &                   ckvipl_e,ckvipl_i,ckvipl_cl
+cyup      write(*,*)'prep3d: ckvipl_e,ckvipl_i,ckvipl_cl',
+cyup     &                   ckvipl_e,ckvipl_i,ckvipl_cl
 
 
 cBH041009  Only germaine if iabsorp.eq.3:
@@ -1986,8 +2023,8 @@ cBH041009  Only germaine if iabsorp.eq.3:
             ckvipl_s(kk)=ratio_perp_pol*cnprim_s(kk)/cld
          enddo
 
-         write(*,*)'prep3d, ckvipol with tokman flux ratio,ckvipl_e',
-     &   ckvipl_e
+cyup         write(*,*)'prep3d, ckvipol with tokman flux ratio,ckvipl_e',
+cyup     &   ckvipl_e
          
       endif
 
@@ -2025,7 +2062,7 @@ c        powj(iray) (erg/c) was calculated in cone_ec
 c        powinilh(iray) (erg/c) was calculated in grill_lh
 c        powini=powj or powinilh
          p=powini
-         write(*,*)'prep3d is=1, powini=',powini
+cyup         write(*,*)'prep3d is=1, powini=',powini
 cSAP081202
 c        delpwr(is)=dexp(-2.d0*ckvipol*(ws(is)))*p
          delpwr(is)=p
@@ -2042,7 +2079,7 @@ cRWH160227  except for i_ox=1 calculation for rays with optimal OX
 cRWH160227  mode converison.
          if (abs(powini).lt.1.d-100 .and. i_ox.ne.1) then
             iraystop=1
-            iray_status_one_ray=14
+            iray_status_one_ray=14 !means: abs(powini).lt.1.d-100
          endif
 
       else  !On is.eq.1, that is, else is.gt.1, begins line 2023
@@ -2066,8 +2103,8 @@ c           write(*,*)'(ckvipol+ckvipold),argexp',
 c     &                (ckvipol+ckvipold),argexp
 
 cSAP100202         
-           write(*,*)'prep3d.f dabs(1.d0-dexp(argexp)),eps_delta_pow',
-     &                         dabs(1.d0-dexp(argexp)),eps_delta_pow
+cyup           write(*,*)'prep3d.f dabs(1.d0-dexp(argexp)),eps_delta_pow',
+cyup     &                         dabs(1.d0-dexp(argexp)),eps_delta_pow
 
            i_go_to_previous_out_step=0   
 
@@ -2097,10 +2134,10 @@ c                 write(*,*)'ckvipol+ckvipold',ckvipol+ckvipold
                  zold=wz(is-1)*0.01d0/r0x
                  rold=wr(is-1)*0.01d0/r0x
                  phiold=wphi(is-1)
-                 write(*,*)'prep3d.f argexp,prmt6_new',argexp,prmt6_new
-                 write(*,*)'prep3d.f
-     &                      prmt6_new*(ckvipol+ckvipold)*r0x*1.d2'
-     &                     ,prmt6_new*(ckvipol+ckvipold)*r0x*1.d2
+cyup                 write(*,*)'prep3d.f argexp,prmt6_new',argexp,prmt6_new
+cyup                 write(*,*)'prep3d.f
+cyup     &                      prmt6_new*(ckvipol+ckvipold)*r0x*1.d2'
+cyup     &                     ,prmt6_new*(ckvipol+ckvipold)*r0x*1.d2
                  return
               else
 c                 if (dabs(1.d0-dexp(argexp)).lt.0.5*eps_delta_pow) then
@@ -2151,7 +2188,7 @@ c-YuP-130605: changed ray-stopping criterion from argexp>0.d0 to this:
               WRITE(*,*)'**********************************************'
               argexp=0.d0
               iraystop=1
-              iray_status_one_ray=10
+              iray_status_one_ray=10 !means: argexp>1d-30 (growing ray power)
            endif
 c-YuP-130605: From print-out: 
 c Even though sometimes ckvipol and ckvipold both are zero,
@@ -2194,7 +2231,7 @@ c     &              (2.d0*pi*frqncy*1.d+9))
          else  !On if(iabsorp_ql.eq.0), line 2050
 c----------to use QL flux for absorption calculations
 c          iabsorp_ql=1
-           write(*,*)'prep3d before absorbed_power_using_ql_flux'
+cyup           write(*,*)'prep3d before absorbed_power_using_ql_flux'
 c           call tensrcld(u(1),u(2),u(3))
 c           cnx=dcmplx(cnper,0.d0)
 c           call efield1(cnpar,cnx,ex,ey,ez,eplus,eminus,epar)
@@ -2204,22 +2241,27 @@ c           call efield1(cnpar,cnx,ex,ey,ez,eplus,eminus,epar)
      &     fluxn(is-1),delpwr(is-1),(ws(is)-ws(is-1)),
      &     absorbed_power_ql)
            delpwr(is)=delpwr(is-1)-absorbed_power_ql
-
+           
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'QL absorption'
            write(*,*)'delpwr(is-1),absorbed_power_ql,delpwr(is)',
      &                delpwr(is-1),absorbed_power_ql,delpwr(is)
+           endif ! outprint
 
          endif !iabsorp_ql, begins at line 2050
  
 c-------------------------------------------------------------------
 c        reflection lost at the plasma edge
 c------------------------------------------------------------------
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'prep3d refl_loss,irefl,irefl_old',
      &             refl_loss,irefl,irefl_old
+         endif ! outprint
+         
          tot_pow_absorb_at_refl=tot_pow_absorb_at_refl+
      &           delpwr(is)*refl_loss*(irefl-irefl_old)
 
-         write(*,*)'prep3d before refl_looss delpwr(i)',delpwr(is)
+cyup         write(*,*)'prep3d before refl_looss delpwr(i)',delpwr(is)
 
          delpwr(is)=delpwr(is)*(1.d0-refl_loss*(irefl-irefl_old))
          irefl_old=irefl 
@@ -2233,10 +2275,12 @@ c     &                     delpwr(is),delpwr(is-1)-delpwr(is)
 c         write(*,*)'delpwr(1)',delpwr(1)
 
 cSAP090603
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          if((delpwr(is).gt.1.d-200).and.(delpwr(1).gt.1.d-200))then
            if(i_ox.ne.1) write(*,*)'-dlog(delpwr(is)/delpwr(1))',
      &             -dlog(delpwr(is)/delpwr(1))
          endif
+         endif ! outprint
  
 c         if(argexp.gt.0.d0)then
 c           write(*,*)'******************************************'
@@ -2247,10 +2291,10 @@ c         endif
 
          if(i_lsc_approach.eq.0) then        
           if(delpwr(is).lt.delpwrmn*delpwr(1))then
-            write(*,*)'***in prep3d delpwr(is).lt.delpwrmn*delpwr(1)**'
+            WRITE(*,*)'***in prep3d delpwr(is).lt.delpwrmn*delpwr(1)**'
 c           stop ray_iray calculations
             iraystop=1
-            iray_status_one_ray=2
+            iray_status_one_ray=2 ! delpwr(is).lt.delpwrmn*delpwr(1)
           endif
          endif 
       end if  !On is.eq.1 [l 2009], else [l 2026]
@@ -2262,8 +2306,8 @@ c       where i_ox_conversion=1
 c       It will reduce the power from O mode to X mode using 
 c       transmission coefficient transm_ox
 
-        write(*,*)'i_call_prep3d_in_output_at_i_ox_conversion_eq_1',
-     &  i_call_prep3d_in_output_at_i_ox_conversion_eq_1
+cyup        write(*,*)'i_call_prep3d_in_output_at_i_ox_conversion_eq_1',
+cyup     &  i_call_prep3d_in_output_at_i_ox_conversion_eq_1
 
         if (i_call_prep3d_in_output_at_i_ox_conversion_eq_1.eq.0)goto 20
 
@@ -2275,7 +2319,7 @@ c     &  is,delpwr(is),delpwr_o
           is=is-1
           nrayelt_o_cutoff=is  !the number of ray point where O
                                ! cutoff was found
-          write(*,*)'prep3d: nrayelt_o_cutoff',nrayelt_o_cutoff
+cyup          write(*,*)'prep3d: nrayelt_o_cutoff',nrayelt_o_cutoff
           goto 20 !the first call of prep3d in output after OX conversion 
         endif
 
@@ -2294,7 +2338,7 @@ c     &                      delpwr_o,transm_ox_loc,delpwr_x
 
  20   continue
   
-      write(*,*)'prep3d after transm delpwr(is)',delpwr(is)
+cyup      write(*,*)'prep3d after transm delpwr(is)',delpwr(is)
       endif ! i_ox.eq.2
 
 c     sdpwr(is)=0.d0
@@ -2362,7 +2406,7 @@ c           stop ray_iray calculations
 cSm051130
             iraystop=1
 cSAP100514
-            iray_status_one_ray=11 
+            iray_status_one_ray=11 ! means: fluxn<0
          endif
      
 c-----------------------
@@ -2521,9 +2565,9 @@ c         call calc_emis_coef(xe,ye,T_kev,wnpar(is),wnper(is),cnray,
      +   iabsorp_collisional_l,coll_mult_l,tempe_l,dense_l,zeff_l,
      +   wal_emis(is),wj_emis(is),wtemp_rad_em(is))
 c         write(*,*)'prep3d after calc_emis_coef'
-         write(*,*)'is wal_emis,wj_emis',is,wal_emis(is),wj_emis(is)
-         write(*,*)'wtemp_em(is),wtemp_rad_em(is)',
-     +   wtemp_em(is),wtemp_rad_em(is)
+cyup         write(*,*)'is wal_emis,wj_emis',is,wal_emis(is),wj_emis(is)
+cyup         write(*,*)'wtemp_em(is),wtemp_rad_em(is)',
+cyup     +   wtemp_em(is),wtemp_rad_em(is)
 
          call cpu_time(time_prep3d_emis_2)
 
@@ -2876,7 +2920,7 @@ c YuP: this function is supposed to be called for ieffic=1 only,
 c but can be called when ieffic>1, for a comparison/test purposes.
 
       IMPLICIT double precision (a-h,o-z)
-      write(*,*)'efficien: jwave=',jwave 
+cyup      write(*,*)'efficien: jwave=',jwave 
       ! jwave= ! can be (0 - LH wave, -1 AW, 1 - EC wave) 
       if(jwave.eq.1) then
 c        EC wave first harmonic
@@ -2887,14 +2931,14 @@ c        LH wave
          efficien=2.d0/(5.d0+z_eff)*
      1   (u1*u1+(7.0d0/4.0d0+9.0d0/4.0d0/(3.d0+z_eff)))
       else ! YuP[07-2017] Added: other values of jwave
-         write(*,*)'WARNING func.efficien() : wrong value of jwave !!!'
+cyup         write(*,*)'WARNING func.efficien() : wrong value of jwave !!!'
          !efficien=0.d0
          ! Or maybe set to be the same as for jwave=1?
          ! Here, same as for jwave=1:
          efficien=1.5d0/(5.d0+z_eff)*
      1   (u1*u1+(2.0d0+3.0d0/2.0d0/(3.d0+z_eff)))
       endif
-      write(*,*)'efficien: nondim asimptotic efficiency',efficien
+cyup      write(*,*)'efficien: nondim asimptotic efficiency',efficien
 c-----------------------------------------------------------
 c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))
 c     temperature temp in kev
@@ -2970,10 +3014,10 @@ c-----external
 c-----for efficiency transformation like in currn in toray
       real*8 phi,zfac
 c-------------------------------------------------------------------
-      write(*,*)'effcurb z,r,yma,xma,r0x,z_eff',
-     &z,r,yma,xma,r0x,z_eff
+cyup      write(*,*)'effcurb z,r,yma,xma,r0x,z_eff',
+cyup     &z,r,yma,xma,r0x,z_eff
 cSAP080617
-      write(*,*)'temp,den,jwave,cnpar,ye',temp,den,jwave,cnpar,ye
+cyup      write(*,*)'temp,den,jwave,cnpar,ye',temp,den,jwave,cnpar,ye
 
 c     ig=+1 selects new	Green's fcn in curba.-1 selects old
 c        +2 or +3 are older models
@@ -3165,15 +3209,15 @@ c-----using  TorGAcurba with real*8 arguments
       zeff_d=z_eff
       tol_d=tol
 cSAP080617
-      write(*,*)'before TorGA_curba '
+cyup      write(*,*)'before TorGA_curba '
 
       call TorGA_curba (rjpd_d,rjpd0_d,ratjpd_d,denom_d,aspct_d,enpar_d, 
      &tc_d, thtc_d, theta_d, elomom_d, lh, zeff_d, model, tol_d, n0, ig)
       rjpd=rjpd_d
       rjpd0=rjpd0_d
       ratjpd=ratjpd_d
-      write(*,*)'after TorGA_curba rjpd,rjpd0,ratjpd,denom_d,lh',
-     &rjpd,rjpd0,ratjpd,denom_d,lh
+cyup      write(*,*)'after TorGA_curba rjpd,rjpd0,ratjpd,denom_d,lh',
+cyup     &rjpd,rjpd0,ratjpd,denom_d,lh
 
 c----------------------------------------------------------
 c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))
@@ -3445,7 +3489,7 @@ c          write(*,*)'in p_c_prof before effcurb'
 
       call effcurb(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,jwave,cnparr,
      +             yer,effic_r)
-           write(*,*)'in p_c_prof after effcurb efffic_r',effic_r
+cyup           write(*,*)'in p_c_prof after effcurb efffic_r',effic_r
            eff(is)=(effic_r)
          endif     ! ieffic.eq.3
 
@@ -3471,7 +3515,7 @@ c--------------------------------------------------------------------
      &                 cefldx,cefldy,cefldz,
      &                 effic_r)
 
-           write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
+cyup           write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
 
            eff(is)=(effic_r)
          endif    ! ieffic.eq.4
@@ -3518,7 +3562,7 @@ c     &    psi_loc,theta_pol
           call CD_adj_LH_efficiency(cnpar,cnper,
      &    psi_loc,theta_pol,cefldy,cefldz,
      &    eff(is))
-          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
+cyup          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
          endif !ieffic.eq.5
 
 
@@ -3559,15 +3603,15 @@ c--------------------------------------------------------------------
 c          write(*,*)'prep3d.f in p_c_prof cefldx,cefldy,cefldz',
 c     &                                    cefldx,cefldy,cefldz
 c          write(*,*)'prep3d.f in p_c_prof cnpar,cnper',cnpar,cnper
-          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
-     &    psi_loc,theta_pol
+cyup          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
+cyup     &    psi_loc,theta_pol
 
       
           call CD_adj_efficiency(cnpar,cnper,
      &    psi_loc,theta_pol,cefldx,cefldy,cefldz,
      &    eff(is))
 
-          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
+cyup          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
          endif !ieffic.eq.6
          
           
@@ -3853,14 +3897,14 @@ c         write(*,*)'in p_c_prof before effcurb'
 
 ctest
         u1=u_res(jwave,cnparr,tempr,yer)
-        write(*,*)'jwave,cnpar,tempr,yer,u1',jwave,cnparr,tempr,yer,u1
+cyup        write(*,*)'jwave,cnpar,tempr,yer,u1',jwave,cnparr,tempr,yer,u1
         effic_r=efficien(z_effr,u1,jwave,tempr,denr) ! just for comparison
-        write(*,*)'asimptotic: z_effr,denr,effic_r',z_effr,denr,effic_r
+cyup        write(*,*)'asimptotic: z_effr,denr,effic_r',z_effr,denr,effic_r
 cendtest
         call effcurb(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,jwave,
      +  cnparr,yer,effic_r)
 
-        write(*,*)'in p_c_prof after effcurb is,effic_r',is,effic_r
+cyup        write(*,*)'in p_c_prof after effcurb is,effic_r',is,effic_r
  
         eff(is)=effic_r
       endif !ieffic.eq.3
@@ -3890,7 +3934,7 @@ c         write(*,*)'in p_c_prof before effcurb'
         call effcurb(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,jwave,
      +  cnparr,yer,effic_r)
 
-        write(*,*)'in p_c_prof after effcurb is,effic_r',is,effic_r
+cyup        write(*,*)'in p_c_prof after effcurb is,effic_r',is,effic_r
 
            call eff_Lin_Liu(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,
      &                 jwave,
@@ -3898,7 +3942,7 @@ c         write(*,*)'in p_c_prof before effcurb'
      &                 cnper,ioxm,ye,
      &                 cefldx,cefldy,cefldz,
      &                 effic_r)
-        write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
+cyup        write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
    
         eff(is)=effic_r
       endif !4
@@ -3939,13 +3983,13 @@ c--------------------------------------------------------------------
 
 c          write(*,*)'prep3d.f in p_c_prof ,cefldy,cefldz',cefldy,cefldz
 c          write(*,*)'prep3d.f in p_c_prof cnpar,cnper',cnpar,cnper
-          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
-     &    psi_loc,theta_pol
+cyup          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
+cyup     &    psi_loc,theta_pol
 
           call CD_adj_LH_efficiency(cnpar,cnper,
      &    psi_loc,theta_pol,cefldy,cefldz,
      &    eff(is))
-          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
+cyup          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
 
 
 c         if (is.ge.65) call CD_adj_LH_efficiency_test(cnpar,cnper,
@@ -3992,14 +4036,14 @@ c--------------------------------------------------------------------
 c          write(*,*)'prep3d.f in p_c_prof ,cefldx,cefldy,cefldz',
 c     &                                     cefldx,cefldy,cefldz
 c          write(*,*)'prep3d.f in p_c_prof cnpar,cnper',cnpar,cnper
-          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
-     &    psi_loc,theta_pol
+cyup          write(*,*)'prep3d.f in p_c_prof psi_loc,theta_pol',
+cyup     &    psi_loc,theta_pol
 
 ctest
         u1=u_res(jwave,cnpar,temp,ye)
-        write(*,*)'jwave,cnpar,temp,ye,u1',jwave,cnpar,temp,ye,u1
+cyup        write(*,*)'jwave,cnpar,temp,ye,u1',jwave,cnpar,temp,ye,u1
         effic_r=efficien(z_eff,u1,jwave,temp,den) ! just for comparison
-        write(*,*)'asimptotic: z_eff,den,effic_r',z_eff,den,effic_r
+cyup        write(*,*)'asimptotic: z_eff,den,effic_r',z_eff,den,effic_r
 cendtest
           call CD_adj_efficiency(cnpar,cnper,
      &    psi_loc,theta_pol,cefldx,cefldy,cefldz,
@@ -4011,7 +4055,7 @@ c    &       psi_loc,theta_pol,cefldx,cefldy,cefldz,
 c    &       eff(is))
 c          endif
 
-          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
+cyup          write(*,*)'prep3d ADJ is,cnpar,eff(is)',is,cnpar,eff(is)
       endif ! ieffic.eq.6
  110  continue
 
@@ -4460,7 +4504,7 @@ c-----locals
       pi=4.0d0*datan(1.0d0)
 c-----------------------------------------------------------------------
 cSAP080731
-      write(*,*)'in dnonetwo'
+cyup      write(*,*)'in dnonetwo'
 c     write(*,*)'spower'
 c     write(*,*)(spower(i), i=1,NR-1)
 c     write(*,*)'spower_e'
@@ -4587,6 +4631,7 @@ c----------------------------------------------------------
       idx=0 
       nx4=nx+4
  
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,1010)'cur_den_tor=p_tor*cur_den_par, '
      &   // 'p_tor = drs_av*f_eqd/(b_av*dr_av)'
       write(*,1010)'cur_den_pol=p_pol*cur_den_par, '
@@ -4595,6 +4640,7 @@ c----------------------------------------------------------
       write(*,1010)'i rho_bin_center powden_e   cur_den_par  p_tor'
      & // '      cur_den_tor'
      & // '   p_pol    cur_den_pol'
+      endif ! outprint
     
  1010    format(/,1x,a)
  1011    format(i3,7(1pe12.4))
@@ -4651,9 +4697,11 @@ c     &             b_pol_bmin,b_av,b_pol_bmin/b_av
 c        write(*,*)'drs_av,f_eqd,b_av,dr_av ',drs_av,f_eqd,b_av,dr_av 
 c        write(*,*)'drs_av*f_eqd/(b_av*dr_av)',drs_av*f_eqd/(b_av*dr_av)
 c----------------------------------------------------------------
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,1011)i,rho_l,powden_e(i),s_cur_den_parallel(i),
      &   drs_av*f_eqd/(b_av*dr_av),s_cur_den_toroidal(i),
      &   b_pol_bmin/b_av,s_cur_den_poloidal(i)
+         endif ! outprint
       enddo 
 c-----------------------------------------------------------
 c     powertot (erg/sec), currtot(A)
@@ -4721,7 +4769,7 @@ cSm040728         poloidlen=rho0_pol*totlength*100.d0 ! poloidal length cm
      &                     s_cur_den_poloidal(j)*binarea_pol(j)
       enddo
 
-
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'parallel_cur_total, toroidal_cur_total ',
      &parallel_cur_total, toroidal_cur_total 
       write(*,*)'poloidal_cur_total ',poloidal_cur_total
@@ -4732,6 +4780,7 @@ cSm040728         poloidlen=rho0_pol*totlength*100.d0 ! poloidal length cm
       write(*,*)'testing 1 DNONETWO powtot_e,powtot_i,powtot_cl',
      &     powtot_e,powtot_i,powtot_cl
       write(*,*)'powtot_s(1:nbulk)=',(powtot_s(kk),kk=1,nbulk)
+      endif ! outprint
 cSm040426end
 
 c$$$      powertot=0.0d0
@@ -4819,6 +4868,8 @@ cSmirnov970106 beg
 cSmirnov970106 end
          currtot1=currtot1+scurrent(i)             !totaql toroidal current        
       enddo
+      
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added      
       write(*,*)'INT2 testing DNONETWO. powrtot1=erg/sec',powrtot1,
      1' currtot1=A',currtot1
       
@@ -4832,6 +4883,7 @@ cSmirnov970106 end
       do kk=2,nbulk
          write(*,*)'kk,powden_s(,kk): ',kk,(powden_s(i,kk),i=1,NR-1)
       enddo
+      endif ! outprint
          
 
 c -----------------------------------------------------------------
@@ -4839,7 +4891,7 @@ c     normalization of density profiles
 c     it dependents on numerical integration formulas
 c     In the case  ***INT**** we have the following normalization:
 
-      write(*,*)'NR',NR
+cyup      write(*,*)'NR',NR
 
 cSAP091021
 c      do i=1,NR
@@ -4874,6 +4926,8 @@ cSmirnov970106 end
         
       enddo
 c------------------------------------------------------------------
+
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 
       do kk=2, nbulk
          write(*,*)'prep3d: second powden_s(i,kk)=', 
@@ -4945,7 +4999,7 @@ cSAP090306
      &    1pe14.6)
 
 
-      if(i_lsc_approach.eq.1)then
+        if(i_lsc_approach.eq.1)then
          write(*,*)'NR-1,n_psi_TSC',NR-1,n_psi_TSC
 
          write(*,1030)'i rho_bin_center powden currden '
@@ -4973,9 +5027,9 @@ c         enddo
 1030    format(/,1x,a)
 1031    format(i3,3(1pe12.4))
 
-
-
-      endif
+        endif ! i_lsc_approach
+      
+      endif ! outprint
 
       return
       END
@@ -4984,9 +5038,9 @@ c         enddo
 
 
   
-      subroutine grpde2_old_real4_110211
-     &(npar, nper, omega, omegpe, nsigma,
-     .                   vgrpdc, edenfac, exde, eyde, ezde)
+      subroutine grpde2_old_real4_110211                     !Not called
+     &(npar, nper, omega, omegpe, nsigma,                    !Not called
+     .                   vgrpdc, edenfac, exde, eyde, ezde)  !Not called
 c
       complex          rootm1,exde,eyde,ezde,d11,d12,d13,d22,d33,denom
       real             npar,npar2,nper,nper2,n2,nperol
@@ -5038,7 +5092,7 @@ c     Let nper2 become (only) slightly negative:
 c
       if (nper2 .le. 0.0) then
         if (nper2 .le. -1.0e-2) then
-          STOP 'subroutine GRPDE2: nper2 is too negative'
+          STOP 'subroutine GRPDE2_old: nper2 is too negative'
         else
           nper2=1.0e-10
           nper=1.0e-5
@@ -6589,11 +6643,15 @@ c------------------------------------------------------------
       write(*,*)'before netcdf_Karne !sqrt(T/m)y file_nm=',file_nm
 
 cSAP081110
+c      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
+c        file_nm='Ehst-Karney_plot' ! set name of output netcdf file
+c        write(*,*)'before netcdf_Karne !sqrt(T/m)y file_nm=',file_nm
 c      call netcdf_Karney(file_nm,n_points_w,w_ar,
 c     &n_theta_pol,theta_pol_ar,n_epsilon,epsilon_ar,
 c     &eta0_ar_fw,eta_ar_fw,eta0_ar_lh,eta_ar_lh)
+c        write(*,*)'after netcdf_Karney '
+c      endif
 
-      write(*,*)'after netcdf_Karney '
 
       return
       end
@@ -7191,16 +7249,15 @@ c               call etajrf(z_eff,epsilon,w,rto,eta,eta0,irfq)
 c--------------------------------------------------------------
 c     write CD efficiency eta and w for fig. 1 to netcdf file
 c------------------------------------------------------------
-      file_nm='Karney_ADJ_plot1' ! name of output netcdf file
-
-      write(*,*)'before netcdf_Karne !sqrt(T/m)y file_nm=',file_nm
-
+c      if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
+c        file_nm='Karney_ADJ_plot1' ! name of output netcdf file
+c        write(*,*)'before netcdf_Karne !sqrt(T/m)y file_nm=',file_nm
 cSAP081110
 c      call netcdf_Karney(file_nm,n_points_w,w_ar,
 c     &n_theta_pol,theta_pol_ar,n_epsilon,epsilon_ar,
 c     &eta0_ar,eta_ar)
-
-      write(*,*)'after netcdf_Karney '
+c        write(*,*)'after netcdf_Karney '
+c      endif
 
       return
       end
@@ -7269,7 +7326,7 @@ c
       else
         rootqd = 0.0d0
       end if
-      nper2=(-bquad+nsigma*DSIGN (1.0d0,omega-1.0d0)*rootqd)/
+      nper2=(-bquad+nsigma*DSIGN(1.0d0,omega-1.0d0)*rootqd)/
      &(2.0d0*aquad)
 
 c
@@ -7277,7 +7334,13 @@ c     Let nper2 become (only) slightly negative:
 c
       if (nper2 .le. 0.0d0) then
         if (nper2 .le. -1.0d-2) then
-          STOP 'subroutine GRPDE2: nper2 is too negative'
+          !YuP/was: STOP 'subroutine GRPDE2: nper2 is too negative'
+          !YuP[2018-05-23] Changed to
+          WRITE(*,*)'sub.GRPDE2: nper2 is too negative. nperol^2, nper2'
+     +      ,nperol**2, nper2
+          vgrpdc=0.d0 !it will stop the ray (but would not halt the run)
+          edenfac=0.d0
+          return
         else
           nper2=1.0d-10
           nper=1.0d-5

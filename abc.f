@@ -28,9 +28,12 @@ c  or by deli=1-Yi, in case of ib=i (ib>1, in case of ICR)
 c  --------------------------------------------------------------
       pc=1.d0+dc2
       call s(z,r,phi,s1,s2,s3,s4,s6,s7)
-      xib=x(z,r,phi,ib) !here ib can be 1 (electrons) or >1 (ions)
-      yib=y(z,r,phi,ib)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      xib=x(z,r,phi,ibmx) !here ib can be 1 (electrons) or >1 (ions)
+      yib=y(z,r,phi,ibmx)
       delib=1.d0-yib ! 1-Yib for a given ib, it is either dele or deli
+
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
 
 c----------------------------------------------------------------
 c  ib =1 (the cyclotron resonance conditions dele=0 may be
@@ -93,43 +96,6 @@ c  if 3 begin
       end if
 c  if 3 end
 
-!   A problem noticed by YuP[07-2017]:
-!   In equation for the two roots,    
-!	    N2p=(-B +sqrt(B^2-4AC))/(2A)      (4.12a) (O)
-!	    N2m=(-B -sqrt(B^2-4AC))/(2A)      (4.12b) (X)
-!   the sign in front of sqrt() [defined as ioxm] determines the mode: 
-!   '+' is for O-mode, '-' is for X-mode .
-!   However, after we multiplied A,B,C by (1-Yib) factor,
-!   the result depends on the sign of delib=(1-Yib).
-!   If (1-Yib) is positive, nothing changes 
-!   in correspondence of ioxm=+/-1 and the two modes. 
-!   But for the negative (1-Yib), e.g. (1-Yib)=-1, we get
-!      (-b +ioxm*sqrt(b^2-4ac))/(2a) = [use a=(1-Yib)*A= -A, etc] 
-!    = (+B +ioxm*sqrt(B^2-4AC))/(-2A)= 
-!    = (-B -ioxm*sqrt(B^2-4AC))/(+2A)
-!   Thus, for ioxm=+1, we are getting the branch (4.12b), 
-!   which is the X mode. The meaning of modes is reversed !
-!   To correct this problem, we simply need to further adjust 
-!   the a,b,c cofficients:
-!      sign_delib=sign(1.d0,delib) 
-!      a=a*sign_delib 
-!      b=b*sign_delib 
-!      c=c*sign_delib 
-!   So, effectively, we use a=|1-Yib|*A, etc.
-!   Then, the meaning (mode type) defined through a,b,c
-!   will remain the same as that defined through the original A,B,C.
-      sign_delib=sign(1.d0,delib) ! YuP[07-2017]
-      ad=ad*sign_delib ! YuP[07-2017] adjusted
-      bd=bd*sign_delib ! YuP[07-2017] adjusted
-      cd=cd*sign_delib ! YuP[07-2017] adjusted
-!   Note that the solution of a*n**4 +b*n**2 +c= 0 equation
-!   only depends on gamma angle, and not on value of Npar ! 
-!   These coefficients (a,b,c)==(ad,bd,cd) are further used to find
-!   the solution in form of N^2(gamma^2).
-!   Important is to remember that the two solutions, 
-!	    N2p=(-B +sqrt(B^2-4AC))/(2A)      (4.12a) (O)
-!	    N2m=(-B -sqrt(B^2-4AC))/(2A)      (4.12b) (X)
-!   will have different values of Npar (even by absolute value)
 
       return
       end
@@ -168,9 +134,9 @@ c end test
 
       pc=1.d0+dc2
       call s(z,r,phi,s1,s2,s3,s4,s6,s7)
-      xib=x(z,r,phi,ib)
-      yib=y_test(z,r,phi,ib)
-      
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      xib=x(z,r,phi,ibmx)
+      yib=y_test(z,r,phi,ibmx)
       delib=1.d0-yib
 
 c----------------------------------------------------------------

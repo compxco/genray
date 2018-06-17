@@ -138,9 +138,9 @@ c	write(*,*)'complx delta=',delta,'accrcy=',accrcy
 2010    continue
 3000    continue !NME 21.03.2005
         if(iter.eq.10) print 566
-566     format('  hot index needs more than 10 iterations')
+566     format('  complx/hot index needs more than 10 iterations')
         if(sol2.lt.0.d0) print 567
-567     format(' warning: hot refractive index is negative!!')
+567     format(' complx/warning: hot refractive index is negative!!')
         sol=cdsqrt(solu)
 ccc	write(*,*)'complx sol=',sol,'solu=',solu
 ctest

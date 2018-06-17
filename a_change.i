@@ -8,8 +8,103 @@ c     This file records changes in the code
 c
 c
 c***********************************************************************
+c[190] version="genray_v10.12_180529"
 
-c[187] A problem noticed and fixed by YuP[07-2017].
+c[190] Reversed changes made in [187]. 
+In the manual, the two cold plasma roots N**2 
+(for dispersion id=2) are described as
+N2p= (-B +sqrt(B^2-4AC))/(2A)      (4.12a) 
+N2m= (-B -sqrt(B^2-4AC))/(2A)      (4.12b) 
+In the code, these equations are modified by
+multiplying each of A,B,C coeffs by a resonance 
+delta=(1-Y) factor (where Y=omega_c/omega)
+which cancels out with corresponding 1/(1-Y), so that
+a=A*delta, b=B*delta, c=C*delta do not contain 
+the diverging 1/(1-Y) factor (either at ECR or ICR).
+Then the equations (4.12) should cast into
+N2p= (-b +sign_del*sqrt(b^2-4ac))/(2a)      
+N2m= (-b -sign_del*sqrt(b^2-4ac))/(2a) 
+or, in general form,  
+N^2= (-b +ioxm*sign_del*sqrt(b^2-4ac))/(2a) 
+where sign_del= sign of (1-Y), and ioxm=+1 or -1.
+The sign of (1-Y) changes across the corresponding resonance
+(across ECR when ib=1, or across ICR 
+when ib=2 or some other value>1).
+In the code, the sign_del factor is omitted, 
+which looks like an error.
+However, a detailed analysis shows that 
+when sign_del is included,
+the solution (root) jumps from one branch to another
+after crossing the corresponding Y=1 resonance.
+So, it is better to keep it in the original form:
+N^2= (-b +ioxm*sqrt(b^2-4ac))/(2a)
+At the same time, it is important to keep in mind that
+the selection between two branches for N^2 depends on both 
+the value of ioxm and the value of ib.
+In general, for ECR frequency range, we should set ib=1.
+Then, ioxm=-1 selects the X-mode, and ioxm=+1 selects the O-mode.
+[But notice that if you keep ib=1 and go to the ICR range,
+there is a jump (switching) between ioxm=+1 
+and -1 branches across the ICR layer.]
+For the ICR region, we should set ib=2 
+(or corresponding ion species in case of nbulk>2).
+Then, ioxm=-1 selects the Fast wave, 
+and ioxm=+1 selects the Slow wave.
+[But notice that if you keep ib=2 and go to ECR range,
+there is a jump (switching) between ioxm=+1 
+and -1 branches across the ECR layer.]
+The most difficult is the case of omega_ci<omega<omega_ce.
+Both ib=1 and ib=2 could be selected, 
+if none of EC or IC resonances are accessible.
+However, depending on ib value, the ioxm value 
+corresponds to different branches.
+So, in applications like LH, Helicon or whistler waves
+it is advised to try different ib values,
+and try both ioxm=-1 and +1 cases,
+then compare the initial Nperp^2 values.
+Example of wave launch in LH frequency range,
+at omega_ce/omega ~ 20-30,
+omega_ci/omega ~ 0.005-0.008,
+and (omega_pe/omega)^2 ~ 100-700:
+The LH (Slow wave with large nperp~20-40) can be launched with
+  {ib=2, ioxm_n_npar=+1} 
+[ioxm value is not important when ioxm_n_npar is not 0] 
+or 
+  {ib=2, ioxm=-1}  [ioxm_n_npar should be set to 0].
+The Fast wave (smaller nperp~5-10) can be launched with
+  {ib=2, ioxm_n_npar=-1} [and ioxm value is not important] or 
+  {ib=1, ioxm=+1}  [ioxm_n_npar should be set to 0].
+
+c[189] Changed the STOP command in subr. GRPDE2, 
+c[189] when 'nper2 is too negative' (related to calc. 
+c[189] of group velocity) to setting vgrpdc=0.d0.
+c[189] It will stop the ray, but would not halt the run 
+c[189] as with the STOP command. This is particularly important 
+c[189] in MPI runs, when a STOP generated at one CPU core
+c[189] effectively hangs the run - other cores 
+c[189] (having no STOP for their rays) are waiting 
+c[189] until the wall time runs out.
+c[189] Also added ibmx=min(ib,nbulk) - 
+c[189] a safety check, not to exceed nbulk.
+c[189] YuP[2018-05-23]
+
+
+c[188] version="genray_v10.10_180518"
+
+c[188] Added a namelist variables for control/suppressing of printout,
+c[188] saving data and saving plots:
+c[188]  outnetcdf (to suppress writing data to *.nc)
+c[188]  outprint (to suppress printing to the screen)
+c[188]  outxdraw (to suppress saving files for xdraw).
+c[188] Many lines with printout are permanently commented out,
+c[188] which were used for debugging printout. For example, 
+c[188] see lines that start with 'cyup' in dinit.f. 
+c[188] Also added more detailed printout of cpu time spent
+c[188] in different parts of the code, like cpu_time(time_drkgs2_2).
+c[188] YuP[2018-01-17] 
+
+
+c[187] A problem noticed and fixed by YuP[07-2017] (later adjusted).
 c[187] In equation for the two roots [Eqn. numbers refer to Genray manual],    
 c[187]	    N2p=(-B +sqrt(B^2-4AC))/(2A)      (4.12a) (O)
 c[187]	    N2m=(-B -sqrt(B^2-4AC))/(2A)      (4.12b) (X)

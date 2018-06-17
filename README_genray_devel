@@ -806,3 +806,14 @@ Put in to git version control on CompX2:~/cql3d/git_genray
 ========================================
 version="genray_v10.11_180410"  
 Otherwise, little changed from "genray_v10.11_170725".
+
+
+180616
+======
+Updated to version="genray_v10.12_180529" in git/genray and pushed to github.com
+YuP has added three namelists variables to control code output:
+outnetcdf (to suppress writing data to *.nc)
+outprint (to suppress printing to the screen)
+outxdraw (to suppress saving files for xdraw).
+
+BH ran the 16 regression tests ==>  No issues.

@@ -98,7 +98,16 @@ c--------------------------------------------------------
         end if
 
         if (id.eq.2) then ! See Eq.(4.12) in Genray manual
-           hamilt1=cn2+(d2-ioxm*dsqrt(d2*d2-4.d0*d4*d0))/
+         ! For id=1 or 2,   
+         ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+         ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+         ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+           ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+           delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+           sign_del=1.d0 !sign(1.d0,delib)
+           oxm= ioxm*sign_del ! replaced ioxm by oxm below
+        
+           hamilt1=cn2+(d2-oxm*dsqrt(d2*d2-4.d0*d4*d0))/
      *                (2.d00*d4)
 c  YuP[07-2017] However, not always ioxm is used to select roots.
 c  Sometimes ioxm_n_npar is used.
@@ -107,7 +116,7 @@ c  [ such that N(N_par,ioxm_n_npar)=N(gam,ioxm) ]
 c  should be found in cninit12/nper_npar_ioxm_n_npar
         end if
         go to 10
-      end if
+      end if ! id=2
 c     end cold plasma dispersion relation
 c-----------------------------------------------------------
 c     det=dsqrt(d2*d2-4.d00*d4*d0)

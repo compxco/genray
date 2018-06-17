@@ -78,8 +78,8 @@ c         if ihermloc=2 the total Mazzucato tensor
 c         if ihermloc=1 the hermitian part of the total Mazzucato tensor       
 c----------------------------------------------------------------------
 cSm030515
-	  write(*,*)'cnpermuz cold an2(1),an2(2),ioxm,np2',
-     +    an2(1),an2(2),ioxm,np2
+cyup	  write(*,*)'cnpermuz cold an2(1),an2(2),ioxm,np2',
+cyup     +    an2(1),an2(2),ioxm,np2
 
           call complx2(mode,xe,ye,mu,nz,np2,accrcy,naccrcy,ceps,sol,
      +    ihermloc)
@@ -91,7 +91,7 @@ c	       write(*,*)'i,j,reps(i,j)',i,j,reps(i,j)
 c	    enddo
 c          enddo
 
-          write(*,*)'cold zero iteration cnpermuz sol',sol
+cyup          write(*,*)'cold zero iteration cnpermuz sol',sol
 c          write(*,*)'cnpermuz ceps',ceps
 
           a1=dreal(sol)
@@ -149,8 +149,8 @@ c         d(dispersion_function)/d(N_perp_real)
           dhamrdnr=(hamrp-hamrm)/(2.d0*step)
           cnprim=-hamimag/dhamrdnr !imaginary part of N_perp
 
-          write(*,*)'cnpermuz.f ipotmaz=2 hamimag,dhamrdnr,cnprim',
-     .    hamimag,dhamrdnr,cnprim
+cyup          write(*,*)'cnpermuz.f ipotmaz=2 hamimag,dhamrdnr,cnprim',
+cyup     .    hamimag,dhamrdnr,cnprim
 
 ctest
 c          ihermlc1=1
@@ -181,7 +181,7 @@ c          write(*,13)dreal(chamilmz),dimag(chamilmz)
      *    'using the initial complexNperp=ReN_perp+i*ImN_perp'/
      *    'Im_Nperp=Im(D_full(N_par,ReN_perp)/dReD_full/dReN_perp'/
      *    'sol=',2(' ',1pe15.7))         
-           write(*,21)dreal(sol),dimag(sol) 
+cyup           write(*,21)dreal(sol),dimag(sol) 
            goto 300           
 
 c-------- calculation cnper,cnprim from the solution of the system
@@ -382,11 +382,11 @@ c        write(*,*)'complx2 iter,delta',iter,delta
 2010    continue
 3000    continue !NME 21.03.2005
         if(iter.eq.10) print 566
-566     format('  hot index needs more than 10 iterations')
+566     format('  complx2/hot index needs more than 10 iterations')
         if(sol2.lt.0.d0) print 567
-567     format(' warning: hot refractive index is negative!!')
+567     format(' complx2/warning: hot refractive index is negative!!')
         sol=cdsqrt(solu)
-	write(*,*)'comlpx2 sol=',sol,'solu=',solu
+cyup	write(*,*)'comlpx2 sol=',sol,'solu=',solu
       ceps(1,1)=eps(1,1)
       ceps(1,2)=eps(1,2)
       ceps(1,3)=sol*eps(1,3)

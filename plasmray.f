@@ -58,25 +58,25 @@ cBH040404:  Ensuring initial box is outside of source posn zst,rst.
       rmax=max(rmaxd,rst)+0.01d0
       rmin=min(rmind,rst)-0.01d0
       if (rmin.lt. 0.d0) rmin=0.d0
+c-------------------------------------------------------------
+c     conditions that start point is inside the plasma
+      ireg=iregion(zst,rst)
       
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'in plasmaray rmax,rmaxd',rmax,rmaxd
       write(*,*)'in plasmaray rmin,rmind',rmin,rmind
       write(*,*)'in plasmaray zmax,zmaxd',zmax,zmaxd
       write(*,*)'in plasmaray zmin,zmind',zmin,zmind
-
-c-------------------------------------------
-
       write(*,*)'in plasmray zst,rst,phist,alfast,betast',
      1zst,rst,phist,alfast,betast
-c-------------------------------------------------------------
-c     conditions that start point is inside the plasma
-      ireg=iregion(zst,rst)
       write(*,*)'plasmray ireg=',ireg
+      endif ! outprint
+      
 
       if (ireg.eq.9) then
          psip=psif(zst,rst)
          if (psip.lt.psilim) then
-	   write(*,*)'start point is inside the plasma'
+cyup        write(*,*)'start point is inside the plasma'
 	   zu0=rst
 	   ru0=rst
            rmax=rmaxd
@@ -109,15 +109,17 @@ c-----------------------------------------------------------
        r0=rst
 c----- determination of the region index for start point
 10     continue
-       write(*,*)'10 z0,r0',z0,r0
+cyup       write(*,*)'10 z0,r0',z0,r0
        ireg=iregion(z0,r0)
-       write(*,*)'ireg=',ireg
+cyup       write(*,*)'ireg=',ireg
 c-----------------------------------------------------------
        goto (1,2,3,4,5,6,7,8,9) ireg
 
 1      if ((cnz.ge.0.d0).or.(cnr.gt.0d0)) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'1 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -146,7 +148,9 @@ c-----------------------------------------------------------
 c---------------------------------------------------------------------
 3      if ((cnz.le.0.d0).or.(cnr.gt.0d0)) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'3 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -175,7 +179,9 @@ c---------------------------------------------------------------------
 c---------------------------------------------------------------------
 5      if ((cnz.le.0.d0).or.(cnr.lt.0d0)) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'5 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -203,7 +209,9 @@ c---------------------------------------------------------------------
 c-------------------------------------------------------------------
 7      if ((cnz.ge.0.d0).or.(cnr.lt.0d0)) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'7 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -232,14 +240,16 @@ c      write(*,*)'in plasmray7 p_rmin=',p_rmin,'p_zmax=',p_zmax
 c-------------------------------------------------------------------
 2      if (cnr.gt.0d0) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'2 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
          zmin=zmind
          return
        end if
-       write(*,*)'in 2  sinbet',sinbet
+cyup       write(*,*)'in 2  sinbet',sinbet
        if (dabs(sinbet).lt.1.d-10) then
          r0=rmax-1.d-10
          go to 10
@@ -272,12 +282,14 @@ c       write(*,*)'plasmray 2 after vacray'
          z0=zp-1.d-10
        end if
        r0=rp-1.d-10
-       write(*,*)'in 2 z0,r0,zrmax,rmax',z0,r0,zrmax,rmax
+cyup       write(*,*)'in 2 z0,r0,zrmax,rmax',z0,r0,zrmax,rmax
        go to 10
 c-------------------------------------------------------------------
 4      if (cnz.lt.0d0) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'4 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -361,7 +373,9 @@ c-------------------------------------------------------------------
 c-------------------------------------------------------------------
 8      if (cnz.gt.0d0) then
          iraystop=1
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'8 ray can not go inside the plasma'
+         endif ! outprint
          rmax=rmaxd
          rmin=rmind
          zmax=zmaxd
@@ -408,24 +422,26 @@ c     This region's boundaries are tangent lines to the limitter
 c     flux surface
 c------------------------------------------------------------------
 c     pstep(part of r0x) is a parameter along the ray
+         if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
          write(*,*)'ray is inside 9'
+         endif ! outprint
          pstep=0.0020d0
 	 p=0.0d0
 	 call vacray(z0,r0,p,sinbet,cosbet,cosalf,zp,rp)
-         write(*,*)'in 9  after vacray z0,r0,p,zp,rp',z0,r0,p,zp,rp
+cyup         write(*,*)'in 9  after vacray z0,r0,p,zp,rp',z0,r0,p,zp,rp
          psip=psif(zp,rp)
 	 epslim=0.001d0
          epslim=1.d-7
          epslim=1.d-8
-	 write(*,*)'in plasmaray 9 psip=',psip,'psilim=',psilim,
-     &   'epslim',epslim
+cyup	 write(*,*)'in plasmaray 9 psip=',psip,'psilim=',psilim,
+cyup     &   'epslim',epslim
 c	 if (dabs(psip-psilim).lt.epslim) then
 	 if ((psip.lt.psilim).and.(psip.gt.(psilim-epslim))) then
 c---------------------------------------------------------------
 c          the point where the ray intersects the plasma boundary
            ru0=r0
            zu0=z0
-	   write(*,*)' 1initial point r0=',r0,'z0=',z0
+cyup	   write(*,*)' 1initial point r0=',r0,'z0=',z0
            rmax=rmaxd
            rmin=rmind
            zmax=zmaxd
@@ -451,7 +467,9 @@ c     1		    'rmin,rp,rmax',rmin,rp,rmax
 
 	 if(((rp.lt.rmin).or.(rp.gt.rmax)).or.
      1	    ((zp.gt.zmax).or.(zp.lt.zmin))) then
+           if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'9 ray can not go inside the plasma'
+           endif ! outprint
 	   iraystop=1
            rmax=rmaxd
            rmin=rmind
@@ -473,7 +491,7 @@ c        p -parameter for ray point inside plazma
 c        pold - parameter for ray point outside plasma
 c---------------------------------------------------------------
 c30	 if (dabs(f3).lt.epslim) then
-         write(*,*)'f3,epslim',f3,epslim
+cyup         write(*,*)'f3,epslim',f3,epslim
  30   continue
 c      write(*,*)'30'
       if ((dabs(f3).lt.epslim).and.(f3.gt.0.d0)) then
@@ -481,7 +499,7 @@ c---------------------------------------------------------------
 c        the point where ray intersects the plasma boundary
          ru0=rp
 	 zu0=zp
-	 write(*,*)'2 initial point ru0=',ru0,'zu0=',zu0
+cyup	 write(*,*)'2 initial point ru0=',ru0,'zu0=',zu0
 c-----------------------------------------------------------------
          if (cnz.ne.0.d0) then
             p0=(zp-zst)/cnz
@@ -518,10 +536,10 @@ c----------------------------------------------------------------------
       end if
 c---------------------------------------------------------------
       isp=isp+1
-      write(*,*)'plasmray.f isp= ',isp 
+cyup      write(*,*)'plasmray.f isp= ',isp 
 c      if (isp.eq.10) then
       if (isp.eq.100) then
-        write(*,*)'plasmray.f isp.eq.100 stpping'   
+        write(*,*)'plasmray.f isp.eq.100 stopping'   
         stop
       endif
       p3=(p1+p2)*0.5d0
@@ -547,7 +565,7 @@ c--------------------------------------------------------------
       rmin=rmind
       zmax=zmaxd
       zmin=zmind
-      write(*,*)'end of plasmaray'
+cyup      write(*,*)'end of plasmaray'
       return
       end
 c******************************************************************
@@ -722,7 +740,7 @@ c------------------------------------------------------------------
       delcor=0.9995d0
       delcor=1.d0-epsbnd
 
-      write(*,*)' in edgcor initial :z,r',z,r
+cyup      write(*,*)' in edgcor initial :z,r',z,r
 1     continue
 cc      write(*,*)'in edgcor after 1 continue'
       iedg=0
@@ -769,7 +787,7 @@ cc	write(*,*)'in engcor new z,r',z,r
       endif
       zu0=z
       ru0=r
-      write(*,*)'edgcor new z,r',z,r
+cyup      write(*,*)'edgcor new z,r',z,r
 
 cSAP091127
       delz=z-yma
@@ -779,8 +797,8 @@ cSAP091127
 
       zu0=z
       ru0=r
-      write(*,*)'edgcor after shift_rho_geom z,r',
-     &shift_rho_geom,z,r
+cyup      write(*,*)'edgcor after shift_rho_geom z,r',
+cyup     &shift_rho_geom,z,r
 
       return
       end

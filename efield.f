@@ -78,8 +78,9 @@ c
           epsg0=+p3
 	go to 10
 	else
-          xb=x(z,r,phi,ib)
-          yb=y(z,r,phi,ib)
+          ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+          xb=x(z,r,phi,ibmx)
+          yb=y(z,r,phi,ibmx)
           del=1.d0-yb
           epstg1=s1-xe/(1.d0-ye*ye)
           epstg0=-xb/(1.d0+yb)

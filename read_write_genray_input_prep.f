@@ -5,7 +5,7 @@ c NOTE: When using with prepare_genray_input (for Plasma State),comment
 c       out if(partner..)-clause surrounding 'call read_transport_prof'.
 c       This gives read_write_genray_input_prep.f, and it should be
 c       kept in sync with read_write_genray_input.f.
-c================s======================================================
+c======================================================================
 
      
 c      program prepare_genray_input
@@ -3681,7 +3681,7 @@ c--------------------------------------------------------
 
 
 c      namelist /genr/ r0x,b0,outdat,stat,mnemonic,rayop,dielectric_op,
-c     +partner
+c     +partner,outnetcdf,outprint,outxdraw
 c      namelist /tokamak/ indexrho,ipsi,ionetwo,ieffic,psifactr,
 c     +deltripl,nloop,i_ripple,eqdskin,NR,ieffic_mom_cons,
 c     &n_wall,max_limiters,n_limimer,r_wall,z_wall,r_limiter,z_limiter,
@@ -3820,12 +3820,18 @@ c&genr
       r0x=1.0d0 ![m]
       b0=1.0d0  ![Tl]
       outdat='zrn.dat'
+      outnetcdf='enabled' ! to save data into netcdf files
+      outprint='enabled'  ! to print data to the screen
+      outxdraw='enabled'  ! to save files for xdraw
+
       stat='new'
       mnemonic='genray'
       rayop='both'
       dielectric_op='disabled'
       partner='disabled'
 c&end
+
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'in default_in after set data for /genr/'
       write(*,*)'r0x=',r0x
       write(*,*)'b0=',b0
@@ -3835,6 +3841,7 @@ c&end
       write(*,*)'rayop=',rayop
       write(*,*)'dielectric_op=',dielectric_op
       write(*,*)'partner=',partner
+      endif ! outprint
 
 !/genr/ namelist   	  (NSTX, FW,cold plasma,one ray)
 !-------------------------------------------------------------------------
@@ -3861,6 +3868,14 @@ c&end
 !--------------------------------------------------------------------------
 ! outdat*20     name of output file
 ! stat*3        status of output file
+! YuP[2018-01-17] Added a namelist variable outnetcdf:
+! outnetcdf*8   ='enabled' (by default), 
+!               or 'disabled' (to suppress writing data to *.nc)
+! outprint*8    ='enabled' (by default), 
+!               or 'disabled' (to suppress printing to the screen)
+! outxdraw*8    ='enabled' (by default), 
+!               or 'disabled' (to suppress saving files for xdraw)
+!
 !--------------------------------------------------------------------------
 ! partner  = 'disabled' to use input profiles from genray.dat or genray.in
 !          = 'genray_profs_in.nc'  to use plasma profile data from the netCDF
@@ -4044,7 +4059,73 @@ c           hamilt1= cn2 - (-b+ioxm*sqrt(b*b-4*a*c))/(2*a)
 c        end if
 c The two roots identified by ioxm will have same angle 'gam', 
 c but different Npar values !
-
+c 
+c ADDITIONAL NOTES ON USAGE OF ioxm, ioxm_n_npar, and ib :
+!
+! In the manual, the two cold plasma roots N**2 
+! (for dispersion id=2) are described as
+! N2p= (-B +sqrt(B^2-4AC))/(2A)      (4.12a) 
+! N2m= (-B -sqrt(B^2-4AC))/(2A)      (4.12b) 
+! In the code, these equations are modified by
+! multiplying each of A,B,C coeffs by a resonance 
+! delta=(1-Y) factor (where Y=omega_c/omega)
+! which cancels out with corresponding 1/(1-Y), so that
+! a=A*delta, b=B*delta, c=C*delta do not contain 
+! the diverging 1/(1-Y) factor (either at ECR or ICR).
+! Then the equations (4.12) should cast into
+! N2p= (-b +sign_del*sqrt(b^2-4ac))/(2a)      
+! N2m= (-b -sign_del*sqrt(b^2-4ac))/(2a) 
+! or, in general form,  
+! N^2= (-b +ioxm*sign_del*sqrt(b^2-4ac))/(2a) 
+! where sign_del= sign of (1-Y), and ioxm=+1 or -1.
+! The sign of (1-Y) changes across the corresponding resonance
+! (across ECR when ib=1, or across ICR 
+! when ib=2 or some other value>1).
+! In the code, the sign_del factor is omitted, 
+! which looks like an error.
+! However, a detailed analysis shows that 
+! when sign_del is included,
+! the solution (root) jumps from one branch to another
+! after crossing the corresponding Y=1 resonance.
+! So, it is better to keep it in the original form:
+! N^2= (-b +ioxm*sqrt(b^2-4ac))/(2a)
+! At the same time, it is important to keep in mind that
+! the selection between two branches for N^2 depends on both 
+! the value of ioxm and the value of ib.
+! In general, for ECR frequency range, we should set ib=1.
+! Then, ioxm=-1 selects the X-mode, and ioxm=+1 selects the O-mode.
+! [But notice that if you keep ib=1 and go to the ICR range,
+! there is a jump (switching) between ioxm=+1 
+! and -1 branches across the ICR layer.]
+! For the ICR region, we should set ib=2 
+! (or corresponding ion species in case of nbulk>2).
+! Then, ioxm=-1 selects the Fast wave, 
+! and ioxm=+1 selects the Slow wave.
+! [But notice that if you keep ib=2 and go to ECR range,
+! there is a jump (switching) between ioxm=+1 
+! and -1 branches across the ECR layer.]
+! The most difficult is the case of omega_ci<omega<omega_ce.
+! Both ib=1 and ib=2 could be selected, 
+! if none of EC or IC resonances are accessible.
+! However, depending on ib value, the ioxm value 
+! corresponds to different branches.
+! So, in applications like LH, Helicon or whistler waves
+! it is advised to try different ib values,
+! and try both ioxm=-1 and +1 cases,
+! then compare the initial Nperp^2 values.
+! Example of waves' launch in LH frequency range,
+! at omega_ce/omega ~ 20-30,
+! omega_ci/omega ~ 0.005-0.008,
+! and (omega_pe/omega)^2 ~ 100-700:
+! The LH (Slow wave with large nperp~20-40) can be launched with
+!   {ib=2, ioxm_n_npar=+1} 
+! [ioxm value is not important when ioxm_n_npar is not 0] 
+! or 
+!   {ib=2, ioxm=-1}  [ioxm_n_npar should be set to 0].
+! The Fast wave (smaller nperp~5-10) can be launched with
+!   {ib=2, ioxm_n_npar=-1} [and ioxm value is not important] or 
+!   {ib=1, ioxm=+1}  [ioxm_n_npar should be set to 0]. 
+!
 !-----------------------------------------------------------------------
 ! 
 ! ioxm_n_npar - 

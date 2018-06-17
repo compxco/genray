@@ -107,7 +107,7 @@ c       rves(nves),zves(nves)
       character*12 namfil
       
 c      namelist /genr/ r0x,b0,outdat,stat,mnemonic,rayop,
-c     +partner,dielectric_op
+c     +partner,outnetcdf,dielectric_op
 c      namelist /tokamak/ indexrho,ipsi,ionetwo,ieffic,psifactr,
 c     +deltripl,nloop,i_ripple,eqdskin,NR
 cSm070426
@@ -150,15 +150,15 @@ c       open(1,file='genray.in',status='old',iostat=kode)
          endif
       endif
 
-      write(*,*)'equilib.f before read genr'
+cyup      write(*,*)'equilib.f before read genr'
       rewind(unit=1)
       read(1,genr,iostat=kode)
-      write(*,*)'equilib.f after read genr kode=',kode
+cyup      write(*,*)'equilib.f after read genr kode=',kode
       write(*,genr)
       call check_read(kode,'genr')
 
 c      if (partner.ne.'disabled') write(*,*)'partner = ',partner
-      write(*,*)'partner = ',partner
+cyup      write(*,*)'partner = ',partner
 c     Check partner values to see if valid (and not old-style):
       if (partner.ne.'disabled'
      1    .and. partner.ne.'genray_profs_in.txt'
@@ -221,15 +221,15 @@ cSm050304
       endif
 
       if (length_char(trim(eqdskin)).gt.256) then
-         write(*,1001)
+         WRITE(*,1001)
  1001    format('STOP: eqdskin spec too long')
          STOP
       endif
     
       if (NR.gt.NRA) then
-        write(*,*)'NR > NRA'
-        write(*,*)'it should be NR.le.NRA'
-        write(*,*)'please change NR in genray.dat or NRA in param.i' 
+        WRITE(*,*)'NR > NRA'
+        WRITE(*,*)'it should be NR.le.NRA'
+        WRITE(*,*)'please change NR in genray.dat or NRA in param.i' 
         STOP 
       endif
 
@@ -237,10 +237,10 @@ cSm050304
 
 c-----end check of namelist /tokamak/
 
-      write(*,*)'in equilib r0x,b0',r0x,b0
-      write(*,*)'ipsi',ipsi
+cyup      write(*,*)'in equilib r0x,b0',r0x,b0
+cyup      write(*,*)'ipsi',ipsi
 
-      write(*,*) ' End of input'
+cyup      write(*,*) ' End of input'
 
 cSAP090923
  10   continue
@@ -259,7 +259,7 @@ cBH020822  Bonoli uses it for ACCOME eqdsk output.
 
 c      read(30,2) nxeqd,nyeqd
       nveqd=0
-      write(*,*)'equilib.f before read (30,2)'
+cyup      write(*,*)'equilib.f before read (30,2)'
       read(30,2,iostat=io1) nxeqd,nyeqd,nveqd
       if (io1.ne.0) then
          rewind 30
@@ -267,7 +267,7 @@ c      read(30,2) nxeqd,nyeqd
          nveqd=0
       endif
 
-      write(*,*)'nxeqd,nyeqd,nveqd',nxeqd,nyeqd,nveqd
+cyup      write(*,*)'nxeqd,nyeqd,nveqd',nxeqd,nyeqd,nveqd
 2     format(52x,3i4)
 
       if (nveqd.gt.nxeqd) stop 'nveqd.gt.nxeqd NOT ENABLED'
@@ -286,13 +286,13 @@ c        stop
 c      endif
 
       read(30,3) xdimeqd,ydimeqd,reqd,redeqd,ymideqd
-      write(*,*)'xdimeqd,ydimeqd,reqd,redeqd,ymideqd'
-      write(*,*)xdimeqd,ydimeqd,reqd,redeqd,ymideqd
+cyup      write(*,*)'xdimeqd,ydimeqd,reqd,redeqd,ymideqd'
+cyup      write(*,*)xdimeqd,ydimeqd,reqd,redeqd,ymideqd
 3     format(5e16.9)
 
       read(30,3) xma,yma,psimag,psilim,beqd
-      write(*,*)'xma,yma,psimag,psilim,beqd'
-      write(*,*)xma,yma,psimag,psilim,beqd
+cyup      write(*,*)'xma,yma,psimag,psilim,beqd'
+cyup      write(*,*)xma,yma,psimag,psilim,beqd
       if(psimag.gt.psilim) then
         dpsimax=-1
       else
@@ -300,7 +300,7 @@ c      endif
       endif
       psimag=dpsimax*psimag
       psilim=dpsimax*psilim
-      write(*,*)'in equilib psimag,psilim',psimag,psilim
+cyup      write(*,*)'in equilib psimag,psilim',psimag,psilim
       read(30,3) toteqd,psimx1,psimx2,xax1,xax2
       read(30,3) zax1,zax2,psisep,xsep,ysep
       read(30,3) (feqd(i),i=1,nveqd)
@@ -326,7 +326,7 @@ c     on the magnetic axis (psimag<psilim)
 cc      write(*,*)'in equilib after change of the peqd sign'
 c------------------------------------------------------------
       read(30,3) (qpsi(i),i=1,nveqd)
-      write(*,*)'in equilib after qpsi'
+cyup      write(*,*)'in equilib after qpsi'
 c      read(30,4) nnlim,nnves
 cc      write(*,*)'in equilib after nnlim,nnves',nnlim,nnves
  4    format(2i5)
@@ -353,6 +353,8 @@ c        ------------------------------------
          write(*,*)'psisep,psilim',psisep,psilim
       endif
       close(30)
+      
+      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)' nxeqd,nyeqd,nveqd'
       write(*,2) nxeqd,nyeqd,nveqd
       !pause !!!
@@ -379,7 +381,6 @@ c         do j=1,nyeqd
 c            write(*,*)'i,j,peqd(i,j)',i,j,peqd(i,j)
 c         enddo
 c      enddo
-
 c      write(*,*) '(peqd(i,j),i=1,nxeqd),j=1,nyeqd)'
 cc      write(*,3) ((peqd(i,j),i=1,nxeqd),j=1,nyeqd)
       write(*,*) 'qpsi(i),i=1,nveqd'
@@ -390,6 +391,7 @@ cc      write(*,*) 'rlimit(i),zlimit(i),i=1,nnlim'
 cc      write(*,3) (rlimit(i),zlimit(i),i=1,nnlim)
 cc      write(*,*) 'rves(i),zves(i),i=1,nnves'
 cc      write(*,3) (rves(i),zves(i),i=1,nnves)
+      endif ! outprint
 
 
 
@@ -790,14 +792,14 @@ cSAP091208
          endif
 
 	 do i=1,nlimit
-           write(*,*)'npsi,i,nteta1', npsi,i,nteta1
+cyup           write(*,*)'npsi,i,nteta1', npsi,i,nteta1
 	   zlimit(i)=zpsi(npsi,i)
 	   rlimit(i)=rpsi(npsi,i)
-	   write(*,*)'nlimit,npsi',nlimit,npsi
-	   write(*,*)'i,zlimit(i),rlimit(i)',i,zlimit(i),rlimit(i)
+cyup	   write(*,*)'nlimit,npsi',nlimit,npsi
+cyup	   write(*,*)'i,zlimit(i),rlimit(i)',i,zlimit(i),rlimit(i)
 	 enddo
 cSAP091030
-         write(*,*)'dinitr before limitr psilim',psilim
+cyup         write(*,*)'dinitr before limitr psilim',psilim
 
          call limitr(zzp,rrp,zzm,rrm,ip,im,
      1   rmax,zrmax,rmin,zrmin,zmax,rzmax,zmin,rzmin)
@@ -806,7 +808,7 @@ c     1   ip,im,rmax,zrmax,rmin,zrmin,zmax,rzmax,zmin,rzmin',
 c     1   ip,im,rmax,zrmax,rmin,zrmin,zmax,rzmax,zmin,rzmin
 
 cSAP091030
-         write(*,*)'dinitr after limitr psilim',psilim
+cyup         write(*,*)'dinitr after limitr psilim',psilim
 
       endif
       ip4=ip+4
@@ -826,9 +828,9 @@ cSAP091030
       end if
  17   format(2e16.9)
 
-      write(*,*)'in equilib.for rlimr,zlimr,i=1,ip'
+cyup      write(*,*)'in equilib.for rlimr,zlimr,i=1,ip'
 c      read(*,*)
-      write(*,17)(rlimr(i),zlimr(i),i=1,ip)
+cyup      write(*,17)(rlimr(i),zlimr(i),i=1,ip)
 
       call iac1r(rlimr,ip,ip4,zlimr,lx,mxa,fxa,mxb,fxb,trlimp,cxlimp)
 c---------------------------------------------------------------------
@@ -865,9 +867,9 @@ c---------------------------------------------------------------------
  1122     rlimr(i)=rrm(im-i+1)
       end if
 
-      write(*,*)'in equilib.for rlimr,zlimr,i=1,im'
+cyup      write(*,*)'in equilib.for rlimr,zlimr,i=1,im'
 c      read(*,*)
-      write(*,17)(rlimr(i),zlimr(i),i=1,im)
+cyup      write(*,17)(rlimr(i),zlimr(i),i=1,im)
 
       call iac1r(rlimr,im,im4,zlimr,lx,mxa,fxa,mxb,fxb,trlimm,cxlimm)
 c---------------------------------------------------------------------
@@ -933,10 +935,10 @@ c   determination rmin and rmax  of limitter and
 c   coordinates of these points: (zrmas,rmax),(zrmin,rmin)
 c------------------------------------------------------------------
 cSmirnov961226 test beg
-      write(*,*)'in limitr nlimit',nlimit
-      do i=1,nlimit
-        write(*,*)'i,zlimit(i),rlimit(i)',i,zlimit(i),rlimit(i)
-      enddo
+cyup      write(*,*)'in limitr nlimit',nlimit
+cyup      do i=1,nlimit
+cyup        write(*,*)'i,zlimit(i),rlimit(i)',i,zlimit(i),rlimit(i)
+cyup      enddo
 cSmirnov961226 test end
 
       irmax=1
@@ -963,8 +965,8 @@ c        write(*,*)'in limitr i rmin,rlimit(i)',i,rmin,rlimit(i)
 
       zrmin=zlimit(irmin)
       zrmax=zlimit(irmax)
-        write(*,*)'irmin=',irmin,'rmin=',rmin,'zrmin=',zrmin
-        write(*,*)'irmax=',irmax,'rmax=',rmax,'zrmax=',zrmax
+cyup        write(*,*)'irmin=',irmin,'rmin=',rmin,'zrmin=',zrmin
+cyup        write(*,*)'irmax=',irmax,'rmax=',rmax,'zrmax=',zrmax
 c---------------------------------------------------------------------
 c  begin of arrays rrp,zzp  and  rrm,zzm  creation
 c---------------------------------------------------------------------

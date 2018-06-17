@@ -999,7 +999,7 @@ c
 c      write(*,*)'in TorGA_legv a,c,zz1,zz2',a,c,zz1,zz2
 
       call TorGA_hypgm(a,a,c,zz1,f1,acc,ncvg)
-      write(*,*)'f1,ncvg,acc',f1,ncvg,acc
+cyup      write(*,*)'f1,ncvg,acc',f1,ncvg,acc
       
       call TorGA_hypgm(a,a,c,zz2,f2,acc,ncv )
 
@@ -2144,7 +2144,7 @@ c
       xm=0.5d0*(b+a)
       xr=0.5d0*(b-a)
 
-      write(*,*)'xm,xr',xm,xr
+cyup      write(*,*)'xm,xr',xm,xr
 
       do j=1,nn
       xx(j)=xm+xr*x(j)

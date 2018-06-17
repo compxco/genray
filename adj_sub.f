@@ -1481,7 +1481,7 @@ cSAP070913
          c2=(2.99792458d10/unorm)**2 !(clight/unorm)**2
 c         write(*,*)'unorm,c2',unorm,c2
 
-c         stop 'runa before runb'
+c         !stop 'runa before runb'
 
 c       if(np.ne.2) goto10 !for test
 
@@ -1508,7 +1508,7 @@ c        write(*,*)'presid,presida,pwork',presid,presida,pwork
 
 c         write(*,*)'runa after runb'
 c         write(*,*)'no,dens_averaged_ar(np)',np,dens_averaged_ar(np)
-c         stop 'runa after runb'
+c         !stop 'runa after runb'
 
 C
 C  Deallocate memory
@@ -1699,7 +1699,7 @@ C
 c      write(*,*)'runb c,c2',c,c2        
       lmaxa = (lmax + 1)/2
 
-c      stop 'runb  before  call initjy'
+c      !stop 'runb  before  call initjy'
 
 c      write(*,*)'runb before  call initjy lmaxa',lmaxa
 
@@ -1909,7 +1909,7 @@ c                  write(*,*)'n,i,chi(i,n)',n,i,chi(i,n)
 c               enddo
 c            enddo
 
-c            stop 'runb after solve'
+c            !stop 'runb after solve'
 
 C
 C  compute current and conductivity.
@@ -1980,7 +1980,7 @@ c        write(*,*)'fm',fm
 c        write(*,*)'chi',chi 
         write(*,*)'end curv,zi,t,dsqrt(t),e',curv,zi,t,dsqrt(t),e
         write(*,*)'curv,cond',curv,cond
-c       stop 'end runb'
+c       'end runb'
 c-----------------------------
 c
  3010 format(1x,4i8)

@@ -140,6 +140,8 @@ c-----locals
      &i_ox_conversion_loc,iflref,iboundc,ibound,icor,ihermloc,
      &ioxm_loc,id_initial,i_output_data,icone,
      &m_limiter,inside_limiter,nearest_lim_boundary
+     
+      integer ibmx !local
 
 c-----externals
       real*8 temperho,y,x,b,gamma1,tempe,cn,tpoprho,vflowrho,
@@ -646,7 +648,7 @@ c	    return
 
 c            goto 53 !to end of corrections
 
-         write(*,*)'output iter,eps',iter,eps
+cyup         write(*,*)'output iter,eps',iter,eps
 cSAP090321
          if(eps.gt.1.d120) then
 c         if(eps.gt.1.d20) then
@@ -657,7 +659,7 @@ c         if(eps.gt.1.d20) then
 	 end if
   
 	 if (dabs(eps).gt.dabs(eps1)) then
-	     write(*,*)'in output eps.gt.eps1,dip',eps,eps1,dip             
+cyup	     write(*,*)'in output eps.gt.eps1,dip',eps,eps1,dip             
 	     dip=0.5d0*dip
 	     goto 12
 	 end if
@@ -726,7 +728,7 @@ c-------------------------------------------------------------------
           
 c---------calculate the coordinates of X mode cutoff point
 c---------r_x,z_x,phi_x,cnr_x,cnz_x,cm_x 
-          write(*,*)'output'
+cyup          write(*,*)'output'
 c          write(*,*)'before ox_conversion u(1),u(2),u(3),u(4),u(5),u(6)'
 c     &    ,u(1),u(2),u(3),u(4),u(5),u(6)
 
@@ -742,7 +744,7 @@ cendtest
      &    r_x,z_x,phi_x,cnr_x,cnz_x,cm_x,i_ox_conversion_loc)
           i_ox_conversion=i_ox_conversion_loc
 
-          write(*,*)'i_ox_conversion=',i_ox_conversion
+cyup          write(*,*)'i_ox_conversion=',i_ox_conversion
 c          write(*,*)'after ox_conversion u(1),u(2),u(3),u(4),u(5),u(6)'
 c     &    ,u(1),u(2),u(3),u(4),u(5),u(6)
 
@@ -777,8 +779,8 @@ c-------------------------------------------------------
 c-----------transmission coefficient in the point before the jump 
             call  transmit_coef_ox(u(1),u(2),u(3),u(4),u(5),u(6),
      &                           transm_ox)
-            write(*,*)'output OX mode conversion coefficient transm_ox'
-     &      ,transm_ox
+cyup            write(*,*)'output OX mode conversion coefficient transm_ox'
+cyup     &      ,transm_ox
 
 c--------------------------------------------------------------------
 c           write the data fo O mode  before jump
@@ -794,8 +796,8 @@ c--------------------------------------------------------------------
             u(4)=cnz_x
             u(5)=cnr_x
             u(6)=cm_x
-            write(*,*)'output after jump before prep3d u= ',
-     &     u(1),u(2),u(3),u(4),u(5),u(6)
+cyup            write(*,*)'output after jump before prep3d u= ',
+cyup     &     u(1),u(2),u(3),u(4),u(5),u(6)
 
 c-----------transmission coefficient in the point after  the jump
 c           call  transmit_coef_ox(u(1),u(2),u(3),u(4),u(5),u(6),
@@ -845,7 +847,7 @@ c     &                 t,t_old,k,s_poloid_plot_disp(k)
 
             if((t-s_poloid_plot_disp(k))*(t_old-s_poloid_plot_disp(k)).
      &        lt.0.d0)then
-            write(*,*)'in output plot contourD(Re_N_perp,Im_N_perp) t',t
+cyup            write(*,*)'in output plot contourD(Re_N_perp,Im_N_perp) t',t
      
               call output_map_disp_nperp(u)    
     
@@ -913,17 +915,18 @@ c---------------plot wave normal surfaces
                   cnper=-1.d0
                 endif
 
-                write(*,*)'cn2,cnpar',cn2,cnpar
+cyup                write(*,*)'cn2,cnpar',cn2,cnpar
 
-                write(*,*)'in output before  wave_normal_surface'
-                write(*,*)'cnpar,cnper,dsqrt(cnpar**2+cnper**2) ',
-     &                     cnpar,cnper,dsqrt(cnpar**2+cnper**2) 
+cyup                write(*,*)'in output before  wave_normal_surface'
+cyup                write(*,*)'cnpar,cnper,dsqrt(cnpar**2+cnper**2) ',
+cyup     &                     cnpar,cnper,dsqrt(cnpar**2+cnper**2) 
 
+                ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
                 call wave_normal_surface(u(1),u(2),u(3),
-     &               cnpar,cnper,t,n_gam,ib)
+     &               cnpar,cnper,t,n_gam,ibmx)
  
                 call wave_ray_normal_surface(u(1),u(2),u(3),
-     &               cnpar,cnper,t,n_gam,ib)
+     &               cnpar,cnper,t,n_gam,ibmx)
                endif
 
                goto 41
@@ -931,8 +934,8 @@ c---------------plot wave normal surfaces
           endif
 
           if (point_plot_disp_cold.eq.'major_radius')then
-            write(*,*)'output.f k,u(2),r_old,r_plot_disp_cold(k)',
-     &                        k,u(2),r_old,r_plot_disp_cold(k)
+cyup            write(*,*)'output.f k,u(2),r_old,r_plot_disp_cold(k)',
+cyup     &                        k,u(2),r_old,r_plot_disp_cold(k)
             if((u(2)-r_plot_disp_cold(k))*(r_old-r_plot_disp_cold(k)).
      &         lt.0.d0)then
  
@@ -956,11 +959,12 @@ c---------------plot wave normal surfaces
                   cnper=-1.d0
                 endif
 
+                ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
                 call wave_normal_surface(u(1),u(2),u(3),
-     &               cnpar,cnper,t,n_gam,ib) 
+     &               cnpar,cnper,t,n_gam,ibmx) 
 
                 call wave_ray_normal_surface(u(1),u(2),u(3),
-     &               cnpar,cnper,t,n_gam,ib)
+     &               cnpar,cnper,t,n_gam,ibmx)
                endif
 
               goto 41
@@ -984,8 +988,8 @@ c      write(*,*)'output.f t,prmt(7)',t,prmt(7)
       if(t.lt.prmt(7))goto 20
       i_output_data=1 !this time step is the output step
 c-------------------------------------------------------
-      write(*,*)'tau=',t,' 1/y(1)=',1.d0/y(z1,r1,phi1,1),
-     &'1/y(2)=',1.d0/y(z1,r1,phi1,2)
+cyup      write(*,*)'tau=',t,' 1/y(1)=',1.d0/y(z1,r1,phi1,1),
+cyup     &'1/y(2)=',1.d0/y(z1,r1,phi1,2)
       
       
 c     The work on the data preparation for the output
@@ -1001,7 +1005,7 @@ c---------------------------------------------------------
       uout6=u(6)*r0x
 c-----------------------------------------------------------
 c      write(*,30)uout2,uout1,uout3,uout4,uout5,uout6
-      write(*,*)uout2,uout1,uout3,uout4,uout5,uout6
+cyup      write(*,*)uout2,uout1,uout3,uout4,uout5,uout6
 
 c      write(*,130)uout2,uout1,uout3,uout4,uout5,uout6
 130   format(3x,6(' ',e16.9))
@@ -1017,7 +1021,7 @@ c      write(*,*)'prmt_7_old',prmt_7_old
       prmt(7)=(dint(t/prmt(6))+1)*prmt(6)
 
 cSAP090515
-      write(*,*)'output.f 1 t,prmt(6),prmt(7)',t,prmt(6),prmt(7)
+cyup      write(*,*)'output.f 1 t,prmt(6),prmt(7)',t,prmt(6),prmt(7)
 
  110  format(3x,6(' ',e13.6))
 c***************************************************
@@ -1039,7 +1043,7 @@ c      write(*,*)'output bef eps u(4),u(5),u(6)',u(4),u(5),u(6)
 c      write(*,*)'output bef eps bz,br,bphi,bmod',bz,br,bphi,bmod
       
       eps=hamilt1(u(1),u(2),u(3),u(4),u(5),u(6))
-      write(*,*)'in output epshamilt1=',eps
+cyup      write(*,*)'in output epshamilt1=',eps
 
       cn2=cnz1*cnz1+cnr1*cnr1+(cm1/r1)**2
 
@@ -1054,7 +1058,7 @@ c       write(*,*)'output rho',rho
       ye=y(u(1),u(2),u(3),1)
       uh=dsqrt(xe+ye*ye)
       uh=xe+ye*ye
-      write(*,*)'output xe,ye,uh',xe,ye,uh
+cyup      write(*,*)'output xe,ye,uh',xe,ye,uh
 
       if (i_uh_switch.eq.1) then
          !change the output step prmt(6) for prmt6_uh_switch 
@@ -1090,11 +1094,11 @@ c         write(*,*)'output i,xi,yi',i,xi,yi
 c end test
  568  format(3x,'eps=',d13.6)
      
-      write(*,*)'output.f before prep3d t',t
+cyup      write(*,*)'output.f before prep3d t',t
 
       call prep3d(t,u,deru,iraystop)
      
-      write(*,*)'output aft prep3d iraystop,t',iraystop,t
+cyup      write(*,*)'output aft prep3d iraystop,t',iraystop,t
 cSAP100202      
 c      write(*,*)'output i_go_to_previous_out_step',
 c     &                  i_go_to_previous_out_step
@@ -1102,9 +1106,9 @@ c      write(*,*)'0 output.f prmt(7),prmt(6)',
 c     &                      prmt(7),prmt(6)
       if (i_go_to_previous_out_step.eq.1) then
 c--------return to the previous output point an will use new prmt6_new
-         write(*,*)'in output.f i_go_to_previous_out_step.eq.1'
-         write(*,*)'in output.f prmt_7_old,prmt(6),prmt6,prmt6_new',
-     &                          prmt_7_old,prmt(6),prmt6,prmt6_new
+cyup         write(*,*)'in output.f i_go_to_previous_out_step.eq.1'
+cyup         write(*,*)'in output.f prmt_7_old,prmt(6),prmt6,prmt6_new',
+cyup     &                          prmt_7_old,prmt(6),prmt6,prmt6_new
          prmt(7)=prmt_7_old-prmt(6)+prmt6_new
          prmt(6)=prmt6_new
 c         write(*,*)'output.f nrayelt prmt(6),prmt(6)', 
@@ -1118,10 +1122,10 @@ c     &                       nrayelt,prmt(6),prmt(6)
          u(6)=wn_phi(nrayelt-1)*u(2)
          t=wt(nrayelt-1)
         
-         write(*,*)'output.f prmt(7),prmt(6)',prmt(7),prmt(6)
-         write(*,*)'output.f u(1),u(2),u(3),u(4),u(5),u(6)',
-     &              u(1),u(2),u(3),u(4),u(5),u(6)
-         write(*,*)'output.f t',t
+cyup         write(*,*)'output.f prmt(7),prmt(6)',prmt(7),prmt(6)
+cyup         write(*,*)'output.f u(1),u(2),u(3),u(4),u(5),u(6)',
+cyup     &              u(1),u(2),u(3),u(4),u(5),u(6)
+cyup         write(*,*)'output.f t',t
          nrayelt=nrayelt-1
          i_go_to_previous_output_step=i_go_to_previous_out_step
 
@@ -1147,7 +1151,7 @@ c         endif
 	 return
       end if
 
-      write(*,*)'!!!!!output nrayelt,nrelt',nrayelt,nrelt
+cyup      write(*,*)'!!!!!output nrayelt,nrelt',nrayelt,nrelt
 cBH131024: Somehow, a return from this subroutine before
 cBH131024: reaching the following test, is causing the test
 cBH131024: to not be reached.  Catch it on the next try.
@@ -1239,35 +1243,35 @@ c        for the optimal OX mode conversion
            cnr0=u(5)
            cm0=u(6)
            cnphi0=cm0/r0              
-           write(*,*)'output i_ox=1'
-           write(*,*)'z0,r0,phi0',z0,r0,phi0
-           write(*,*)'cnz0,cnr0,cm0,cnphi0',cnz0,cnr0,cm0,cnphi0
+cyup           write(*,*)'output i_ox=1'
+cyup           write(*,*)'z0,r0,phi0',z0,r0,phi0
+cyup           write(*,*)'cnz0,cnr0,cm0,cnphi0',cnz0,cnr0,cm0,cnphi0
            
 c------test
 c           write(*,*)'bz,br,bphi',bz,br,bphi
-            write(*,*)'output.f before call antenna_vertex'
+cyup            write(*,*)'output.f before call antenna_vertex'
            cnpar_test=(cnz0*bz+cnr0*br+cnphi0*bphi)/bmod
-           write(*,*)'output cnpar_test',cnpar_test
+cyup           write(*,*)'output cnpar_test',cnpar_test
            cn0_s=cnz0**2+cnr0**2+cnphi0**2
            cnper_test=dsqrt(cn0_s-cnpar_test**2)
 c           write(*,*)'dsqrt(cn0_s)',dsqrt(cn0_s)
-           write(*,*)'output cnper_test',cnper_test
+cyup           write(*,*)'output cnper_test',cnper_test
            sin_phi=dsin(phi0)
            cos_phi=dcos(phi0)
            cnx=cnr0*cos_phi-cnphi0*sin_phi
            cny=cnr0*sin_phi+cnphi0*cos_phi
            cnz=cnz0  
-           write(*,*)'cnx,cny,cnz',cnx,cny,cnz
+cyup           write(*,*)'cnx,cny,cnz',cnx,cny,cnz
            call ninit_ec(z0,r0,phi0,cnx,cny,cnz,cnteta,cnphi0)
-           write(*,*)'cnteta,cnphi0',cnteta,cnphi0
-           write(*,*)'cnrho',dsqrt(cn0_s-cnteta**2-cnphi0**2) 
+cyup           write(*,*)'cnteta,cnphi0',cnteta,cnphi0
+cyup           write(*,*)'cnrho',dsqrt(cn0_s-cnteta**2-cnphi0**2) 
            ioxm_loc=ioxm
            ioxm=1  
            call cninit12(z0,r0,phi0,cnpar_test,cnteta,cnphi0,
      1                  cnz_t,cnr_t,cm_t,iraystop)
            ioxm=ioxm_loc 
-           write(*,*)'output.f after cninit12 cnz_t,cnr_t,cm_t',
-     &     cnz_t,cnr_t,cm_t
+cyup           write(*,*)'output.f after cninit12 cnz_t,cnr_t,cm_t',
+cyup     &     cnz_t,cnr_t,cm_t
 c----------endtest
            icone=icone_loc
            call antenna_vertex(u(2),u(3),u(1),-u(5),-u(6)/u(2),-u(4),
@@ -1281,8 +1285,8 @@ c----------put the data into cone.i
            alpha_st_ox=alpha_st
            beta_st_ox=beta_st
 
-           write(*,*)'oxb r_st,phi_st,z_st,alpha_st,beta_st',
-     &     r_st,phi_st,z_st,alpha_st,beta_st
+cyup           write(*,*)'oxb r_st,phi_st,z_st,alpha_st,beta_st',
+cyup     &     r_st,phi_st,z_st,alpha_st,beta_st
  
       endif ! ((i_ox.eq.1).and.(iflref.eq.1)  
 
@@ -1345,26 +1349,26 @@ c--------scattering using Nicola subroutine
          s_total_new=s_total
 
 cSAPO120603
-         write(*,*)'output.f bef sc u',u
-         write(*,*)'s_total_new, s_total_old',s_total_new,s_total_old
+cyup         write(*,*)'output.f bef sc u',u
+cyup         write(*,*)'s_total_new, s_total_old',s_total_new,s_total_old
 
          call lhscattering(u, s_total_new, s_total_old)
 
 cSAP120603
-         write(*,*)'output.f aft sc u',u
-         write(*,*)'s_total_new, s_total_old',s_total_new,s_total_old
+cyup         write(*,*)'output.f aft sc u',u
+cyup         write(*,*)'s_total_new, s_total_old',s_total_new,s_total_old
 
        endif
 
 c      write(*,*)'output irefl,ireflm',irefl,ireflm 
       if (irefl.ge.ireflm) then
-	 write(*,*)'****irefl.ge.ireflm u(2)',u(2)
-         write(*,*)'i_output_data ',i_output_data 
+cyup         write(*,*)'****irefl.ge.ireflm u(2)',u(2)
+cyup         write(*,*)'i_output_data ',i_output_data 
          if (i_output_data.eq.0) then
-             write(*,*)'output.f i_output_data.eq.0 befor prep3d'
+cyup             write(*,*)'output.f i_output_data.eq.0 befor prep3d'
              call prep3d(t,u,deru,iraystop)
-           write(*,*)'output.f i_output_data.eq.0 aft prep3d iraystop',
-     &                iraystop
+cyup           write(*,*)'output.f i_output_data.eq.0 aft prep3d iraystop',
+cyup     &                iraystop
          endif
 !nme         if(iout3d.eq.'enable') then
 c----------writing data to output mnemonic.txt file
@@ -1378,7 +1382,7 @@ c----------writing data to output mnemonic.txt file
 
       end if
 
-      write(*,*)'output.f after irefl.ge.ireflm iraystop,t',iraystop,t
+cyup      write(*,*)'output.f after irefl.ge.ireflm iraystop,t',iraystop,t
 
  120  continue
 c----------------------------------------------------

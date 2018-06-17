@@ -105,8 +105,8 @@ c------------------------------------------------------------------
 c if 0
       if (((id.eq.1).or.(id.eq.2)).or.(id.eq.16)) then
 
-         write(*,*)'cninit before cninit12 z,r,phi,cnpar,cnteta,cnphi',
-     &   z,r,phi,cnpar,cnteta,cnphi
+cyup         write(*,*)'cninit before cninit12 z,r,phi,cnpar,cnteta,cnphi',
+cyup     &   z,r,phi,cnpar,cnteta,cnphi
 cSAP111115          
          if(id.eq.16)then
            id_loc=id
@@ -337,12 +337,12 @@ c-----calculations of initial values cnz,cnr,cm from cnper for id=4,5,6,7
 c---------------------------------------------------------------------
       call cnzcnr(z,r,phi,cnteta,cnphi,cnrho,cnz,cnr,cm)
 c---------------------------------------------------------------------
-      write(*,*)'in cninit after cnzcnr cnz,cnr,cm',cnz,cnr,cm
+cyup      write(*,*)'in cninit after cnzcnr cnz,cnr,cm',cnz,cnr,cm
       cm=cnphi*r
       gam=gamma1(z,r,phi,cnz,cnr,cm)
-      write(*,*)'cninit.f before ddd=hamilt1'
+cyup      write(*,*)'cninit.f before ddd=hamilt1'
       ddd=hamilt1(z,r,phi,cnz,cnr,cm)
-      write(*,*)'in cninit ddd=',ddd
+cyup      write(*,*)'in cninit ddd=',ddd
 
 
   111 continue
@@ -350,7 +350,7 @@ c---------------------------------------------------------------------
 c----------------------------------------------------------------
 c     for the grill conditions it will use the different grill types
 c---------------------------------------------------------------
-      write(*,*)'cninit istart,i_n_poloidal',istart,i_n_poloidal
+cyup      write(*,*)'cninit istart,i_n_poloidal',istart,i_n_poloidal
       if(istart.eq.2) then !grill conditions
          if (i_n_poloidal.eq.2) then !input N_parallel, N_poloidal
 c            calculate N_phi,N_theta,N_rho
@@ -377,9 +377,9 @@ c_test
 
              arg= 1.d0-(alpha_teta*bmod/bphi)**2
              if (arg.lt.0.d0) then
-               write(*,*)'cninit.f 1.d0-(alpha_teta*bmod/bphi)**2<0'
-               write(*,*)'cninit.f change n_theta_pol'
-               stop
+               WRITE(*,*)'cninit.f 1.d0-(alpha_teta*bmod/bphi)**2<0'
+               WRITE(*,*)'cninit.f change n_theta_pol'
+               STOP
              endif
 
              cnrho_full=cnper*dsqrt(arg)
@@ -443,7 +443,7 @@ cSAP091026
 c         if((i_n_poloidal.ne.1).and.(i_n_poloidal.ne.3)) then
              call cnzcnr(z,r,phi,cnteta_full,cnphi_full,cnrho_full,
      &       cnz,cnr,cm)
-
+             if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
              write(*,*)'cninit end grill condition'
              write(*,*)'cnteta_full,cnphi_full,cnrho_full,cn**2',
      &       cnteta_full,cnphi_full,cnrho_full,
@@ -453,6 +453,7 @@ c         if((i_n_poloidal.ne.1).and.(i_n_poloidal.ne.3)) then
              write(*,*)'cnz,cnr,cm',cnz,cnr,cm
              write(*,*)'(cnz*bz+cnr*br+cm*bphi/r)/bmod',
      &        (cnz*bz+cnr*br+cm*bphi/r)/bmod
+             endif ! outprint
 c_test_begin
 c         bmod=b(z,r,phi)
 c         gam=gamma1(z,r,phi,cnz,cnr,cm)
@@ -504,14 +505,14 @@ c     the initialization of cnrho
       cirho=1.d0
 c------------------------------------------------------------------
 10    continue
-      write(*,*)'cninit.f in cnzcnr cnteta,cirho,cnrho',
-     &cnteta,cirho,cnrho
+cyup      write(*,*)'cninit.f in cnzcnr cnteta,cirho,cnrho',
+cyup     &cnteta,cirho,cnrho
 c     write(*,*)'cninit.f in cnzcnr dpdzd,dpdrd,gradpsi',
 c    &dpdzd,dpdrd,gradpsi
       cnz=(cnteta*dpdrd-cirho*cnrho*dpdzd)/gradpsi
       cnr=(-cnteta*dpdzd-cirho*cnrho*dpdrd)/gradpsi
       cm=cnphi*r
-      write(*,*)'cninit.f in cnzcnr cnz,cnr,cm',cnz,cnr,cm
+cyup      write(*,*)'cninit.f in cnzcnr cnz,cnr,cm',cnz,cnr,cm
 cSm030515
 c      if((i_n_poloidal.eq.1).or.(i_n_poloidal.eq.2)) then
 cSm040415
@@ -537,15 +538,15 @@ c-----------------------------------------------------------------
          u(4)=cnz
          u(5)=cnr
          u(6)=cm
-        write(*,*)'cninit.f in cnzcnr before rside1'    
+cyup        write(*,*)'cninit.f in cnzcnr before rside1'    
          call rside1(0.d0,u,deru) 
-        write(*,*)'cninit.f in cnzcnr after rside1 deru',deru        
+cyup        write(*,*)'cninit.f in cnzcnr after rside1 deru',deru        
 c----------------------------------------------------------------
 c        cmultpl is the scalar multiplication V_groop*grad(psi)
 c        gradient(psi) is directed outside the plasma
 c----------------------------------------------------------------
          cmultpl=dpdzd*deru(1)+dpdrd*deru(2)
-        write(*,*)'cninit in cnzcnr cmultpl,i_vgr_ini',cmultpl,i_vgr_ini
+cyup        write(*,*)'cninit in cnzcnr cmultpl,i_vgr_ini',cmultpl,i_vgr_ini
 
          if ((cmultpl*i_vgr_ini).gt.0.d0) then
 c-----------the poloidal direction of the group velocity is opposite
@@ -558,7 +559,7 @@ c****************************************************************
 c         end irho determination
       endif !i_n_poloidal =1 or =2
 c----------------------------------------------------------------
-      write(*,*)'cninit.f at end, cnzcnr cnz,cnr,cm:',cnz,cnr,cm
+cyup      write(*,*)'cninit.f at end, cnzcnr cnz,cnr,cm:',cnz,cnr,cm
       return
       end ! cnzcnr
 
@@ -595,7 +596,9 @@ c-----locals
      &xe,xb,ye,yb,
      &s1,s2,s3,s4,s6,s7,cnprim,cnpar2,
      &px,px2,pypb,pyme,pyme2,py2,py4,pype
-      real*8 sign_delib
+     
+      real*8 sign_del
+      integer ibmx !local
 
       integer ioxmold,ioptmaz,iraystop        
 
@@ -612,6 +615,15 @@ c     solution of the dispersion relation
 c     for cn2 from cnpar by using dispersin relation
 c     f*n**4 +g*n**2+w=0
 c     in the following form n**2=(-g+ioxm*sqrt(g**2-4*f*w))/(2*f)
+
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C)*|delta|
+      ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in nsolv
+
 c------------------------------------------------------------------
 c     Applton - Hartry dispersion relation
 c
@@ -635,17 +647,13 @@ c------------------------------------------------------------------
          fd=f1e*dele+f0e
          gd=g1e*dele+g0e
          wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
          detin=gd**2-4.*fd*wd
          if (detin.lt.0d0) then
             write(*,*)' 1 in nsolv detin  less then zero '
             return
 	   end if
-	   cn2p=(-gd+dsqrt(detin))/(2.*fd) ! N^2(Npar) using (f,g,w)
-	   cn2m=(-gd-dsqrt(detin))/(2.*fd) ! N^2(Npar) using (f,g,w)
+	   cn2p=(-gd+sign_del*dsqrt(detin))/(2.*fd) ! N^2(Npar) using (f,g,w)
+	   cn2m=(-gd-sign_del*dsqrt(detin))/(2.*fd) ! N^2(Npar) using (f,g,w)
 	   WRITE(*,*)'Apl nsolv cn2p,cn2m',cn2p,cn2m
            if((cn2m.lt.0.d0).and.(cn2p.lt.0d0)) then
             write(*,*)'in cninit2 two roots of the dispersion < 0'
@@ -686,17 +694,13 @@ c          write(*,*)'cold plasma ib=1 '
 	     fd=f1e*dele+f0e
 	     gd=g1e*dele+g0e
 	     wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 	     detin=gd**2-4.*fd*wd
 	     if (detin.lt.0d0) then
 	        write(*,*)' 2 in nsolv detin  less then zero '
 	        return
 	     end if
-	     cn2p=(-gd+dsqrt(detin))/(2.*fd)
-	     cn2m=(-gd-dsqrt(detin))/(2.*fd)
+	     cn2p=(-gd+sign_del*dsqrt(detin))/(2.*fd)
+	     cn2m=(-gd-sign_del*dsqrt(detin))/(2.*fd)
 
              if((cn2m.lt.0.d0).and.(cn2p.lt.0d0)) then
                write(*,*)'in cninit2 two roots of the dispersion < 0'
@@ -713,8 +717,9 @@ c       ib.gt.1 ion (species i=ib) resonance condition may be present in plasma
 c  if 3
         if (ib.gt.1) then
 c          write(*,*)'cold plasma ib .gt.1  '
-           xb=x(z,r,phi,ib) 
-           yb=y(z,r,phi,ib) ! i=ib species 
+           ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+           xb=x(z,r,phi,ibmx) 
+           yb=y(z,r,phi,ibmx) ! i=ib species 
            xe=x(z,r,phi,1)
            ye=y(z,r,phi,1)
 	   pype=xe/(1.+ye)
@@ -731,20 +736,16 @@ c          write(*,*)'cold plasma ib .gt.1  '
 	   w1b=cnpar2*(-s4*(s1-pyme2)+(s2-pype)*(s3-pyme))+
      1	       s4*(s2-pype)*(s3-pyme)
            w0b=cnpar2*(pypb*s4-xb*(s3-pyme))-s4*(s3-pyme)*xb
-	   fd=f1b*delib+f0b ! see below
-	   gd=g1b*delib+g0b ! see below
-	   wd=w1b*delib+w0b ! see below
-            sign_delib=sign(1.d0,delib) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]  	   
+	   fd=f1b*delib+f0b
+	   gd=g1b*delib+g0b
+	   wd=w1b*delib+w0b
 	   detin=gd**2-4.*fd*wd
 	   if (detin.lt.0d0) then
 	      write(*,*)' 3 in nsolv detin  less then zero '
 	      return
 	   end if
-	   cn2p=(-gd+dsqrt(detin))/(2.*fd)
-	   cn2m=(-gd-dsqrt(detin))/(2.*fd)
+	   cn2p=(-gd+sign_del*dsqrt(detin))/(2.*fd)
+	   cn2m=(-gd-sign_del*dsqrt(detin))/(2.*fd)
            if((cn2m.lt.0.d0).and.(cn2p.lt.0d0)) then
             write(*,*)'in cninit2 two roots of the dispersion < 0'
             write(*,*)'cn2m,cn2p',cn2m,cn2p
@@ -820,7 +821,8 @@ c-----locals
      &pype,pyme,pyme2,pypb,
      &f1b,f0b,g1b,g0b,w1b,w0b,
      &cnprim
-      real*8 sign_delib
+      real*8 sign_del
+      integer ibmx !local
 
       integer
      &ioxmold,ioptmaz
@@ -838,6 +840,13 @@ c     f*cnper**4 +(2f*cnpar**2+g)*cnper**2+(f*cnpar**4+g*cnpar**2+w)=0
 c     f*cnper**4 +gnew*cnper**2+wnew=0
 c     gnew=2fcnpar**2+g, wnew=f*cnpar**4+g*cnpar**2+w
 c     in the following form cnper**2=(-gnew+,-*sqrt(gnew**2-4*f*wnew))/(2*f)
+
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C)*|delta|
+      ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in npernpar
 c------------------------------------------------------------------
 c     Appleton - Hartry dispersion relation
 c
@@ -861,10 +870,6 @@ c------------------------------------------------------------------
          fd=f1e*dele+f0e
          gd=g1e*dele+g0e
          wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
          gnew=gd+2.d0*fd*cnpar2
          wnew=wd+gd*cnpar2+fd*cnpar4
@@ -876,8 +881,8 @@ c new coefficients
             write(*,*)' 1 in npernpar detin  less then zero '
             return
          endif
-         cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-         cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+         cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+         cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c         WRITE(*,*)'Aplt cnpernpar cnper2p,cnper2m',cnper2p,cnper2m
       end if
 c end if 1
@@ -905,10 +910,6 @@ c         write(*,*)'cnint cold plasma ib=1 '
           fd=f1e*dele+f0e
           gd=g1e*dele+g0e
           wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
           gnew=gd+2.d0*fd*cnpar2
           wnew=wd+gd*cnpar2+fd*cnpar4
@@ -922,8 +923,8 @@ c new coefficients
              cnper2m=-1.d0
              return
 	  end if
-          cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-          cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+          cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+          cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c          write(*,*)'in cninit.f  1 npernpar cnper2p,cnper2m',
 c     .    cnper2p,cnper2m
           goto 111
@@ -934,8 +935,9 @@ c     ib.gt.1 iones resonance condition may be
 c  if 3
         if (ib.gt.1) then
 c          write(*,*)'cold plasma ib .gt.1  '
-           xb=x(z,r,phi,ib)
-           yb=y(z,r,phi,ib)
+           ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+           xb=x(z,r,phi,ibmx)
+           yb=y(z,r,phi,ibmx)
            xe=x(z,r,phi,1)
            ye=y(z,r,phi,1)
            pype=xe/(1.d0+ye)
@@ -955,10 +957,6 @@ c          write(*,*)'cold plasma ib .gt.1  '
            fd=f1b*delib+f0b ! see below
            gd=g1b*delib+g0b ! see below
            wd=w1b*delib+w0b ! see below
-            sign_delib=sign(1.d0,delib) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]             
 c new coefficients
            gnew=gd+2.d0*fd*cnpar2
            wnew=wd+gd*cnpar2+fd*cnpar4
@@ -970,8 +968,8 @@ c new coefficients
               write(*,*)' 3 in dinit detin  less then zero '
               return
            end if
-           cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-           cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+           cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+           cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c        write(*,*)'in npernpar ib.qt.1 cnper2p,cnper2m',cnper2p,cnper2m
            goto 111
         end if
@@ -1076,10 +1074,6 @@ c------------------------------------------------------------------
       fd=f1e*dele+f0e
       gd=g1e*dele+g0e
       wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
       detin=gd**2-4.d0*fd*wd
       if (detin.lt.0d0) then
 	 write(*,*)' 3 in cninit detin  less then zero '
@@ -1087,8 +1081,13 @@ c------------------------------------------------------------------
 	 return
       end if
 
-      cn2p=(-gd+dsqrt(detin))/(2.d0*fd)
-      cn2m=(-gd-dsqrt(detin))/(2.d0*fd)
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+      delib= dele  ! 1-Y (here electrons)
+      sign_del=1.d0 !sign(1.d0,delib) ! in cninit3
+
+      cn2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd) ! corr to ioxm=+1
+      cn2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd) ! corr to ioxm=-1
       WRITE(*,*)'apl cninit cn2p,cn2m',cn2p,cn2m
       if((cn2m.lt.0.d0).and.(cn2p.lt.0d0)) then
             write(*,*)'in cninit2 two roots of the dispersion < 0'
@@ -1134,7 +1133,7 @@ c     controle that cn2 and gam are the solution of the dispersion
 c     relation  n**2=(-b+ioxm*sqrt(b**2-4*a*c))/(2*a)
 c--------------------------------------------------------------------
       sqrdet=dsqrt(py4*ds4+4.d0*py2*px2*dc2)
-      pz=2.d0*px-py2*ds2+ioxm*sqrdet
+      pz= 2.d0*px -py2*ds2 +ioxm*sqrdet
       cn2new=1.d0-2.d0*xi*px/pz
 c     write(*,*)'cn2new=',cn2new
       if (iroot.eq.1) then
@@ -1193,6 +1192,14 @@ c------------------------------------------------------------------
       cnpar2=cnpar*cnpar
       cntang2=cnteta*cnteta+cnphi*cnphi
       bmod=b(z,r,phi)
+      
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C)*|delta|
+      !in    N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in cninit12_n_gam
+      
 c      write(*,*)'cninit12_n_gam ioxm=',ioxm
 c      write(*,*)'z,r,phi,cnpar,cnteta,cnphi',z,r,phi,cnpar,cnteta,cnphi
 c-----------------------------------------------------------------
@@ -1233,10 +1240,6 @@ c          write(*,*)'cninit12 xe,ye',xe,ye
 	    fd=f1e*dele+f0e !==(1-Ye)*eps1  
 	    gd=g1e*dele+g0e !==
 	    wd=w1e*dele+w0e !==
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]  
 	    detin=gd**2-4.d0*fd*wd
 c            write(*,*)'cninit12 fd,gd,wd,detin',fd,gd,wd,detin
 	    if (detin.lt.0d0) then
@@ -1244,22 +1247,22 @@ c            write(*,*)'cninit12 fd,gd,wd,detin',fd,gd,wd,detin
 	       iraystop=1
 	       return
 	    end if
-	    cn2p=(-gd+dsqrt(detin))/(2.d0*fd)
-	    cn2m=(-gd-dsqrt(detin))/(2.d0*fd)
+	    cn2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+	    cn2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c	    write(*,*)'in cninit fd,gd,wd,detin'
 	    !write(*,*)fd,gd,wd,detin
-	    write(*,*)'cninit12_n_gam cn2p,cn2m',cn2p,cn2m
-            write(*,*)'cninit12_n_gam cn2p-cnpar2,cn2m-cnpar2',
-     .      (cn2p-cnpar2),(cn2m-cnpar2)
+cyup	    write(*,*)'cninit12_n_gam cn2p,cn2m',cn2p,cn2m
+cyup            write(*,*)'cninit12_n_gam cn2p-cnpar2,cn2m-cnpar2',
+cyup     .      (cn2p-cnpar2),(cn2m-cnpar2)
 
 ctest angle
             if (cn2p.gt.0.d0)then
                if(cnpar2.le.cn2p) then
                  dc_l=cnpar/dsqrt(cn2p)
                  gam_l=dacos(dc_l)
-                 write(*,*)'in cninit12_n_gam cn2p,gam_l',cn2p,gam_l
+cyup                 write(*,*)'in cninit12_n_gam cn2p,gam_l',cn2p,gam_l
                 else
-                 write(*,*)'in cninit12_n_gam cnpar2>cn2p',cnpar2,cn2p
+cyup                 write(*,*)'in cninit12_n_gam cnpar2>cn2p',cnpar2,cn2p
                 endif
             endif  
 
@@ -1267,54 +1270,56 @@ ctest angle
               if(cnpar2.le.cn2m) then
                 dc_l=cnpar/dsqrt(cn2m)
                 gam_l=dacos(dc_l)
-                write(*,*)'in cninit12_n_gam cn2m,gam_l',cn2m,gam_l
+cyup                write(*,*)'in cninit12_n_gam cn2m,gam_l',cn2m,gam_l
               else
-                write(*,*)'in cninit12_n_gam cnpar2>cn2m',cnpar2,cn2m
+cyup                write(*,*)'in cninit12_n_gam cnpar2>cn2m',cnpar2,cn2m
               endif
             endif
 
 
             if((cn2m.lt.0.d0).and.(cn2p.lt.0d0)) then
-             write(*,*)'cninit12_n_gam two roots of the dispersion < 0'
-             write(*,*)'cn2m,cn2p=',cn2m,cn2p
-             write(*,*)'the given wave can not exist in plasma'
+cyup             write(*,*)'cninit12_n_gam two roots of the dispersion < 0'
+cyup             write(*,*)'cn2m,cn2p=',cn2m,cn2p
+cyup             write(*,*)'the given wave can not exist in plasma'
 	     iraystop=1
 	     return
 	    endif
 
 20	    iroot=iroot+1
-            write(*,*)'cninit12_n_gam iroot,cntang2',iroot,cntang2
+cyup            write(*,*)'cninit12_n_gam iroot,cntang2',iroot,cntang2
 
 	    if(iroot.eq.1) then
               cn2=cn2p
 	      if(cn2.lt.cntang2)then
-	        write(*,*)'cninit12_n_gam cn2p.lt.cntang2'
+cyup	        write(*,*)'cninit12_n_gam cn2p.lt.cntang2'
 	        go to 20
 	      end if
 	    else
               cn2=cn2m
 	      if(cn2.lt.cntang2)then
+	        if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 	        write(*,*)'cninit12_n_gam cn2m.lt.cntang2'
 	        write(*,*)'the given wave can not exist in plasma'
+	        endif ! outprint
 	        iraystop=1
 	        return
 	      end if
 	    end if
 	    
-            write(*,*)'cninit12_n_gam cn2=',cn2
+cyup            write(*,*)'cninit12_n_gam cn2=',cn2
 	    cnrho2=cn2-cnteta**2-cnphi**2
 	    cnrho=dsqrt(cnrho2)
             cnperp=cnrho
 cSm060906
             cnperp=dsqrt(cn2-cnpar2)
-            write(*,*)'cnpar,dsqrt(cn2-cnpar2)',cnpar,dsqrt(cn2-cnpar2)
+cyup            write(*,*)'cnpar,dsqrt(cn2-cnpar2)',cnpar,dsqrt(cn2-cnpar2)
 c-------------------------------------------------------------------
-          write(*,*)'cninit12_n_gam cn2',cn2
+cyup          write(*,*)'cninit12_n_gam cn2',cn2
           call cnzcnr(z,r,phi,cnteta,cnphi,cnrho,cnz,cnr,cm)
 
-          write(*,*)'cninit12_n_gam  after cnzcnr z,r,phi', z,r,phi
-          write(*,*)'cnteta,cnphi,cnrho',cnteta,cnphi,cnrho
-          write(*,*)'cnz,cnr,cm',cnz,cnr,cm
+cyup          write(*,*)'cninit12_n_gam  after cnzcnr z,r,phi', z,r,phi
+cyup          write(*,*)'cnteta,cnphi,cnrho',cnteta,cnphi,cnrho
+cyup          write(*,*)'cnz,cnr,cm',cnz,cnr,cm
 c-------------------------------------------------------------------
           cm=cnphi*r
 	  gam=gamma1(z,r,phi,cnz,cnr,cm)
@@ -1328,55 +1333,27 @@ c         verify that cn2 and gam are the solution of the dispersion
 c         relation  n**2=(-b+ioxm*sqrt(b**2-4*a*c))/(2*a)
 c---------------------------------------------------------------------
           call abc(z,r,phi,ds2,dc2,ad,bd,cd) ! here: cninit12_n_gam
-!   The original coefficients A,B,C of the A*n**4 +B*n**2 +C= 0 equation
-!   (see Genray manual: A,B,C are given by (4.9-4.11))  
-!   are multiplied by delib=dele=1-Ye in case of ib=1,
-!   or by delib=deli=1-Yi in case of ib=i (ib>1, in case of ICR),
-!   to get rid of a resonance denominator (1-Y) .
-!   So, for defining the roots we use ab=delib*A, bd=delib*B, cd=delib*C.
-!   A problem noticed by YuP[07-2017]:
-!   In equation for the two roots,    
-!	    N2p=(-B +sqrt(B^2-4AC))/(2A)      (4.12a) (O)
-!	    N2m=(-B -sqrt(B^2-4AC))/(2A)      (4.12b) (X)
-!   the sign in front of sqrt() [defined as ioxm] determines the mode: 
-!   '+' is for O-mode, '-' is for X-mode .
-!   However, after we multiplied A,B,C by (1-Yib) factor,
-!   the result depends on the sign of (1-Yib).
-!   If (1-Yib) is positive, nothing changes 
-!   in correspondence of ioxm=+/-1 and the two modes. 
-!   But for the negative (1-Yib), e.g. (1-Yib)=-1, we get
-!      (-b +ioxm*sqrt(b^2-4ac))/(2a) = [use a=(1-Yib)*A= -A, etc] 
-!    = (+B +ioxm*sqrt(B^2-4AC))/(-2A)= 
-!    = (-B -ioxm*sqrt(B^2-4AC))/(+2A)
-!   Thus, for ioxm=+1, we are getting the branch (4.12b), 
-!   which is the X mode. The meaning of modes is reversed !
-!   To correct this problem, we simply need to further adjust 
-!   the a,b,c cofficients:
-!      sign_delib=sign(1.d0,delib) 
-!      a=a*sign_delib 
-!      b=b*sign_delib 
-!      c=c*sign_delib 
-!   So, effectively, we use a=|1-Yib|*A, etc.
-!   Then, the meaning (mode type) defined through a,b,c
-!   will remain the same as that defined through the original A,B,C.
-!   This correction is done at the end of subr.abc(), for the ad,bd,cd.
+          
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C)*|delta|
+      !in    N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+
 
           d4=ad
 	  d2=bd
 	  d0=cd
           det=d2*d2-4.d0*d4*d0
-          write(*,*)'--- cninit12_n_gam, for abc: gam===',gam
+cyup          write(*,*)'--- cninit12_n_gam, for abc: gam===',gam
 c-------------------------------------------------------------
           cn1=dsqrt(d2*d2-4.d0*d4*d0)
-          cn2p_ib1=(-d2+cn1)/(2.d0*d4)
-          cn2m_ib1=(-d2-cn1)/(2.d0*d4)
-          write(*,*)'from abc: (-d2+cn1)/(2.d0*d4)',(-d2+cn1)/(2.d0*d4)
-          write(*,*)'from abc: (-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
-	  write(*,*)'cninit12_n_gam ib=1 from abc: cn2p,cn2m',cn2p_ib1,cn2m_ib1
-	  !!!pause
+          cn2p_ib1=(-d2+sign_del*cn1)/(2.d0*d4)
+          cn2m_ib1=(-d2-sign_del*cn1)/(2.d0*d4)
+cyup          write(*,*)'from abc: (-d2+cn1)/(2.d0*d4)',(-d2+cn1)/(2.d0*d4)
+cyup          write(*,*)'from abc: (-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
+cyup          write(*,*)'cninit12_n_gam ib=1 from abc: cn2p,cn2m',cn2p_ib1,cn2m_ib1
           
-          cn2new=(-d2+ioxm*cn1)/(2.d0*d4)
-	  write(*,*)'cninit12_n_gam cn2new=',cn2new,'iroot=',iroot
+          cn2new=(-d2+ioxm*sign_del*cn1)/(2.d0*d4)
+cyup       write(*,*)'cninit12_n_gam cn2new=',cn2new,'iroot=',iroot
 	  if(iroot.eq.1) then
 	      dnp=dabs(cn2-cn2new)
 c              write(*,*)'cninit12 dnp,epsmode',dnp,epsmode
@@ -1400,8 +1377,9 @@ c  if 3
         if (ib.gt.1) then
 c         write(*,*)'in cninit: cold plasma ib .gt.1 x,r.phi,ib',
 c     +   z,r,phi,ib
-          xb=x(z,r,phi,ib)
-          yb=y(z,r,phi,ib)
+          ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+          xb=x(z,r,phi,ibmx)
+          yb=y(z,r,phi,ibmx)
           xe=x(z,r,phi,1)
           ye=y(z,r,phi,1)
 
@@ -1426,10 +1404,6 @@ c          write(*,*)'in cninit12_n_gam s1,s2,s3,s4',s1,s2,s3,s4
 	  fd=f1b*delib+f0b ! see below
 	  gd=g1b*delib+g0b ! see below
 	  wd=w1b*delib+w0b ! see bolow
-            sign_delib=sign(1.d0,delib) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]  
 	  detin=gd**2-4.d0*fd*wd
 
 c       write(*,*)'in cninit12_n_gam f1b,delib,f0b,fd',f1b,delib,f0b,fd
@@ -1444,48 +1418,51 @@ c          write(*,*)'in cninit12_n_gam gd,fd,wd,detin',gd,fd,wd,detin
 	      return
 	  end if
 c          write(*,*)'cninit: gd,fd,wd,detin',gd,fd,wd,detin
-	  cn2p=(-gd+dsqrt(detin))/(2.d0*fd)
-	  cn2m=(-gd-dsqrt(detin))/(2.d0*fd)
+	  cn2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+	  cn2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
          
           if((cn2m.lt.0.d0).and.(cn2p.lt.0.d0)) then
+            if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
             write(*,*)'cninit12_n_gam two roots of the dispersion < 0'
             write(*,*)'cn2m,cn2p',cn2m,cn2p
             write(*,*)'the given wave can not exist in plasma'
+            endif ! outprint
 	    iraystop=1
 	    return
 	   endif
 
-	  write(*,*)'cninit12_n_gam ib.qt.1 cn2p,cn2m',cn2p,cn2m
-	  !!!pause
+cyup	  write(*,*)'cninit12_n_gam ib.qt.1 cn2p,cn2m',cn2p,cn2m
 c	  write(*,*)'in cninit fd,gd,wd',fd,gd,wd
 30	  iroot=iroot+1
 
-          write(*,*)'cninit12_n_gam iroot,cntang2',iroot,cntang2
+cyup          write(*,*)'cninit12_n_gam iroot,cntang2',iroot,cntang2
 
 	  if(iroot.eq.1) then
              cn2=cn2p
 	     if(cn2.lt.cntang2)then
-	        write(*,*)'cninit12_n_gam cn2p.lt.cntang2'
+cyup	        write(*,*)'cninit12_n_gam cn2p.lt.cntang2'
 	        go to 30
 	     end if
 	  else
              cn2=cn2m
 	     if(cn2.lt.cntang2)then
+	        if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
 	        write(*,*)'cninit12_n_gam cn2m.lt.cntang2'
 	        write(*,*)'the given wave can not exist in plasma'
+	        endif ! outprint
 	        iraystop=1
 	        return
 	     end if
 	  end if
 
-          write(*,*)'cninit12_n_gam cn2=',cn2
+cyup          write(*,*)'cninit12_n_gam cn2=',cn2
 	  cnrho2=cn2-cnteta**2-cnphi**2
 	  cnrho=dsqrt(cnrho2)   
           cnperp=cnrho
-          write(*,*)'cnperp=cnrho',cnperp
+cyup          write(*,*)'cnperp=cnrho',cnperp
 cSm050826
           cnperp=dsqrt(cn2-cnpar2)
-          write(*,*)'cnpar,dsqrt(cn2-cnpar2)',cnpar,dsqrt(cn2-cnpar2)
+cyup          write(*,*)'cnpar,dsqrt(cn2-cnpar2)',cnpar,dsqrt(cn2-cnpar2)
 c------------------------------------------------------------------
 c          write(*,*)'cnini12 ib>1 before call cnzcnr'
 c          write(*,*)'z,r,phi,cnteta,cnphi,cnrho',
@@ -1495,10 +1472,10 @@ c          write(*,*)'cninit12 after cnzcnr cnz,cnr,cm',cnz,cnr,cm
 
 c---------test begin
 cSm050906
-          cnpar_test=(bz*cnz+br*cnr+bphi*cm/r)/bmod
-          write(*,*)'cninit12_n_gam cnpar,cnpar_test', cnpar,cnpar_test
-          write(*,*)'cn2,cnz**2+cnr**2+(cm/r)**2',
-     &    cn2,cnz**2+cnr**2+(cm/r)**2
+cyup          cnpar_test=(bz*cnz+br*cnr+bphi*cm/r)/bmod
+cyup          write(*,*)'cninit12_n_gam cnpar,cnpar_test', cnpar,cnpar_test
+cyup          write(*,*)'cn2,cnz**2+cnr**2+(cm/r)**2',
+cyup     &    cn2,cnz**2+cnr**2+(cm/r)**2
 c---------test_end
 
 c---------------------------------------------------------------------
@@ -1571,10 +1548,10 @@ c         write(*,*)'fmina,gminb,wminc'
 c         write(*,*)fmina,gminb,wminc
 c-------------------------------------------------------------
           cn1=dsqrt(d2*d2-4.d0*d4*d0)
-          write(*,*)'(-d2+cn1)/(2.d0*d4)',(-d2+cn1)/(2.d0*d4)
-          write(*,*)'(-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
-          cn2new=(-d2+ioxm*cn1)/(2.d0*d4)
-	  write(*,*)'cn2new=',cn2new
+cyup          write(*,*)'(-d2+cn1)/(2.d0*d4)',(-d2+cn1)/(2.d0*d4)
+cyup          write(*,*)'(-d2-cn1)/(2.d0*d4)',(-d2-cn1)/(2.d0*d4)
+          cn2new=(-d2+ioxm*sign_del*cn1)/(2.d0*d4)
+cyup	  write(*,*)'cn2new=',cn2new
 	  if(iroot.eq.1) then
 	     dnp=dabs(cn2-cn2new)
 	     if (dnp.gt.epsmode)then
@@ -1583,7 +1560,9 @@ c-------------------------------------------------------------
 	  else
 	     dnm=dabs(cn2-cn2new)
 	     if (dnm.gt.epsmode)then
+	     if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
            write(*,*)'cninit12_n_gam given mode cannot exist in plasma'
+           endif ! outprint
 	        iraystop=1
 	        return
 	     end if
@@ -1595,15 +1574,15 @@ c end if 3
 c end if 0
  
   111 continue
-      write(*,*)'cninit12_n_gam FOUND: cn2=',cn2,cnz**2+cnr**2+(cm/r)**2
-      !!!pause
+cyup      write(*,*)'cninit12_n_gam FOUND: cn2=',cn2,cnz**2+cnr**2+(cm/r)**2
                                                               
       return
       end ! cninit12_n_gam
 
 
 
-      subroutine n_cold_gam(z,r,phi,gam,cn_p,cn_m,iraystop_p,iraystop_m)
+      subroutine n_cold_gam(z,r,phi,ib,gam,cn_p,cn_m,iraystop_p,
+     + iraystop_m)
 c----------------------------------------------------------------
 c     Used by cninit12/ioxm_n_npar section to find a matching ioxm
 c     that satisfies N(Npar,ioxm_n_npar) = N(gam,ioxm)
@@ -1628,10 +1607,13 @@ c          =1-y_i for ions      ib=i>1 (ib=i means a resonance
 c                               with this ion species is expected)
 c----------------------------------------------------------------     
       implicit none
+      
 c-----input
       real*8 z,r,phi, ! space coordinates of the given point
      *gam             ! the angle [radians] between the wave vector
                       ! and the magnetic field                      
+      ! ib  YuP[2018-05-24] Added ib as an input, see above
+      
 c-----output
       real*8 cn_p,cn_m    !roots cn_p=N(gam,ioxm=+1), cn_m=N(gam,ioxm=-1),  
       integer iraystop_p, !=0 the root with ioxm=+1 found
@@ -1642,6 +1624,10 @@ c-----output
 c-----locals
       real*8 ds,dc,ds2,dc2,
      &a,b,c,det,cn2_p,cn2_m
+     
+      real*8 delib, sign_del, y
+      integer ibmx !local
+      integer ib
 
       iraystop_p=0
       iraystop_m=0
@@ -1664,8 +1650,13 @@ c-----locals
         return
       endif
 
-
-      cn2_p=(-b+dsqrt(det))/(2.d0*a) !N**2, for given gam angle
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+      ibmx=ib !min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (can be electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in n_cold_gam
+      
+      cn2_p=(-b+sign_del*dsqrt(det))/(2.d0*a) !N**2, Corresp to ioxm=+1
       if(cn2_p.gt.0.d0)then
         cn_p=dsqrt(cn2_p) 
       else
@@ -1676,7 +1667,7 @@ c-----locals
         iraystop_p=1
       endif
 
-      cn2_m=(-b-dsqrt(det))/(2.d0*a) !N**2
+      cn2_m=(-b-sign_del*dsqrt(det))/(2.d0*a) !N**2  Corresp to ioxm=-1
       if(cn2_m.gt.0.d0)then
         cn_m=dsqrt(cn2_m) 
       else
@@ -1744,6 +1735,12 @@ c     f*cnper**4 +(2f*cnpar**2+g)*cnper**2+(f*cnpar**4+g*cnpar**2+w)=0
 c     f*cnper**4 +gnew*cnper**2+wnew=0
 c     gnew=2fcnpar**2+g, wnew=f*cnpar**4+g*cnpar**2+w
 c     in the following form cnper**2=(-gnew+,-*sqrt(gnew**2-4*f*wnew))/(2*f)
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+      ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in nper_npar_ioxm_n_npar
 c------------------------------------------------------------------
 c     Appleton - Hartry dispersion relation
       if (id_loc.eq.3) then ! id.eq.3
@@ -1766,10 +1763,6 @@ c------------------------------------------------------------------
          fd=f1e*dele+f0e
          gd=g1e*dele+g0e
          wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
          gnew=gd+2.d0*fd*cnpar2
          wnew=wd+gd*cnpar2+fd*cnpar4
@@ -1784,7 +1777,7 @@ c new coefficients
            return
          endif
 
-         cnper2=(-gd+ioxm_n_npar*dsqrt(detin))/(2.d0*fd)
+         cnper2=(-gd+ioxm_n_npar*sign_del*dsqrt(detin))/(2.d0*fd)
          if(cnper2.lt.0d0) then
             write(*,*)'2. nper_npar_ioxm_n_nparn cnper2<0'
             write(*,*)'N_perp^2 is negative for the given ioxm_n_npar=',
@@ -1822,10 +1815,6 @@ c         write(*,*)'nper_npar_ioxm_n_npar cold plasma ib=1 '
           !gd= (1-Ye)*[Npar^2 *(eps3-eps1) +eps2^2 -eps1^2 -eps1*eps3]
           wd=w1e*dele+w0e !== (1-Ye)*w
           !wd= (1-Ye)*[Npar^2 *(eps1^2-eps2^2-eps1*eps3) +eps3*(eps1^2-eps2^2)]
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
           gnew=gd+2.d0*fd*cnpar2
           wnew=wd+gd*cnpar2+fd*cnpar4
@@ -1841,7 +1830,7 @@ c new coefficients
           end if
 
           
-          cnper2=(-gd+ioxm_n_npar*dsqrt(detin))/(2.d0*fd) ! Nper^2(Npar)
+          cnper2=(-gd+ioxm_n_npar*sign_del*dsqrt(detin))/(2.d0*fd) !Nper^2(Npar)
           if(cnper2.lt.0.d0)then
             write(*,*)'2, nper_npar_ioxm_n_nparn cnper2<0'
             write(*,*)'N_perp^2 is negative for the given ioxm_n_npar=',
@@ -1861,8 +1850,9 @@ c new coefficients
         if(ib.gt.1) then
 c---------ib.gt.1 iones resonance condition may be
 c         write(*,*)'cold plasma ib .gt.1  '
-          xb=x(z,r,phi,ib)
-          yb=y(z,r,phi,ib)
+          ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+          xb=x(z,r,phi,ibmx)
+          yb=y(z,r,phi,ibmx)
           xe=x(z,r,phi,1)
           ye=y(z,r,phi,1)
           pype=xe/(1.d0+ye)
@@ -1882,10 +1872,6 @@ c         write(*,*)'cold plasma ib .gt.1  '
           fd=f1b*delib+f0b ! see below
           gd=g1b*delib+g0b ! see below
           wd=w1b*delib+w0b ! see below
-            sign_delib=sign(1.d0,delib) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]            
 c new coefficients
           gnew=gd+2.d0*fd*cnpar2
           wnew=wd+gd*cnpar2+fd*cnpar4
@@ -1900,7 +1886,7 @@ c new coefficients
             return
 	  end if
 
-          cnper2=(-gd+ioxm_n_npar*dsqrt(detin))/(2.d0*fd) ! Nper^2(Npar)
+          cnper2=(-gd+ioxm_n_npar*sign_del*dsqrt(detin))/(2.d0*fd) !Nper^2(Npar)
           if(cnper2.lt.0.d0) then
             write(*,*)'3. nper_npar_ioxm_n_nparn cnper2<0'
             write(*,*)'N_perp^2 is negative for the given ioxm_n_npar=',
@@ -1967,7 +1953,7 @@ cSAP090504
       cnpar2=cnpar*cnpar
       cntang2=cnteta*cnteta+cnphi*cnphi
       bmod=b(z,r,phi)
-      write(*,*)'cninit12 ioxm_n_npar=',ioxm_n_npar
+cyup      write(*,*)'cninit12 ioxm_n_npar=',ioxm_n_npar
       
       if(ioxm_n_npar.eq.0) then ! ioxm_n_npar=0  Use ioxm instead
 c-------------------------------------------------------------
@@ -1980,8 +1966,8 @@ c-------------------------------------------------------------------
 c       calculates the root N(N_par,ioxm_n_npar) for given ioxm_n_npar,
 c       then finds matching ioxm to get  N(N_par,ioxm_n_npar)=N(gam,ioxm)
 c-------------------------------------------------------------------
-        write(*,*)'cninit12/ioxm_n_npar: z,r,phi,cnpar,cnteta,cnphi',
-     &             z,r,phi,cnpar,cnteta,cnphi
+cyup        write(*,*)'cninit12/ioxm_n_npar: z,r,phi,cnpar,cnteta,cnphi',
+cyup     &             z,r,phi,cnpar,cnteta,cnphi
 c-----------------------------------------------------------------
         iroot=0 ! will be 1, or 2(if two matching ioxm are found)
 c------------------------------------------------------------------
@@ -1997,9 +1983,9 @@ c       dispersion relation cnpar=N_per(n_par)
 c------------------------------------------------------------------        
         call nper_npar_ioxm_n_npar(id_loc,z,r,phi,cnpar,
      &  cnper,iraystop) !ioxm_n_npar was set in one.i
-        write(*,*)'cninit12 after nper_npar_ioxm_n_npar'
-        write(*,*)'ioxm_n_npar,cnper,iraystop',
-     &             ioxm_n_npar,cnper,iraystop
+cyup        write(*,*)'cninit12 after nper_npar_ioxm_n_npar'
+cyup        write(*,*)'ioxm_n_npar,cnper,iraystop',
+cyup     &             ioxm_n_npar,cnper,iraystop
 c-------------------------------------------------------------------
         if(iraystop.eq.1) then
           write(*,*)'cninit12/ioxm_n_npar: no root N(Npar,ioxm_n_npar)'
@@ -2027,12 +2013,13 @@ cSAP091026 It was that for ksi=0 the refractive vector
 c          was directed opposite to grad(psi)
 c              cnrho=cnper*dcos(rad_ksi_nperp)
               cnrho=-cnper*dcos(rad_ksi_nperp)
-
+              if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
               write(*,*)'cninit12/i_n_poloidal=3 cnteta,cnphi,cnrho',
      &                                           cnteta,cnphi,cnrho
               write(*,*)'cninit12/ioxm_n_npar:  i_n_poloidal=3', 
      &        'rad_ksi_nperp,dcos(rad_ksi_nperp),cnper',
      &        rad_ksi_nperp,dcos(rad_ksi_nperp),cnper
+              endif ! outprint
 
 c              write(*,*)'cnteta**2+cnrho**2',cnteta**2+cnrho**2
 
@@ -2051,12 +2038,14 @@ c     &                   ksi_nperp,rad_ksi_nperp*180.d0/pi
 
           
           cn2_npar=cnper**2+cnpar**2
-          write(*,*)'cninit12/ioxm_n_npar: cn2_npar,cntang2',
-     +     cn2_npar,cntang2
+cyup          write(*,*)'cninit12/ioxm_n_npar: cn2_npar,cntang2',
+cyup     +     cn2_npar,cntang2
 
           if(cn2_npar.lt.cntang2)then
+            if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
             write(*,*)'cninit12/ioxm_n_npar: (cn2_npar.lt.cntang2)'
             write(*,*)'   no root N(Npar,ioxm_n_npar) > N_tang'
+            endif ! outprint
             iraystop=1
             return
           else
@@ -2071,9 +2060,9 @@ c--------------------------------------------------------------
 c           calculate refractive index components cnz,cnr,cm
 c           for given z,r,phi,cntheta,cnphi,cnrho
 c-------------------------------------------------------------- 
-            write(*,*)'cninit12/ioxm_n_npar: before cnzcnr'
-            write(*,*)'r,phi,cnteta,cnphi,cnrho',
-     &                 r,phi,cnteta,cnphi,cnrho
+cyup            write(*,*)'cninit12/ioxm_n_npar: before cnzcnr'
+cyup            write(*,*)'r,phi,cnteta,cnphi,cnrho',
+cyup     &                 r,phi,cnteta,cnphi,cnrho
 
 cSAP090601
 c           In this case ioxm_n_npar.ne.0 and
@@ -2094,8 +2083,8 @@ c           If yes, then it can creat the new problem.
 cSAP090601          
             id=id_loc_2 
 
-            write(*,*)'cninit12/ioxm_n_npar:  after cnzcnr'
-            write(*,*)'cnz,cnr,cm',cnz,cnr,cm
+cyup            write(*,*)'cninit12/ioxm_n_npar:  after cnzcnr'
+cyup            write(*,*)'cnz,cnr,cm',cnz,cnr,cm
 
 ccSAP091024------------------------------------------------test-------
 c            if (i_n_poloidal.eq.3) then !input N_parallel, ksi_nperp
@@ -2159,8 +2148,9 @@ c           calculate cold plasma roots roots
 c           cn_p=N(gam,ioxm=+1) and cn_m=N(gam,ioxm=-1)
 c           Trying to find a matching ioxm 
 c             for a found solution N(Npar,ioxm_n_npar)
-c-------------------------------------------------------------          
-            call n_cold_gam(z,r,phi,gam,cn_p,cn_m,
+c-------------------------------------------------------------  
+            ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+            call n_cold_gam(z,r,phi,ibmx,gam,cn_p,cn_m,
      &                      iraystop_p,iraystop_m)
 c-------------------------------------------------------------
 c           choose ioxm for which
@@ -2220,7 +2210,7 @@ c------------------------------------------------------------
       endif !ioxm_n_npar=0        ioxm_n_npar.eq.0
 
 c  10 continue
-      write(*,*)'end of subroutine cninit12 iraystop',iraystop
+cyup      write(*,*)'end of subroutine cninit12 iraystop',iraystop
       return
       end ! cninit12
 
@@ -2261,7 +2251,8 @@ c-----locals
      &pype,pyme,pyme2,pypb,
      &f1b,f0b,g1b,g0b,w1b,w0b,
      &cnprim
-      real*8 sign_delib
+      real*8 sign_del
+      integer ibmx !local
 
       integer
      &ioxmold,ioptmaz
@@ -2279,6 +2270,12 @@ c     f*cnper**4 +(2f*cnpar**2+g)*cnper**2+(f*cnpar**4+g*cnpar**2+w)=0
 c     f*cnper**4 +gnew*cnper**2+wnew=0
 c     gnew=2fcnpar**2+g, wnew=f*cnpar**4+g*cnpar**2+w
 c     in the following form cnper**2=(-gnew+,-*sqrt(gnew**2-4*f*wnew))/(2*f)
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+      ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib) ! in npernpar_test
 c------------------------------------------------------------------
 c     Appleton - Hartry dispersion relation
 c
@@ -2302,10 +2299,6 @@ c------------------------------------------------------------------
          fd=f1e*dele+f0e
          gd=g1e*dele+g0e
          wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
          gnew=gd+2.d0*fd*cnpar2
          wnew=wd+gd*cnpar2+fd*cnpar4
@@ -2317,8 +2310,8 @@ c new coefficients
             write(*,*)' 1 in npernpar detin  less then zero '
             return
          endif
-         cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-         cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+         cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+         cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c         WRITE(*,*)'Aplt cnpernpar cnper2p,cnper2m',cnper2p,cnper2m
       end if
 c end if 1
@@ -2346,10 +2339,6 @@ c         write(*,*)'cnint cold plasma ib=1 '
           fd=f1e*dele+f0e
           gd=g1e*dele+g0e
           wd=w1e*dele+w0e  !==(1-Y)*w
-            sign_delib=sign(1.d0,dele) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]           
 c new coefficients
           gnew=gd+2.d0*fd*cnpar2
           wnew=wd+gd*cnpar2+fd*cnpar4
@@ -2363,8 +2352,8 @@ c new coefficients
              cnper2m=-1.d0
              return
 	  end if
-          cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-          cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+          cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+          cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c          write(*,*)'in cninit.f  1 npernpar cnper2p,cnper2m',
 c     .    cnper2p,cnper2m
           goto 111
@@ -2375,8 +2364,9 @@ c     ib.gt.1 ions resonance condition may be
 c  if 3
         if (ib.gt.1) then
 c          write(*,*)'cold plasma ib .gt.1  '
-           xb=x(z,r,phi,ib)
-           yb=y(z,r,phi,ib)
+           ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+           xb=x(z,r,phi,ibmx)
+           yb=y(z,r,phi,ibmx)
            xe=x(z,r,phi,1)
            ye=y(z,r,phi,1)
            pype=xe/(1.d0+ye)
@@ -2393,13 +2383,9 @@ c          write(*,*)'cold plasma ib .gt.1  '
 	   w1b=cnpar2*(-s4*(s1-pyme2)+(s2-pype)*(s3-pyme))+
      1	     s4*(s2-pype)*(s3-pyme)
            w0b=cnpar2*(pypb*s4-xb*(s3-pyme))-s4*(s3-pyme)*xb
-           fd=f1b*delib+f0b ! see below
-           gd=g1b*delib+g0b ! see below
-           wd=w1b*delib+w0b ! see below
-            sign_delib=sign(1.d0,delib) ! YuP[07-2017]	  
-            fd=fd*sign_delib ! YuP[07-2017]  
-            gd=gd*sign_delib ! YuP[07-2017]  
-            wd=wd*sign_delib ! YuP[07-2017]             
+           fd=f1b*delib+f0b
+           gd=g1b*delib+g0b
+           wd=w1b*delib+w0b
 c new coefficients
            gnew=gd+2.d0*fd*cnpar2
            wnew=wd+gd*cnpar2+fd*cnpar4
@@ -2411,8 +2397,8 @@ c new coefficients
               write(*,*)' 3 in dinit detin  less then zero '
               return
            end if
-           cnper2p=(-gd+dsqrt(detin))/(2.d0*fd)
-           cnper2m=(-gd-dsqrt(detin))/(2.d0*fd)
+           cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
+           cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c        write(*,*)'in npernpar ib.qt.1 cnper2p,cnper2m',cnper2p,cnper2m
            goto 111
         end if

@@ -162,34 +162,34 @@ c --- inquire about dimension sizes:#species,grid size---
       
       if (nspec.gt.nspeca) then
          write(*,*)'*************************************************'
-         write(*,*)'in partner.f in read_transport_prof' 
-         write(*,*)'nspec > nspeca. Need nspec.le.nspeca'
-         write(*,*)'nspeca = ',nspeca,' nspec = ',nspec 
-         write(*,*)'Please increase parameter nspeca in the genray'
-         write(*,*)'file onewto_prof.i and recompile genray'
-         write(*,*)'*************************************************'
+         WRITE(*,*)'in partner.f in read_transport_prof' 
+         WRITE(*,*)'nspec > nspeca. Need nspec.le.nspeca'
+         WRITE(*,*)'nspeca = ',nspeca,' nspec = ',nspec 
+         WRITE(*,*)'Please increase parameter nspeca in the genray'
+         WRITE(*,*)'file onewto_prof.i and recompile genray'
+         WRITE(*,*)'*************************************************'
          STOP 'in subroutine read_transport_prof'
       endif
 
       if (nspec.gt.nbulka) then
          write(*,*)'*************************************************'
-         write(*,*)'in partner.f in read_transport_prof' 
-         write(*,*)'nspec > nbulka. Need nspec.le.nbulka'
-         write(*,*)'nbulka = ',nbulka,' nspec = ',nspec 
-         write(*,*)'Please increase parameter nbulka in the genray'
-         write(*,*)'file param.i and recompile genray'
-         write(*,*)'*************************************************'
+         WRITE(*,*)'in partner.f in read_transport_prof' 
+         WRITE(*,*)'nspec > nbulka. Need nspec.le.nbulka'
+         WRITE(*,*)'nbulka = ',nbulka,' nspec = ',nspec 
+         WRITE(*,*)'Please increase parameter nbulka in the genray'
+         WRITE(*,*)'file param.i and recompile genray'
+         WRITE(*,*)'*************************************************'
          STOP 'in subroutine read_transport_prof'
       endif
 
       if (nj.gt.nja) then
          write(*,*)'*************************************************'
-         write(*,*)'in partner.f in read_transport_prof' 
-         write(*,*)'nj > nja. but it should be nj.le.nja'
-         write(*,*)'nja = ',nja,' nj = ',nj 
-         write(*,*)'Please increase parameter nja in the file'
-         write(*,*)'onewto_prof.i and recompile genray'
-         write(*,*)'*************************************************'
+         WRITE(*,*)'in partner.f in read_transport_prof' 
+         WRITE(*,*)'nj > nja. but it should be nj.le.nja'
+         WRITE(*,*)'nja = ',nja,' nj = ',nj 
+         WRITE(*,*)'Please increase parameter nja in the file'
+         WRITE(*,*)'onewto_prof.i and recompile genray'
+         WRITE(*,*)'*************************************************'
          STOP 'in subroutine read_transport_prof'
       endif
       

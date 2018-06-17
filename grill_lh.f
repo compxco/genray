@@ -1307,8 +1307,6 @@ c        if (iraystop.eq.0) then
         n_gam=500        ! set the number of angle points at the interval
                          ! (0,2*pi) at the wave normal surface plot
 
-c        call wave_normal_surface(z,r,phi,cnpar,cnper,0.d0,n_gam,ib)
-
       endif
       write(*,*)'grill_lh.f in  rho_ini_LHFW after '
       write(*,*)'plot_disp_cold_grill and wave_normal_surface'

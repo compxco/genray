@@ -43,8 +43,8 @@ c      CHARACTER*7 LABEL
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'contour2d: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'contour2d: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
 
 c-----Advance plotter to a new page or panel, clearing the screen if
@@ -301,7 +301,8 @@ c      xmax=-1.e38
       end
 
 
-
+c====================================================================
+c====================================================================
       subroutine plotinit
 c-----initialise the otput file plot.ps for pgplot
       character*100 line,line_
@@ -311,8 +312,8 @@ c-----initialise the otput file plot.ps for pgplot
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'plotinit: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'plotinit: TRYING TO PGOPEN at rank=',myrank
+         STOP
       endif     
 c-----Open a graphics device for PGPLOT output
 c     INTEGER FUNCTION PGOPEN (DEVICE)
@@ -326,15 +327,15 @@ c      write(*,*) 'PLOTINIT before PGOPEN'
 c      ier=PGOPEN('plot.ps/VPS')   
 c      ier=PGOPEN('plot.ps/PS') 
 c      ier=PGOPEN('?')
+      write(*,*)'in plotinit after PGOPEN: ier=',ier
       if (ier .LE. 0 ) then
-         write(*,*)'in plotini after PGOPEN'
-         write(*,*)'ier should be positive but ier.le.0 ier=',ier
-         stop
+         WRITE(*,*)'ier should be positive but ier.le.0 ier=',ier
+         STOP
       endif
  
 c     PGSCI -- set color index
       CALL PGSCI(1)
-      write(*,*) 'PLTINIT-1 ier=1 is OK: ier=',ier
+      write(*,*)'in plotinit/PGOPEN()  ier=1 is OK: ier=',ier
            
  1000  format(a80)
  1001  format(a80,'$')
@@ -342,6 +343,8 @@ c     PGSCI -- set color index
       return
       end
 
+c=====================================================================
+c=====================================================================
       subroutine plotend
 c-----close the work with pgplot    
 
@@ -349,19 +352,20 @@ c-----close the work with pgplot
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'plotend: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'plotend/PGCLOS: TRYING TO close at rank=',myrank
+         STOP
       endif     
    
 c     Close the currently selected graphics device.
       CALL PGCLOS
+      write(*,*)'plotend after PGCLOS'
 
       close(unit=100)
       return
       end
 
-
-
+c=====================================================================
+c=====================================================================
       subroutine plot1dt(x,y,nxa,nya,nx,ny,ll,ymin,ymax,ilabx,ilaby)
 ctest
 cmnt   This routine gives one plot of j=1,ny curves specified by
@@ -397,8 +401,8 @@ c      parameter (maxref=1000)
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'plot1d: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'plot1d: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
 
 c      write(*,*)'begin of plot1dt'
@@ -563,8 +567,8 @@ c      parameter (maxref=1000)
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'plot1dt_param: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'plot1dt_param: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
 
 c      write(*,*)'begin of plot1dt'
@@ -747,33 +751,33 @@ c      CHARACTER*7 LABEL
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'contour2d_S: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'contour2d_S: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
 
       if(nxmax.gt.nxmax_a) then
-        write(*,*)'in contour2d_S nxmax >nxmax_a'
-        write(*,*)'It should be nxmax.le.nxmax_a'
-        write(*,*)' nxmax,nxmax_a',nxmax,nxmax_a
-        write(*,*)'Please change arguments'
-        stop 'contour2d_S'
+        WRITE(*,*)'in contour2d_S nxmax >nxmax_a'
+        WRITE(*,*)'It should be nxmax.le.nxmax_a'
+        WRITE(*,*)' nxmax,nxmax_a',nxmax,nxmax_a
+        WRITE(*,*)'Please change arguments'
+        STOP 'contour2d_S'
       endif
 
       if(nymax.gt.nymax_a) then
-        write(*,*)'in contour2d_S nymax > nymax_a'
-        write(*,*)'It should be nymax.le.nymax_a'
-        write(*,*)'nymax,nymax_a',nymax,nymax_a
-        write(*,*)'Please change arguments'
-        write(*,*)'nymax,nymax_a',nymax,nymax_a
-        stop 'contour2d_S'
+        WRITE(*,*)'in contour2d_S nymax > nymax_a'
+        WRITE(*,*)'It should be nymax.le.nymax_a'
+        WRITE(*,*)'nymax,nymax_a',nymax,nymax_a
+        WRITE(*,*)'Please change arguments'
+        WRITE(*,*)'nymax,nymax_a',nymax,nymax_a
+        STOP 'contour2d_S'
       endif
 
       if(n_contour.gt.n_contour_a) then
-        write(*,*)'in contour2d_S n_contour > n_contour_a'
-        write(*,*)'It should be n_contour.le.n_contour_a'
-        write(*,*)'n_contour,n_contour_a',n_contour,n_contour_a
-        write(*,*)'Please change arguments'
-        stop 'contour2d_S'
+        WRITE(*,*)'in contour2d_S n_contour > n_contour_a'
+        WRITE(*,*)'It should be n_contour.le.n_contour_a'
+        WRITE(*,*)'n_contour,n_contour_a',n_contour,n_contour_a
+        WRITE(*,*)'Please change arguments'
+        STOP 'contour2d_S'
       endif
 
 c-----Advance plotter to a new page or panel, clearing the screen if
@@ -1051,8 +1055,8 @@ c      parameter (maxref=1000)
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-      write(*,*)'plot1dt_marker_param:TRYING TO PGOPEN from rank',myrank
-         stop
+      WRITE(*,*)'plot1dt_marker_param:TRYING TO PGPAGE at rank',myrank
+         STOP
       endif     
 
 c      write(*,*)'begin of plot1dt plot1dt_marker_param'
@@ -1249,8 +1253,8 @@ c      CHARACTER*7 LABEL
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'contour2d_test: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'contour2d_test: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
       
       write(*,*)' contour2d_test nxmax,nymax',nxmax,nymax
@@ -1479,8 +1483,8 @@ c-----input
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'contour2d_test_1:TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'contour2d_test_1:TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
       
       
@@ -1547,8 +1551,8 @@ c      CHARACTER*7 LABEL
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.ne.0)then
-         write(*,*)'contour2d_1: TRYING TO PGOPEN from rank=',myrank
-         stop
+         WRITE(*,*)'contour2d_1: TRYING TO PGPAGE at rank=',myrank
+         STOP
       endif     
       
 c-----Advance plotter to a new page or panel, clearing the screen if

@@ -187,6 +187,17 @@ c-----------------------------------------------------------------
 c analytical calculations of hamiltonian derivatives
 c-----------------------------------------------------------------
 	   bmod=b(z,r,phi)
+
+	! For id=1 or 2,   
+      ! Note: a=A*delta, b=B*delta, c=C*delta (where delta=1-Y)
+      ! and sqrt(det)= sqrt(B*B-4*A*C) * |delta|
+      ! in   N^2 = (-b +ioxm*sqrt(b*b-4*a*c))/(2a)
+      ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+      delib= 1.d0-y(z,r,phi,ibmx) ! 1-Y (electrons or ions)
+      sign_del=1.d0 !sign(1.d0,delib)
+      oxm= ioxm*sign_del ! replaced ioxm by oxm below
+	   
+	   
 	   gam=gamma1(z,r,phi,cnz,cnr,cm)
            ds=dsin(gam)
            dc=dcos(gam)
@@ -271,9 +282,10 @@ c  dispersion relation is multiplied by delib
 c
 	   pc=1.+dc2
          call s(z,r,phi,s1,s2,s3,s4,s6,s7)
-         xib=x(z,r,phi,ib)
-         yib=y(z,r,phi,ib)
-           delib=1.-yib
+         ibmx=min(ib,nbulk) ! safety check: not to exceed nbulk
+         xib=x(z,r,phi,ibmx)
+         yib=y(z,r,phi,ibmx)
+         delib=1.-yib
 
 c  ib =1 (cyclotron resonance conditions dele=0 may be
 c         realised in plasma, dispersion relation is
@@ -294,9 +306,9 @@ c  if 2 begin
 	   c0e=-xe*s4*(s6-peyp)
 	   c1e=s4*s3*(s6-peyp)
 	   dele=1.-ye
-	     ad=(dele*a1e+a0e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	     bd=(dele*b1e+b0e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	     cd=(dele*c1e+c0e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
+	     ad=dele*a1e+a0e
+	     bd=dele*b1e+b0e
+	     cd=dele*c1e+c0e
 c----------------------------------------------------------------------
 	     da1edc=-s7+s4
 	     da0edc=peyp
@@ -305,9 +317,9 @@ c----------------------------------------------------------------------
 	     dc1edc=0.d0
 	     dc0edc=0.d0
 
-	     dadc2=(dele*da1edc+da0edc)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	     dbdc2=(dele*db1edc+db0edc)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	     dcdc2=(dele*dc1edc+dc0edc)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
+	     dadc2=dele*da1edc+da0edc
+	     dbdc2=dele*db1edc+db0edc
+	     dcdc2=dele*dc1edc+dc0edc
 c-------------------------------------------------------------------
       end if
 c  if 2 end
@@ -339,9 +351,9 @@ c  if 3 begin
 	   c0b=-xib*s4*(s3-peym)
 	   c1b=s4*(s2-peyp)*(s3-peym)
 	   delib=1.-yib
-	     ad=(delib*a1b+a0b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-	     bd=(delib*b1b+b0b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-	     cd=(delib*c1b+c0b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
+	     ad=delib*a1b+a0b
+	     bd=delib*b1b+b0b
+	     cd=delib*c1b+c0b
 c--------------------------------------------------------------------
 	     da1bdc=-(s1-peym2)+s4
 	     da0bdc=pbyp
@@ -350,9 +362,9 @@ c--------------------------------------------------------------------
 	     dc1bdc=0.d0
 	     dc0bdc=0.d0
 
-	     dadc2=(delib*da1bdc+da0bdc)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-	     dbdc2=(delib*db1bdc+db0bdc)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
- 	     dcdc2=(delib*dc1bdc+dc0bdc)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
+	     dadc2=delib*da1bdc+da0bdc
+	     dbdc2=delib*db1bdc+db0bdc
+ 	     dcdc2=delib*dc1bdc+dc0bdc
 c-------------------------------------------- -----------0-----------
       end if
 c  if 3 end
@@ -362,7 +374,7 @@ c-----------------------------------------------------------------
 c
 c  dispersion relation a*n**4+b*n**2+c=0
 c
-          ddd=ad*cn2*cn2+bd*cn2+cd
+          ddd= ad*cn2*cn2 +bd*cn2 +cd
              if (dabs(ddd).lt.epsten) then
 	       goto 60
 	     end if
@@ -377,7 +389,7 @@ c  Sometimes ioxm_n_npar is used.
 c  Need to fix?  Maybe not - the matching ioxm
 c  [ such that N(N_par,ioxm_n_npar)=N(gam,ioxm) ]
 c  should be found in cninit12/nper_npar_ioxm_n_npar
-         ddd=cn2-(-bd+ioxm*dsqrt(bd*bd-4.*ad*cd))/(2.*ad)
+         ddd=cn2-(-bd+oxm*dsqrt(bd*bd-4.*ad*cd))/(2.*ad)
              if (dabs(ddd).lt.epsten) then
 	       goto 60
 	     end if
@@ -469,12 +481,12 @@ c if 7 begin
      1    	       ds3dyi*s4*(s6-xe/(1.+ye))-ds6dyi*s4*s3
                dc0eyi=xe*ds4dyi*(s6-xe/(1.+ye))+ds6dyi*xe*s4
 
-	         dadxi=(dele*da1exi+da0exi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	         dbdxi=(dele*db1exi+db0exi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-	         dcdxi=(dele*dc1exi+dc0exi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dadyi=(dele*da1eyi+da0eyi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dbdyi=(dele*db1eyi+db0eyi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dcdyi=(dele*dc1eyi+dc0eyi)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
+	         dadxi=dele*da1exi+da0exi
+	         dbdxi=dele*db1exi+db0exi
+	         dcdxi=dele*dc1exi+dc0exi
+                 dadyi=dele*da1eyi+da0eyi
+                 dbdyi=dele*db1eyi+db0eyi
+                 dcdyi=dele*dc1eyi+dc0eyi
 
 	       goto 30
 	     end if
@@ -505,12 +517,12 @@ c if 8 begin
      1    	       ds3dyi*(s2-xe/(1.+ye)))
                dc0byi=xib*s4*ds3dyi
 
-                 dadxi=(delib*da1bxi+da0bxi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdxi=(delib*db1bxi+db0bxi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdxi=(delib*dc1bxi+dc0bxi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dadyi=(delib*da1byi+da0byi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdyi=(delib*db1byi+db0byi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdyi=(delib*dc1byi+dc0byi)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
+                 dadxi=delib*da1bxi+da0bxi
+                 dbdxi=delib*db1bxi+db0bxi
+                 dcdxi=delib*dc1bxi+dc0bxi
+                 dadyi=delib*da1byi+da0byi
+                 dbdyi=delib*db1byi+db0byi
+                 dcdyi=delib*dc1byi+dc0byi
 
 	       goto 30
 	     end if
@@ -568,12 +580,12 @@ c if 9 begin
      1                 ds3dyb*(s2-xe/(1.+ye)))
                dc0byb=xib*s4*ds3dyb
 
-                 dadxi=(delib*da1bxb+da0bxb)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdxi=(delib*db1bxb+db0bxb)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdxi=(delib*dc1bxb+dc0bxb)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dadyi=(delib*da1byb+da0byb-a1b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdyi=(delib*db1byb+db0byb-b1b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdyi=(delib*dc1byb+dc0byb-c1b)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
+                 dadxi=delib*da1bxb+da0bxb
+                 dbdxi=delib*db1bxb+db0bxb
+                 dcdxi=delib*dc1bxb+dc0bxb
+                 dadyi=delib*da1byb+da0byb-a1b
+                 dbdyi=delib*db1byb+db0byb-b1b
+                 dcdyi=delib*dc1byb+dc0byb-c1b
 
 	     end if
 c if 9 end
@@ -640,12 +652,12 @@ c
      -                    xe/(1.-ye)**2*(s2-xe/(1.+ye)))
                dc0bye=xib*s4*xe/(1.-ye)**2
 
-                 dadxi=(delib*da1bxe+da0bxe)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdxi=(delib*db1bxe+db0bxe)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdxi=(delib*dc1bxe+dc0bxe)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dadyi=(delib*da1bye+da0bye)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dbdyi=(delib*db1bye+db0bye)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
-                 dcdyi=(delib*dc1bye+dc0bye)*sign(1.d0,delib) !YuP[07-2017] corrected by sign()
+                 dadxi=delib*da1bxe+da0bxe
+                 dbdxi=delib*db1bxe+db0bxe
+                 dcdxi=delib*dc1bxe+dc0bxe
+                 dadyi=delib*da1bye+da0bye
+                 dbdyi=delib*db1bye+db0bye
+                 dcdyi=delib*dc1bye+dc0bye
 
                goto 40
 	     end if
@@ -673,12 +685,12 @@ c
                dc1eye=-ds4dye*s3*(s6-xe/(1.+ye))+s4*s3*xe/(1.+ye)**2
                dc0eye=-xe*xe*s4/(1.+ye)**2
 
-                 dadxi=(dele*da1exe+da0exe)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dbdxi=(dele*db1exe+db0exe)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dcdxi=(dele*dc1exe+dc0exe)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dadyi=(dele*da1eye+da0eye-a1e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dbdyi=(dele*db1eye+db0eye-b1e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
-                 dcdyi=(dele*dc1eye+dc0eye-c1e)*sign(1.d0,dele) !YuP[07-2017] corrected by sign()
+                 dadxi=dele*da1exe+da0exe
+                 dbdxi=dele*db1exe+db0exe
+                 dcdxi=dele*dc1exe+dc0exe
+                 dadyi=dele*da1eye+da0eye-a1e
+                 dbdyi=dele*db1eye+db0eye-b1e
+                 dcdyi=dele*dc1eye+dc0eye-c1e
 
 
 	     end if
@@ -746,23 +758,23 @@ c
          det=dsqrt(bd*bd-4.*ad*cd)
          p4=0.5/(ad*ad)
          p5=1./det
-         p6=-bd+ioxm*det
+         p6=-bd+oxm*det
 c------------------------------------------------------------------
-         p7=ioxm*(bd*dbdz-2.*dadz*cd-2.*ad*dcdz)*p5
+         p7=oxm*(bd*dbdz-2.*dadz*cd-2.*ad*dcdz)*p5
          dddz=-((-dbdz+p7)*ad-dadz*p6)*p4
-         p7=ioxm*(bd*dbdr-2.*dadr*cd-2.*ad*dcdr)*p5
+         p7=oxm*(bd*dbdr-2.*dadr*cd-2.*ad*dcdr)*p5
          dddr=-((-dbdr+p7)*ad-dadr*p6)*p4-
      1		2.*cm**2/(r**3)
-         p7=ioxm*(bd*dbdphi-2.*dadphi*cd-2.*ad*dcdphi)*p5
+         p7=oxm*(bd*dbdphi-2.*dadphi*cd-2.*ad*dcdphi)*p5
          dddphi=-((-dbdphi+p7)*ad-dadphi*p6)*p4
 
-         p7=ioxm*(bd*dbdnz-2.*dadnz*cd-2.*ad*dcdnz)*p5
+         p7=oxm*(bd*dbdnz-2.*dadnz*cd-2.*ad*dcdnz)*p5
           dddcnz=2.*cnz-
      1      	 ((-dbdnz+p7)*ad-dadnz*p6)*p4
-         p7=ioxm*(bd*dbdnr-2.*dadnr*cd-2.*ad*dcdnr)*p5
+         p7=oxm*(bd*dbdnr-2.*dadnr*cd-2.*ad*dcdnr)*p5
           dddcnr=2.*cnr-
      1      	 ((-dbdnr+p7)*ad-dadnr*p6)*p4
-         p7=ioxm*(bd*dbdm-2.*dadm*cd-2.*ad*dcdm)*p5
+         p7=oxm*(bd*dbdm-2.*dadm*cd-2.*ad*dcdm)*p5
           dddcm=2.*cm/(r*r)-
      1      	 ((-dbdm+p7)*ad-dadm*p6)*p4
 c--------------------------------------------------------------------

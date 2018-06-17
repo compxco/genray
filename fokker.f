@@ -336,7 +336,7 @@ c              write(*,*)'fokker dhot j,dv',j,dv
            enddo
 
            if (dnormh.eq.0.d0) then
-              write(*,*) "Prblm with total hot tail density. Check nml."
+              WRITE(*,*) "Prblm with total hot tail density. Check nml."
               STOP
            endif
 
@@ -380,7 +380,7 @@ c       Add in beam component
            enddo
 
            if (dnormb.eq.0.d0) then
-              write(*,*) "Prblm with total beam, density. Check nml."
+              WRITE(*,*) "Prblm with total beam, density. Check nml."
               STOP
            endif
                

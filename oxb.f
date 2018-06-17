@@ -2372,7 +2372,7 @@ c-----local
       endif
 
  10   continue
-      write(*,*)'after 10 i_ox_conversion',i_ox_conversion
+cyup      write(*,*)'after 10 i_ox_conversion',i_ox_conversion
       return
       end     
 

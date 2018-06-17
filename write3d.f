@@ -160,8 +160,6 @@ c-----the output ray data for mnemonic.nc netCDF file
 
       nrayelt_nc(irayl)=nrayelt
 
-      write(*,*)'write3d irayl,nrayelt',irayl,nrayelt
-
       if (nrayelt.eq.0) goto 10
 
       do is=1,nrayelt
@@ -211,7 +209,7 @@ c     &                          is,salphas(is,i),salphal_nc(is,irayl)
            enddo
          else
            salphal_nc(is,irayl)=salphal(is)
-         endif!(iabsorp.eq.3.or.iabsorp.eq.9)=91, =92 
+         endif !(iabsorp.eq.3.or.iabsorp.eq.9)=91, =92 
 
 c         salphal_nc(is,irayl)=salphal(is)
 
@@ -272,7 +270,7 @@ c--------the data for OX conversion
       w_tot_pow_absorb_at_refl_nc=w_tot_pow_absorb_at_refl
 
  10   continue
-      write(*,*)'write3d after 10 irayl,nrayelt',irayl,nrayelt
+cyup      write(*,*)'write3d after 10 irayl,nrayelt',irayl,nrayelt
        
       return
       end

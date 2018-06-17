@@ -154,10 +154,10 @@ C*** if relres is 0, then it was never set, and use the medium option by default
       elseif (relres.eq.4) then
         if (errabs0.eq.0 .and. errrel0.eq.0 .and. navg.eq.0 .and. 
      +    diff_err.eq.0) then
-           write(*,*) 'ERROR -- id=14, and relres=4, but errabs0,',
+           WRITE(*,*) 'ERROR -- id=14, and relres=4, but errabs0,',
      +       'errrel0,navg, and diff_err are all 0. '
-           write(*,*) 'Set them manually in genray.dat'
-           stop
+           WRITE(*,*) 'Set them manually in genray.dat'
+           STOP
         endif
       endif         
 
