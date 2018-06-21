@@ -57,23 +57,22 @@ SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
 		write3d.f x.f   y.f wconvini.f zcunix.f\
 		zfunc.f   zr_psith.f zfun_cur.f
 OBJECTS=	$(SOURCES:.f=.o)
-F90SRCS=	kind_spec.f90
+F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90 
 F90OBJS=	$(F90SRCS:.f90=.o)
 LOCATION=	-L/usr/lib64  -L/home/bobh/pgplot/pgplot_build_140331
-#LOCATION=	-L/usr/lib64  -L/usr/local/pgplot
-##LOCATION  =  -L/usr/local/netcdf-3.5.0/lib -L/usr/X11R6/lib -L/usr/local/pgplot  -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
+#LOCATION  =  -L/usr/local/netcdf-3.5.0/lib -L/usr/X11R6/lib -L/usr/local/pgplot  -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 #LIBRARIES=	-lX11 -lnetcdf -lpgplot
 
 LIBRARIES=	-lX11 -lnetcdff -lnetcdf -lpgplot
 #LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
-INCLUDE=  -I/usr/include
+INCLUDE=/usr/include
 DEBUG=		
 #BH100214:  -ieee not working with gfortran? CSPECIAL= -ieee -frecord-marker=4	
-CSPECIAL= -O1 -frecord-marker=4  -fno-align-commons	
+CSPECIAL= -O3 -frecord-marker=4  -fno-align-commons	
 BSPECIAL=	
 
 #COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE)
-COMPILE=	$(COMPILER) -c $(CSPECIAL) $(INCLUDE)
+COMPILE=	$(COMPILER) -c $(CSPECIAL) -I $(INCLUDE)
 #BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL) $(DEBUG)
 BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL)
 PROTECT=	chmod 755

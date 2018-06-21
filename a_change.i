@@ -8,8 +8,12 @@ c     This file records changes in the code
 c
 c
 c***********************************************************************
-c[190] version="genray_v10.12_180529"
 
+c[191] Fixed an argument list dimensioning in call to
+c[191] lh_bonoli_disp.f, which made no change in results for test7.1
+c[191] of this dispersion relation.  [BH180620]
+
+c[190] version="genray_v10.12_180529"
 c[190] Reversed changes made in [187]. 
 In the manual, the two cold plasma roots N**2 
 (for dispersion id=2) are described as

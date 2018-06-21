@@ -1441,8 +1441,8 @@ c-----locals
      &d_npar_dz,d_npar_dr,d_npar_dphi,
      &d_npar_dcnz,d_npar_dcnr,d_npar_dcm,
      &d_nperp_dw,d_npar_dw,
-     &d_x_dr_ar,d_x_dz_ar,d_x_dphi_ar,              !
-     &d_y_dr_ar,d_y_dz_ar,d_y_dphi_ar,              !
+cBH180620     &d_x_dr_ar,d_x_dz_ar,d_x_dphi_ar,              !
+cBH180620     &d_y_dr_ar,d_y_dz_ar,d_y_dphi_ar,              !
      &d_eps_par_dr,d_eps_par_dz,d_eps_par_dphi,
      &d_eps_perp_dr,d_eps_perp_dz,d_eps_perp_dphi,
      &eps_perp,eps_par,eps_xy, 
@@ -1457,6 +1457,9 @@ c-----locals
 c-----externals
       real*8 b,x,y,gamma1,cn
       real*8, dimension(1:nbulk) :: x_ar,y_ar!
+cBH180620
+      real*8, dimension(1:nbulk) :: d_x_dr_ar,d_x_dz_ar,d_x_dphi_ar 
+      real*8, dimension(1:nbulk) :: d_y_dr_ar,d_y_dz_ar,d_y_dphi_ar 
 
       write(*,*)'in dddw_analitic'
 
