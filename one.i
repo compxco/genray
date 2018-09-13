@@ -113,7 +113,7 @@ c     iabsorp -choice of Imag(N_perp)
 c             (N_perp is the perpendicular refractive index)
 c              iabsorp=1 for EC waves from Mazzucato solver
 c               =2 for LH waves, =3 for FW waves
-c For use with Abhay Ram's dispersion relation (id=14) parameters to
+c For use with Abhay Ram\'s dispersion relation (id=14) parameters to
 c control the integration routipne for the Trubnikov integral.
 c
 c relres offers 4 choices for the resolution to use for the relativistic

@@ -9,6 +9,16 @@ c
 c
 c***********************************************************************
 
+c[192] version="genray_v10.12_180912"
+c[192] Fixed bugs related to MPI implementation 
+c[192] of ADJ-related subroutines (i_adj=1).
+c[192] The bugs resulted in zero current. 
+c[192] With this fix, the file 'adjout' (usually a large file)
+c[192] is only recordered by one core (myrank=0), and 
+c[192] read also by one core, and then MPI-broadcasted to other cores.
+c[192] See "write (iout5,...)" and "read (iout5,...)".
+c[192] YuP[2018-09-12].
+
 c[191] Fixed an argument list dimensioning in call to
 c[191] lh_bonoli_disp.f, which made no change in results for test7.1
 c[191] of this dispersion relation.  [BH180620]

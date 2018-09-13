@@ -836,22 +836,19 @@ C-----------------------------------------------
       return
       end subroutine maxwel
 
-      subroutine operinit
+c      subroutine operinit ! not used
 C...Translated by Pacific-Sierra Research VAST-90 2.06G2  09:55:56   6/14/01
 C...Switches: -p4 -yb
-      use kind_spec
-
-      implicit none
+c      use kind_spec
+c      implicit none
 C-----------------------------------------------
 C   L o c a l   V a r i a b l e s
 C-----------------------------------------------
 C-----------------------------------------------
-
-      open(unit=20, file='adjout', form='unformatted', status='unknown')
-      open(unit=29, file='adjinp', form='unformatted', status='old')
-
-      return
-      end subroutine operinit
+c      open(unit=20, file='adjout', form='unformatted', status='unknown')
+c      open(unit=29, file='adjinp', form='unformatted', status='old')
+c      return
+c      end subroutine operinit ! not used
 
 
       subroutine pot(ua,du,c,fm,chil,nmax,nmax1,legjy,psid,fla,ijy)
@@ -1188,7 +1185,7 @@ C-------------------------------------------
      & npsi0,      !number of radial points
      & iout3,      !number of input file='adjinp',
      & iout4,      !number of output file='adjout',
-     & iout5,      !write (iout5, 3000) psis(np), dene, teme
+     & iout5,      !write(iout5,3000) psis(np), dene, teme
      & iout7,
      & iout8,      !if(np=1)write(iout8,3030)((chi(i,n),i=0,imax-1),n=0,nmax-1)
      & iswchi      !=0  chi(:imax-1,:nmax-1) = 0
@@ -1244,6 +1241,9 @@ C-----------------------------------------------
 c-----local
       real(kind=dp) :: rho_loc,unorm,zi,c2,eps
 C-----------------------------------------------
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+
 c
 c   Common block for Comdynray
 c
@@ -1415,7 +1415,7 @@ c      call hpalloc(memptr,memsize,ierc,1)
 c         ALLOCATE(memory(memsize),stat=ierc)
           ALLOCATE(memory(0:memsize),stat=ierc)
          if (ierc /= 0) then
-            print *, 'memory could not be allocated in runa'
+            PRINT *, 'memory could not be allocated in runa'
             return
          endif
       endif
@@ -1424,11 +1424,15 @@ c      call bcast (memory, memsize)
 
 c      write(*,*)'in runa before read thetps iout3',iout3
 
-      read (iout3, 2020) thetps
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout3, 2020) thetps ! in runa
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'in runa thetps',thetps
 
-      read (iout3, 2020) thetpe
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout3, 2020) thetpe ! in runa
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'in runa thetpe',thetpe
      
@@ -1437,13 +1441,17 @@ c      write(*,*)'in runa npsi0',npsi0
       do np = 1, npsi0   
          write(*,*)'runa np',np
          
-         read (iout3, 2010) psis(np)
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2010) psis(np) ! in runa
+         !endif  !On myrank=0   ! myrank=0
 
 c         write(*,*)'runa psis(np)',psis(np) 
          rho_loc=rhopsi(psis(np))
          write(*,*)'rhopsi',rho_loc
 
-         read (iout3, 2020) dla
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2020) dla ! in runa
+         !endif  !On myrank=0   ! myrank=0
 
 c         write(*,*)'runa kmax',kmax
 c         write(*,*)'runa dla',dla
@@ -1453,13 +1461,17 @@ c         enddo
 
 c         write(*,*)'ba(0:nthpp0-1) !b/b0along b line kmax=nthp0'
 
-         read (iout3, 2020) ba
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2020) ba ! in runa
+         !endif  !On myrank=0   ! myrank=0
 
 c         do n=0,kmax-1
 c           write(*,*)'n,ba(n)',n,ba(n)
 c         enddo
 
-         read (iout3, 2010) alenb(np), bmax(np), bmin(np)
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2010) alenb(np),bmax(np),bmin(np) ! in runa
+         !endif  !On myrank=0   ! myrank=0
 
 c         write(*,*)'runa np,alenb(np), bmax(np), bmin(np)',
 c     &                   np,alenb(np), bmax(np), bmin(np)
@@ -1469,7 +1481,9 @@ c     &                   np,alenb(np), bmax(np), bmin(np)
 c         write(*,*)'runa   psis(np), dene, teme, zi',
 c     &                     psis(np), dene, teme, zi
 
-         write (iout5, 3000) psis(np), dene, teme
+         if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         write (iout5, 3000) psis(np), dene, teme ! in runa
+         endif  !On myrank=0   ! myrank=0
 c
 c   teme in Kev
 c
@@ -1516,7 +1530,10 @@ C
 
 c10        continue !for test
       end do
-      close(iout5)
+     
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      close(iout5) ! in runa, after write(iout5,...)
+      endif  !On myrank=0   ! myrank=0
 
 c      call hpdeallc(memptr,ierc,0)
 c     if (allocated(memory)) then
@@ -1605,6 +1622,9 @@ C-----------------------------------------------
       EXTERNAL initjy, initp, maxwel, isotrop, hinit, matinit, decomp,
      1   reactall, residue, error, solve
 C-----------------------------------------------
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+
 C
 C  Velocity space meshes
 C
@@ -1689,7 +1709,10 @@ C
          if (iswchi == 0) then
             chi(:imax-1,:nmax-1) = 0
          else
-            read (iout7, 3030) ((chi(i,n),i=0,imax - 1),n=0,nmax - 1)
+            if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+            !WRITE(*,*)'runb: trying to access iout7'
+            !YuP[2018-09-12](not accessed in op_file) read (iout7, 3030) ((chi(i,n),i=0,imax - 1),n=0,nmax - 1)
+            endif  !On myrank=0   ! myrank=0
          endif
       endif
 C
@@ -1847,7 +1870,7 @@ cSAP080321
 c                ALLOCATE(memory(memsize),stat=ierc)
                  ALLOCATE(work_2d(0:imax1 - 1,0:nmax - 1),stat=ierc)
                  if (ierc /= 0) then
-                   print *, 'memory could not be allocated in runb'
+                   PRINT *, 'memory could not be allocated in runb'
                    return
                  endif
              endif
@@ -1859,10 +1882,10 @@ c             write(*,*)'before  md03uaf'
 c             write(*,*)'after  md03uaf'
 
              if(ifail.NE.0)then
-               write(6,*)'md03uaf failed: ',ifail,time
+               WRITE(6,*)'md03uaf failed: ',ifail,time
       
       
-               write(*,*)'runb before solve 1'
+               WRITE(*,*)'runb before solve 1'
 
             call solve (resida, imax1, nmax, 1, imax, uinv(0,-1), uinv(0
      1         ,0), uinv(0,1), resid, dt, alpha)
@@ -1926,7 +1949,9 @@ c            write(*,*)'mod(time,tskip)',mod(time,tskip)
      &         t,harr(((1-1)*1*(2*1-1))/6+(1-1)*1+1)
 
                cond = curv*zi/(t*dsqrt(t)*e)
-               write (iout4, 4020) time, cond, abserr, relerr
+               if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+               write (iout4, 4020) time, cond, abserr, relerr ! 1st line of 'scrach'
+               endif  !On myrank=0   ! myrank=0
  4020          format(2x,i5,3x,e20.12,2x,e16.8,2x,e16.8)
  
 
@@ -1942,9 +1967,10 @@ c            write(*,*)'curv,zi,t,dsqrt(t),e',curv,zi,t,dsqrt(t),e
 C
 C  Write out results.
 C
-      write (iout5, 3010) nmax, imax, kmax, lmax
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout5, 3010) nmax, imax, kmax, lmax ! in runb ! 4i8
       write (iout5, 3020) t, c2, ze, zi, eps
-      write(iout5,3020)umax,th0max,du,dth0,rho,deltb,bmin(np),bmax(np)
+      write (iout5, 3020)umax,th0max,du,dth0,rho,deltb,bmin(np),bmax(np)
       write (iout5, 3040) dt, tmax, alpha
       write (iout5, 3020) cond, abserr, relerr
       write (iout5, 3030) ua
@@ -1953,8 +1979,13 @@ C
       write (iout5, 3030) th0g
       write (iout5, 3030) lam1a
       write (iout5, 3030) fm
-      write (iout5, 3030) ((chi(i,n),i=0,imax - 1),n=0,nmax - 1)
-      if(np==1)write(iout8,3030)((chi(i,n),i=0,imax-1),n=0,nmax-1)
+      write (iout5, 3030) ((chi(i,n),i=0,imax - 1),n=0,nmax - 1) ! in runb
+      !YuP[2018-09-12](iout8 not opened in op_file)
+      !WRITE(*,*)'runb: trying to access iout8'
+      !YuP if(np==1)write(iout8,3030)((chi(i,n),i=0,imax-1),n=0,nmax-1)
+      !YuP[2018-09-12] commented write(iout8,*) - it was never opened,
+      !and then this data was saved into 'fort.218' (iout8=218).
+      endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'runb end chi'
 c       do n=0,nmax-1
@@ -2138,6 +2169,8 @@ C-----------------------------------------------
 
       real*8 temperho,psi_rho
 C-----------------------------------------------
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 c
 c   Common block for Comdynray
 c
@@ -2156,17 +2189,23 @@ C
       write(*,*)'adj_sub.f  subadj  before read 2000 iout3=',iout3
       write(*,*)'adj_sub npsi0',npsi0
 cSAP070727
-      open(iout3, file='adjinp', status='old')
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      open(iout3, file='adjinp', status='old') ! in subadj
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'adj_sub.f  subadj after open  iout3'
 
-      read (iout3, 2000) nthp0, npsi0
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout3, 2000) nthp0, npsi0 ! in subadj
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'subadj  after read nthp0, npsi0',nthp0, npsi0
 
 c      write(*,*)'subadj  before read 2010 iout3=',iout3
 
-      read (iout3, 2010) psimx, psimn
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout3, 2010) psimx, psimn ! in subadj
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'subadj  after read psimx, psimn', psimx, psimn
 
@@ -2191,12 +2230,15 @@ c      call hpalloc(dumptr,ndum,iercd,1)
       if (.not.allocated(dum)) then
          ALLOCATE(dum(ndum),stat=iercd)
          if (iercd /= 0) then
-            print *, 'dum could not be allocated in subadj'
+            PRINT *, 'dum could not be allocated in subadj'
             return
          endif
       endif
-      write (iout5, 2000) nthp0, npsi0
-      write (iout5, 2010) psimx, psimn
+
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout5, 2000) nthp0, npsi0 ! in subadj
+      write (iout5, 2010) psimx, psimn ! in subadj
+      endif  !On myrank=0   ! myrank=0
    
       tskip = 10    !time to print out current and errors
 !      call second (cpu0)
@@ -2212,14 +2254,12 @@ c      call hpalloc(dumptr,ndum,iercd,1)
      3   iout5, iout7, iout8, iswchi, aerrmx, rerrmx,
      &   dens_averaged_ar)
 
-       write(*,*)'after runa dens_averaged_ar', dens_averaged_ar
+      write(*,*)'after runa dens_averaged_ar', dens_averaged_ar
 
-!      call second (cpu)
-  
-c      write(*,*)'adj_sub.f in subadj after runa'
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-12] added
+      close(iout3) ! in subadj
+      !endif  !On myrank=0   ! myrank=0
 
-!      write (iout4, 4030) cpu - cpu0
-c      call hpdeallc(dumptr,iercd,0)
       DEALLOCATE(dum)
  4030 format(1x,'adj CPU time: ',f8.4,' secs.')
 c----------------------

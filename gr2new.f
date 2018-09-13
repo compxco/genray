@@ -14,7 +14,7 @@ c* Output: arrays AR,AZ, zpsi,rpsi are into common block 'gr          *
 c*         (file gr.cb)                                               *
 c**********************************************************************
 c
-      subroutine gr2new0
+      subroutine gr2new0 ! not called
       implicit double precision (a-h,o-z)
       include 'param.i'
       include 'gr.i'
@@ -312,17 +312,19 @@ cbegin
 c        ipsi=1 !  to calculate contours
 c        ipsi=0 !  to read contours data from file:psi.bin
       if (ipsi.eq.0) then
-          open(1,file='psi.bin',form='unformatted',status='old')
-         do i=1,npsi
-	  do j=1,nteta1
-             read(1)zpsi(i,j),rpsi(i,j)            
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+           open(1,file='psi.bin',form='unformatted',status='old') ! to read
+           do i=1,npsi
+           do j=1,nteta1
+            read(1)zpsi(i,j),rpsi(i,j)            
             write(*,*)'read i,j',i,j
             write(*,*)'zpsi(i,j),rpsi(i,j)',zpsi(i,j),rpsi(i,j)
-	  end do
-         end do
-	 close(1)
-	 go to 200
-      endif
+           end do
+           end do
+	     close(1)
+	   !endif ! myrank=0
+         go to 200
+      endif ! ipsi
 c------------------------------------------------------------------      
       do  i=1,nteta1
          zpsi(1,i)=yma
@@ -535,7 +537,7 @@ c----------------------------------------------------------
 c     if ipsi=1 then continue,write file psi.bin
 
       if(myrank.eq.0)then
-        open(1,file='psi.bin',form='unformatted')
+        open(1,file='psi.bin',form='unformatted') ! to write
         do i=1,npsi
         do j=1,nteta1
              write(1)zpsi(i,j),rpsi(i,j)

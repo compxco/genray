@@ -150,6 +150,14 @@ as input for i_edge_dens_rz_mesh=2.  Comparisons are made with the
 saved ray plots, and with test7 ray data which was produced without
 using the dens_temp_rz_out.dat/dens_temp_rz_in.dat files, giving
 slightly different rays.
+test7.mpi
+=========
+Put test 7 files in ./test7.mpi
+Run with mpi using edison_batchscript_mpi.slurm, as described in that file.
+#This run takes full time: 22.45 secs.   To be compared with serial version
+#  which takes 58.2 secs.   Since parallelization is over rays, then the
+#  execution time for the mpi version is controlled by the ray which takes
+#  the longest time.
 
 
 Test8:

@@ -2291,7 +2291,8 @@ c         endif
 
          if(i_lsc_approach.eq.0) then        
           if(delpwr(is).lt.delpwrmn*delpwr(1))then
-            WRITE(*,*)'***in prep3d delpwr(is).lt.delpwrmn*delpwr(1)**'
+            WRITE(*,*)'**prep3d delpwr(is)<delpwrmn*delpwr(1). iray,is='
+     +      ,iray,is     
 c           stop ray_iray calculations
             iraystop=1
             iray_status_one_ray=2 ! delpwr(is).lt.delpwrmn*delpwr(1)
@@ -3320,6 +3321,8 @@ c      IMPLICIT double precision (a-h,o-z)
       INCLUDE 'write.i'
       INCLUDE 'gr.i'
       INCLUDE 'rho.i'
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
      
 c-----input
       real*8 rhobegin,rhoend,cnpar,cnper

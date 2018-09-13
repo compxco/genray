@@ -817,3 +817,25 @@ outprint (to suppress printing to the screen)
 outxdraw (to suppress saving files for xdraw).
 
 BH ran the 16 regression tests ==>  No issues.
+
+
+180906-8
+========
+Recompiled genray, serial and mpi versions, on edison.
+Added an test7.mpi MPI test into 00_Genray_Regression_Tests/
+
+
+180912
+======
+version="genray_v10.12_180912"
+Fixed bugs related to MPI implementation 
+of ADJ-related subroutines (i_adj=1).
+The bugs resulted in zero current. 
+With this fix, the file 'adjout' (usually a large file)
+is only recordered by one core (myrank=0), and 
+read also by one core, and then MPI-broadcasted to other cores.
+See "write (iout5,...)" and "read (iout5,...)".
+YuP[2018-09-12].
+
+YuP ran tests with MPI on a iadj=1 test case from Francesca Poli.
+BH ran all 15 00_Genray_Regression_Tests/ regression tests.

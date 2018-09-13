@@ -183,7 +183,7 @@ c     1 cnprim_e,cnprim_i,cnprim_cl
 c      calculates the imaginary part of refractive index
 c      due to collisional electron-ion damping 
 c      using the formula 
-c      Im(N)=(nu_ei/(gr_perp))*clight/omega)
+c      Im(N)=(nu_ei/(v_gr_perp))*clight/omega)
 c
 c      input parameters: 
 c                        tempe -electron temperature  (keV)  

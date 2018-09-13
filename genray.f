@@ -120,7 +120,7 @@ c      implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i' ! specifies code parameters 
-      include 'commons.i'
+      include 'commons.i' ! includes adj.i, tec.
 c      include 'transport_prof.i'  [added to commons.i, SAP080629]
 
 CMPIINSERTPOSITION DECLARATION
@@ -165,7 +165,10 @@ c-----externals
       real*4 time_loop_ifreq_1,time_loop_ifreq_2,time_loop_ifreq,
      +time_before_rk,time_after_rk,time_rk,
      +time_drkgs2_1,time_drkgs2_2,
-     +time_genray_1,time_genray_1a,time_before_1st_ray,time_genray_2,
+     + time_genray_1,time_genray_1a,time_genray_1b,
+     + time_genray_1c, time_genray_1d,
+     + time_before_1st_ray, time_after_last_ray,
+     + time_genray_2,
      +time_emission_2,
      +time_emission_1
 c------------------------------------------------------------
@@ -368,12 +371,13 @@ c          zpllim(r),zminlim (r) - limmiter boundary
 c---------------------------------------------------------------
 CWRITE       write(*,*)' genray.f before call equilib'
       if (myrank.eq.0) then
-      call cpu_time(time_genray_1a) !read input,allocation; just before equilib
+      call cpu_time(time_genray_1a) !just before equilib
       endif  !On myrank.eq.0 
 
       call equilib
-CWRITE       write(*,*)' genray.f after call equilib'
-CWRITE       write(*,*)'NR',NR
+      if (myrank.eq.0) then
+      call cpu_time(time_genray_1b) !just after equilib
+      endif  !On myrank.eq.0 
 c---------------------------------------------------------------
 CWRITE       write(*,*) 'genray.f before call rhospl'
       call rhospl     
@@ -942,7 +946,7 @@ c
 c       open text file for 3d FP code
           if(rayop.eq."text" .or. rayop.eq."both") then
              i_=92
-             open(i_,file=trim(filetxt))
+             open(i_,file=trim(filetxt)) ! at myrank=0 only
           endif
 c-----preparing data for output mnemonic.txt and mnemonic.nc file
 CWRITE       write(*,*)'in genray.f before write3d1 nray',nray
@@ -1019,62 +1023,102 @@ cSAP080422
          ifreq_write=1 !it is used in dinit_1ray
          call gr_OX_optimal_direction(ndim)
       endif
+      endif  !On myrank=0    !----------------------------myrank=0
 c---------------------------------------------------------------
 CWRITE       write(*,*)'genray.f before   adj_chi_function'
 CWRITE       write(*,*)'genray.f i_adj=',i_adj
       if (i_adj.eq.1) then  
+         if(myrank.eq.0) then  ! MPI
+           call cpu_time(time_genray_1c) ! just before adj-related
+         endif  !On myrank=0   ! myrank=0
          if (i_calculate_or_read_adj_function.eq.1) then
 c----------calculate adj chi function used for current drive efficiency
-           call adj_chi_function
-c          write(*,*)'genray.f ua',ua
-c          write(*,*)'th0a',th0a
-c          stop 'adj_chi_function'
-         endif
+           !call adj_chi_function !YuP: now it is setup below, explicitly
+c------------------------------------------------------------------
+c     calculate adj chi function using Karney subroutins from Curray code
+c------------------------------------------------------------------- 
+c     (1) open files iout3='adjinp', iout5='adjout', ... , calculate
+c     &thetas(nthpp0+1),   !poloidal angle mesh for b line integration 
+c     &dla(0:nthpp0-1),    !length along b line 
+c     &ba(0:nthpp0-1),     !b/b0   along b line
+c     &thetae(0:nthpp0-1)  !poloidal angle mesh for b line integration 
+c---------------------------------------------------------------------------
+            call adjint(1) !write to 'adjinp'(at myrank=0), close 'adjinp'
+CMPIINSERTPOSITION BARRIER_1
+            !YuP[2018-09-12] This BARRIER is needed because 
+            ! adjint(2) will be opening 'adjinp' and reading data from it,
+            ! at all mpi cores.
+c----------------------------------------------------------------------------
+c     (2) get Spitzer-function table
+c     chi(theta,ua)=chi(0:imax1 - 1,0:nmax - 1) and output to 'adjout'
+c     At each radial point (np=1,npsi0) write chi and other variables 
+c     to the file with file number: iout5 and file name: 'adjout'
+c----------------------------------------------------------------------------
+            call adjint(2) !-> call subadj()!-> open 'adjinp', read (all cores)
+                                            !-> write into 'adjout' (myrank=0)
+                                            !-> call runa !-> read 'adjinp'
+                                                          !-> write to 'adjout' (myrank=0)
+                                                          !-> call runb !-> write to 'adjout'(myrank=0)
+                                                                        !-> close 'adjout'(myrank=0)
+                                            !-> close 'adjinp'(all cores)
+           !Note: usually 'adjinp' is a small file (25KB), and 'adjout' is big (20MB)
+c--------------------------------------------------------------------------
+         endif ! i_calculate_or_read_adj_function.eq.1
+
 c---------------------------------------------------------
+CMPIINSERTPOSITION BARRIER_2
+         ! The BARRIER is needed because file 'adjout' should be ready for all cores. 
 c-------read chi function from the file iout5
-         call read_iout5_chi
+         if(myrank.eq.0) then  ! MPI
+         call read_iout5_chi ! open,read,close iout5='adjout' (myrank=0)
+         endif  !On myrank=0   ! myrank=0
+         ! YuP[2018-09-10] added:
+         ! It will broadcast arrays that were read from file "adjout" 
+CMPIINSERTPOSITION BCAST_ADJ_ARRAYS
 
 c-------calculate CD conductivity
-c        write(*,*)'genray.f 1 ua',ua
-c        write(*,*)'th0a',th0a 
          if (i_calculate_or_read_adj_function.eq.1) then  
+            !if(myrank.eq.0) then  ! MPI
             call DC_electric_field_adj_conductivity
+            !endif  !On myrank=0   ! myrank=0
+            !WRITE(*,*)'genray1090: after DC_electric_field_adj', myrank
          endif
          if (i_calculate_or_read_adj_function.eq.0) then  
-            call read_iout3_chi
+            !if(myrank.eq.0) then  ! MPI
+            call read_iout3_chi !open,read,close at all cores (small file)
+            !endif  !On myrank=0   ! myrank=0
+            !WRITE(*,*)'genray1095: after read_iout3', myrank
          endif
-cSAP080205
-c        goto 110
+CMPIINSERTPOSITION BARRIER_3
+         
 c------------------------------------------------------------
 c       calculate numerical arrays of derivatives d_chi_du,d_chi_d_theta
 c       from chi function
 c------------------------------------------------------------ 
 CWRITE       write(*,*)'genray.f before interpolation_chi'
          call interpolation_chi(1,n_radial0,u0,theta0,
-     +             chi,d_chi_d_u_out,d_chi_d_theta_out) 
+     +             chi,d_chi_d_u_out,d_chi_d_theta_out) ! at all cores
+         !all cores - ok, no data read/write in there.
 CWRITE       write(*,*)'genray.f after interpolation_chi'
 c-------------------------------------------------------------
 c       calculate spline coefficients for chi 2D function
 c       for all radial points
 c--------------------------------------------------------------
 CWRITE       write(*,*)'genray.f before splcoef_chi'
-         call  splcoef_chi
-
+         call  splcoef_chi ! at all mpi cores
+         !all cores - ok, no data read/write in there.
 CWRITE       write(*,*)'genray.f after splcoef_chi'
 
-c        stop 'stop after after splcoef_chi'
 c----------------------------------------------------
 c      creates data (arrays) for plot like Fig. 1
 c      at Karney article Nuclear Fusion 1991 p. 1934
 c      using ADJ efficiency
 c--------------------------------------------------- 
+         if(myrank.eq.0) then   ! MPI
+         call plot_1_ADJ_Karney ! myrank=0 only
+         endif  !On myrank=0    ! myrank=0
 
-CWRITE       write(*,*)'genray.f before plot_1_ADJ_Karney'
-         call plot_1_ADJ_Karney
-CWRITE       write(*,*)'genray.f after plot_1_ADJ_Karney'
-
-
-         goto 101
+         goto 101 ! skip the rest? test only.
 ctest efficiency fo LH case
          clight=2.99792458d10     !light speed [cm/sec]
          u_ph_karney=2.d0         !LH phase velocity normalized to unorm
@@ -1102,16 +1146,19 @@ CWRITE       write(*,*)'asimptotic efficien',efficien
 CWRITE       write(*,*)'unorm',unorm
 CWRITE       write(*,*)'lh_cd_efficiency',lh_cd_efficiency
          enddo
- 101     continue
+ 101     continue ! end of test
+         if(myrank.eq.0) then  ! MPI
+         call cpu_time(time_genray_1d) ! just after adj-related 
+         endif  !On myrank=0   ! myrank=0
       endif ! i_adj.eq.1
 c----------------------------------------------------------------
 
-      endif  !On myrank=0    !----------------------------myrank=0
+      
 
-      do iray=1,nray         
+c      do iray=1,nray         
 CWRITE       write(*,*)'4 iray,arzu0(iray),arru0(iray),arphiu0(iray)',
 CWRITE      +iray,arzu0(iray),arru0(iray),arphiu0(iray)
-      enddo
+c      enddo
 
       i_total_bad_initial_conditions=0
       power_launched=0.d0
@@ -1356,7 +1403,6 @@ c     +     nrayelt+nrayelt_emis+ifreq0+i_ox_conversion+
 c     +     ifreq_write+iray_status_one_ray,  sum(w_ires),
 c     +     sum(cwexde),sum(cweyde),sum(cwezde),sum(w_ceps),
 c     +     sum(delpow_e_ar),sum(delcur_par_ar)
-c      ! pause
            
 c------------------------------------------------------------------
 c           creation of the file: genray.bin for xdraw
@@ -1651,6 +1697,9 @@ c           endif
       endif
  21   continue ! iray=1,nray 
 
+      if(myrank.eq.0) then  ! MPI
+         call cpu_time(time_after_last_ray)
+      endif  !On myrank=0 MPI
          
       if ((i_emission.eq.1).and.(nfreq.gt.1))then
 c-----------------------------------------------------------------------------
@@ -1758,7 +1807,7 @@ c-------end lsc ----------------------------------------
       
         if(rayop.eq."text" .or. rayop.eq."both") then
 c--------close file for 3d FP code
-          close(i_)
+          if( myrank.eq.0 ) close(i_)
         endif
 
 CWRITE       write(*,*)'genray: powtot_e,powtot_i',powtot_e,powtot_i
@@ -2005,11 +2054,15 @@ c
 c  
       call cpu_time(time_genray_2)
       
-      WRITE(*,'(a,1pd15.6)') 'CPU time from t_just_before_equilib=',
-     +              time_genray_2-time_genray_1a
+c      WRITE(*,'(a,1pd15.6)') 'CPU time from t_just_before_equilib=',
+c     +              time_genray_2-time_genray_1a
      
-      WRITE(*,'(a,1pd15.6)') 'CPU time from t_just_before_1st_ray=',
-     +              time_genray_2-time_before_1st_ray
+      WRITE(*,'(a,1pd15.6)') 'CPU time spent in subr.equilib=',
+     +              time_genray_1b-time_genray_1a
+      WRITE(*,'(a,1pd15.6)') 'CPU time spent in ADJ-related=',
+     +              time_genray_1d-time_genray_1c
+      WRITE(*,'(a,1pd15.6)') 'CPU time spent for ray-tracing only =',
+     +              time_after_last_ray-time_before_1st_ray
      
       WRITE(*,1003) time_genray_2-time_genray_1
  1003 format('CPU TOTAL runtime [sec] ',1pd15.6)
@@ -2056,7 +2109,7 @@ c *****************************************************************
       
       if(myrank.ne.0) return
       
-      open(30,file='con1')
+      open(30,file='con1') ! at myrank=0 only
       write(30,90) nxeqd,nyeqd
 90    format(8x,' the data of input file',/,
      +2x,'the numbers of points in the r direction:',i3,/,
@@ -2080,7 +2133,7 @@ c *****************************************************************
      +2x,'at major radius of the torus:',f12.6,' t')
       write(30,13) toteqd
 13    format(2x,'the toroidal curent:',e17.8,' a')
-      close(30)
+      close(30) ! at myrank=0 only
 
       return
       end

@@ -56,6 +56,9 @@ c     output for writing
 
 c-----for nonuniform ADJ radial mesh
       real*8 rho_L,rho_R,drho_L,drho_R
+
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
         
 c-----small radius array from CQL for the comparison of DC conductivity
       data rya / 
@@ -93,17 +96,23 @@ c      rho_max=0.8d0
 
       write(*,*)'bavorb1  nthp0, npsi0', nthp0, npsi0
 
-      write (iout3, 2000) nthp0, npsi0   ! need opened( iout3, ) 
-
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout3, 2000) nthp0,npsi0 !in bavorb1 ! need opened(iout3,
+      ! out3 is for 'adjinp' file
+      endif  !On myrank=0   ! myrank=0
 
       write(*,*)'bavorb1  psimx,c psimn', psimx, psimn
 
-      write (iout3, 2010) psimx, psimn
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout3, 2010) psimx, psimn !in bavorb1
+      endif  !On myrank=0   ! myrank=0
 
       if(nthpp0<nthp0) then
+        if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
         WRITE(*,*)' bavorb1: nthpp0<nthp0' 
         WRITE(*,*)'it should be nthpp0 >= nthp0'
         WRITE(*,*)'nthpp0, nthp0',nthpp0, nthp0
+        endif  !On myrank=0   ! myrank=0
         STOP
       endif
 
@@ -127,13 +136,17 @@ c      thetae_1(0:nthp0_a-1)=thetae(0:nthp0_a-1)
          write(*,*)'nth,thetas(nth)',nth,thetas(nth)
       enddo
 
-      write (iout3, 2020) (thetas(n),n=1,nthp0 + 1)
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout3, 2020) (thetas(n),n=1,nthp0 + 1) !in bavorb1
+      endif  !On myrank=0   ! myrank=0
 
       do nth = 0, nthp0 - 1
          write(*,*)'nth,thetae(nth)',nth,thetae(nth)
       enddo
 
-      write (iout3, 2020) (thetae(n),n=0,nthp0 - 1)
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      write (iout3, 2020) (thetae(n),n=0,nthp0 - 1) !in bavorb1
+      endif  !On myrank=0   ! myrank=0
 
 
 c      write(*,*)' bavorb1 npsi0', npsi0
@@ -194,12 +207,14 @@ c            endif
 c            if (n_psi.gt.8) rho_in=0.08d0+(n_psi-8)*(1.d0-0.08d0)*0.5d0   
     
             if (rho_in.gt.1.d0) then
+               if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
                WRITE(*,*)'adj_orbit.f  subroutine bavorb1 rho_in.gt.1'
                WRITE(*,*)'n_psi=',n_psi,'rho_in=',rho_in
                WRITE(*,*)'it should be for adj calculations rho_in.le.1'
                WRITE(*,*)'Please change setting of small radius of '
                WRITE(*,*)'of the adj flux surface rho_in in'
                WRITE(*,*)' subroutine bavorb1 and recompile the code'
+               endif  !On myrank=0   ! myrank=0
                STOP 'in adj_orbit.f'
             endif
 
@@ -217,10 +232,11 @@ c----------------------------------------------------------------
 c       calculate density temperature,zef at given psi
 c       call subpar (psi, eden(np), etem(np), zefi(np))
 c        if (psi.eq.1.d0) psi = 1. - 1.Ed-5
-        write (iout3, 2010) psi
+        if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+        write (iout3, 2010) psi !in bavorb1
+        endif  !On myrank=0   ! myrank=0
 
         write(*,*)'n_psi,psi',n_psi,psi
-
         write(*,*)' bavorb1 nthp0',nthp0
 
         Q_safety_adj(n_psi)=0.d0
@@ -307,7 +323,7 @@ C       determine bmax,bmin at given poloidal flux psi
 C       using functions bmax_psi and bmin_psi
 C       
         bmax= bmax_psi(psi)
-	bmin= bmin_psi(psi)	 ! (in Tl)  
+        bmin= bmin_psi(psi)	 ! (in Tl)  
 c        write(*,*)'n_psi,psi,bmax,bmin',n_psi,psi,bmax,bmin
 
 c---------------------------------------------------------------------------
@@ -364,13 +380,17 @@ c----------------------------------------------------------------------------
 c            write(*,*)'n_psi,nth,bbar(n_psi)',n_psi,nth,bbar(n_psi)
         enddo
 
-        write (iout3, 2020) (dla(n),n=0,nthp0 - 1)
+        if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+        write (iout3, 2020) (dla(n),n=0,nthp0 - 1) !in bavorb1
+        endif  !On myrank=0   ! myrank=0
 
         do n=0,nthp0-1
            write(*,*)'n,dla(n)',n,dla(n)
         enddo
 
-        write (iout3, 2020) (ba(n),n=0,nthp0 - 1)
+        if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+        write (iout3, 2020) (ba(n),n=0,nthp0 - 1) !in bavorb1
+        endif  !On myrank=0   ! myrank=0
 
         do n=0,nthp0-1
            write(*,*)'n,ba(n)',n,ba(n)
@@ -386,29 +406,24 @@ c        do nth=0,nthp0-1
 c          write(*,*)'nth,ba_2d(nth,n_psi)',nth,ba_2d(nth,n_psi)
 c        enddo 
   
-        write (iout3, 2010) alenb, bmax, bmin
+        if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+        write (iout3, 2010) alenb, bmax, bmin !in bavorb1
+        endif  !On myrank=0   ! myrank=0
 
-        write (*,*)'alenb, bmax, bmin',alenb, bmax, bmin
+c        write(*,*)'alenb, bmax, bmin',alenb, bmax, bmin
 
         rho_psis=rhopsi(psis(n_psi)) !   normalized small radius at given psi GR
         dene=densrho(rho_psis,1)  !   electron density in 10**13 cm**-3
         teme=temperho(rho_psis,1) !   electron temperature in KeV
         zi=zeffrho(rho_psis)      !   zeff 
 
-c        write(*,*)'n_psi,dene,teme,zi',n_psi,dene,teme,zi
-cSm070507
-c        write (iout3, 2010)  dene,teme,zi
-
       enddo !n_psi
 cSAP 070727
-        close(iout3)
-
+      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+       close(iout3) !in bavorb1
+      endif  !On myrank=0   ! myrank=0
 c
 c---------------------------
-c
-   
-         
-
  2000 format(1x,2i8)
  2010 format(4(2x,e20.12))
  2020 format(5(2x,e20.12))
@@ -429,6 +444,9 @@ c-----input
       include 'param.i'
       include 'adj_no_nml.i'
 
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+
       integer iout,iounit1,iout0,iout2,
      & iout1
 
@@ -437,6 +455,7 @@ c
 c
       select case (i_unit)
       case default
+      !YuP/note: the following is done when i_unit=0
       iout = 6
       iounit1 = 7
       iout0 = 9
@@ -477,36 +496,52 @@ cSm070626
 c
 
       case(1)
-c         iout = iounit(i_unit)
+c         iout = iounit(i_unit) ! op_file is never called with (1)
+         if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
          open(iout, file='currayout', status='unknown')
+         endif  !On myrank=0   ! myrank=0
 c         write(*,*)'open file currayout'
       case(2)
-c         iout2 = iounit(i_unit)            
+c         iout2 = iounit(i_unit) ! op_file is never called with (2)    
+         if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
          open(iout2, file='rayop', status='unknown')
+         endif  !On myrank=0   ! myrank=0
 c         write(*,*)'open file rayop'
       case(3)
 c         iout3 = iounit(i_unit)
          if (icurdr.eq.1) then
-            open(iout3, file='adjinp', status='unknown')
+            if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+            open(iout3, file='adjinp', status='unknown') ! op_file
+            endif  !On myrank=0   ! myrank=0
          else
-            open(iout3, file='adjinp', status='old')
+            if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+            open(iout3, file='adjinp', status='old') ! op_file
+            endif  !On myrank=0   ! myrank=0
          endif
 c         write(*,*)'open file adjinp'
       case(4)
 c         iout4 = iounit(i_unit)
+         if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
          open(iout4, file='scrach', status='unknown')
+         endif  !On myrank=0   ! myrank=0
 c         write(*,*)'open file scrach'
       case(5)
 c         iout5 = iounit(i_unit)
          if (icurdr.eq.1) then
-            open(iout5, file='adjout', status='unknown')
+            if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+            open(iout5, file='adjout', status='unknown') ! in op_file
+            endif  !On myrank=0   ! myrank=0
          else
-            open(iout5, file='adjout', status='old')
+            if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+            open(iout5, file='adjout', status='old') ! in op_file
+            endif  !On myrank=0   ! myrank=0
          endif
 c         write(*,*)'open file adjout'
       case(6)
 c         iout6 = iounit(i_unit)
+         if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
          open(iout6, file='joptab', status='unknown')
+         endif  !On myrank=0   ! myrank=0
 c         write(*,*)'open file joptab' 
       end select
       return
@@ -599,9 +634,11 @@ c  check if nthp0 is smaller than nthp00 and npsi0 is smaller than npsis
 c
 
 c      if (npsi0>npsis .or. nthp0>nthp00-1) then
+c      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
 c         write (iout4, *) 'npsi0 or nthp0 is too large in bavorbt'
 c         write (iout4, *) npsi0, nthp0
 c         write (iout4, *) npsis, nthp00
+c      endif  !On myrank=0   ! myrank=0
 c         !stop
 c      endif
       ii = 1

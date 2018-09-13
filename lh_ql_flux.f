@@ -189,7 +189,8 @@ cSAP080411
      &clight,              !light speed [cm/sec]
      &arg1,cln,
 cfor test
-     &del_power,del_cd
+     &del_power,del_cd, w1,w2,w3,w4
+     
 c-----external
       real*8 terp2p_Sm,b_d_bmin,y
        
@@ -340,7 +341,7 @@ c         write(*,*)'dsin(th0a_chi(imax_chi,n_radial0))',
 c     &              dsin(th0a_chi(imax_chi,n_radial0))
 
          if((theta0_res.le.th0a_chi(imax_chi,n_radial0)).or.
-     &     (theta0_res.ge.pi-th0a_chi(imax_chi,n_radial0))) then          
+     &     (theta0_res.ge.pi-th0a_chi(imax_chi,n_radial0))) then
 c         if (sin_theta0_res.lt.sin_trap) then
 c-----------passing particles
 c            write(*,*)'theta0_res,u0',theta0_res,u0
@@ -369,7 +370,8 @@ c-----------------spline interpolation
                endif
 c               write(*,*)'d_chi_du0,d_chi_dtheta0',
 c     &                    d_chi_du0,d_chi_dtheta0
-            else
+            else ! theta0_res.ge.pi-th0a_chi(imax_chi,n_radial0)
+            
                theta0_odd=pi-theta0_res 
 cSAP090129
                if (i_chi_interpolation.eq.2) then
@@ -396,7 +398,9 @@ c-----------------spline interpolation
      &            chi_uu(1,1,n_radial0),
      &            chi_ttuu(1,1,n_radial0),idm,1,0,1,imax_chi)
                endif
-            endif
+               
+            endif ! theta0_res.ge.pi-th0a_chi(imax_chi,n_radial0)
+            
 c                          write(*,*)'d_chi_du0,d_chi_dtheta0',
 c     &                    d_chi_du0,d_chi_dtheta0
 
@@ -418,6 +422,16 @@ c     &           (u0/gamma*cos_theta0_res)*Gamma_a_LH_u0*
      &           (d_chi_du0-
      &           (d_chi_dtheta0/u0)*(sin_theta0_res/cos_theta0_res))*
      &                 dfm_du0/dg_d_theta0
+c      if(abs(rho_small-0.444).le.0.001)then
+       !w1=theta0_res
+       !w2=th0a_chi(imax_chi,n_radial0)
+       !w3=pi-th0a_chi(imax_chi,n_radial0)
+       !w4=d_chi_du0
+       !!w=(d_chi_du0-(d_chi_dtheta0/u0)*(sin_theta0_res/cos_theta0_res))
+c      WRITE(*,'(a,i5,5e11.3)')'in CD_adj_LH_efficiency_1',
+c     &  n, rho_small, temp_kev, du, n_parallel, umin
+c      !pause
+c      endif
 
 
             del_cd=du*u0**2*sin_theta0_res*
@@ -438,7 +452,7 @@ c     & (d_chi_du0-(d_chi_dtheta0/u0)*(sin_theta0_res/cos_theta0_res))
 c            write(*,*)'pow_dens,lh_cd_dens=',pow_dens,lh_cd_dens        
 
          endif 
-      enddo
+      enddo ! n=nmin,nmax_chi-1
 
       pow_dens=2.d0*pi*pow_dens
       lh_cd_dens=-2.d0*pi*LH_CD_dens
@@ -450,10 +464,7 @@ c      write(*,*)'lh_cd_dens',lh_cd_dens
       else
         lh_cd_efficiency=0.d0
       endif
-
-      write(*,*)'in CD_adj_LH_efficiency_1 lh_cd_efficiency=',
-     &lh_cd_efficiency
-         
+               
 c-----cln -Coulomb Ln
       arg1 = 1.d3/temp_kev*dsqrt(10.d0*dense)	!temp KeV, dense 10**13/cm**3
       cln=24.d0-dlog(arg1)
@@ -821,9 +832,13 @@ C-----------------------------------------------
       real(kind=dp)  psimx,psimn,cond,abserr,relerr,c2,zi,eps
       real(kind=dp)  th0max,du,dth0,deltb
 
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
       
-      open(iout5, file='adjout', status='old')
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      open(iout5, file='adjout', status='old') ! in read_iout5_chi
 c      write(*,*)'read_iout5_chi iout5=',iout5
+      !endif  !On myrank=0   ! myrank=0
  
  2000 format(1x,2i8)
  2010 format(4(2x,e20.12))
@@ -834,83 +849,73 @@ c      write(*,*)'read_iout5_chi iout5=',iout5
  3030 format(5(1x,e20.12))
  3040 format(1x,e20.12,2x,i8,2x,e20.12)
 
-      read (iout5, 2000) nthp0, npsi0
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout5, 2000) nthp0, npsi0 ! in read_iout5_chi
 c      write(*,*)' nthp0, npsi0', nthp0, npsi0
- 
       read (iout5, 2010) psimx, psimn
 c      write(*,*)' psimx, psimn', psimx, psimn
+      !endif  !On myrank=0   ! myrank=0
 
       do n_radial=1,npsi0 
 
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
          write(*,*)'lh_ql_flux.f read_iout5_chi n_radial=', n_radial
- 
-        read (iout5, 3000) psis(n_radial),dene_chi(n_radial),
+         read (iout5, 3000) psis(n_radial),dene_chi(n_radial),
      &                      teme_chi(n_radial)
          write(*,*)'psis(n_radial),dene_chi(n_radial),teme_chi(n_radial)
      &   ',psis(n_radial),dene_chi(n_radial),teme_chi(n_radial)
-
          read (iout5, 3010) nmax, imax, kmax, lmax
 c         write(*,*)' nmax, imax, kmax, lmax', nmax, imax, kmax, lmax
-
-         read(iout5,3020) t, c2, ze, zi, eps
+         read (iout5,3020) t, c2, ze, zi, eps
 c         write(*,*)'t, c2, ze, zi, eps',t, c2, ze, zi, eps
+         !endif  !On myrank=0   ! myrank=0
 
-         zi_chi(n_radial)=zi
+         zi_chi(n_radial)=zi ! MPI_BCAST -ed
 
-         read(iout5,3020)umax,th0max,du,dth0,rho_,deltb,
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout5,3020)umax,th0max,du,dth0,rho_,deltb,
      &   bmin_chi(n_radial),bmax_chi(n_radial)
-
-c         write(*,*)'umax,th0max,du,dth0,rho_,deltb,
-c     &   bmin_chi(n_radial),bmax_chi(n_radial)',
-c     &   umax,th0max,du,dth0,rho_,deltb,
-c     &   bmin_chi(n_radial),bmax_chi(n_radial)
-
          read (iout5, 3040) dt, tmax, alpha
 c         write(*,*)' dt, tmax, alpha', dt, tmax, alpha
-
          read (iout5, 3020) cond, abserr, relerr
 c         write(*,*)'cond, abserr, relerr',cond, abserr, relerr
-
 c         write(*,*)'before read ua iout5=',iout5
          read (iout5, 3030) ua1           !ua
 c         write(*,*)'after read ua iout5=',iout5
 c         write (*, 3030) ua1 
-
- 
 c         write(*,*)'before read ug iout5=',iout5
-         read(iout5, 3030) ug
+         read (iout5, 3030) ug
 c         write(*,*)'ug'
 c         write(*,3030) ug
-
 c         write(*,*)'before read th0a iout5=',iout5
          read (iout5, 3030) th0a1             !th0a
 c         write(*,*)'th0a'
 c         write(*, 3030) th0a1   
-         th0a_chi(1:imax_chi,n_radial)= th0a1(0:imax_chi-1)
-          
+         th0a_chi(1:imax_chi,n_radial)= th0a1(0:imax_chi-1) ! MPI_BCAST -ed
+         !endif  !On myrank=0   ! myrank=0
+	 
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
 c         write(*,*)'before read th0g iout5=',iout5
          read (iout5, 3030) th0g                                    !th0g
 c         write(*,*)'th0g'
 c         write (*, 3030) th0g
-
 c         write(*,*)'before read lam1a iout5=',iout5
          read (iout5, 3030) th0a1             !lam1a
 c         write(*,*)'lam1a'
 c         write(*, 3030) th0a1 
-
 c         write(*,*)'before read fm iout5=',iout5
          read (iout5, 3030) fm             !fm         
 c         write(*,*)'fm'
 c         write(*,3030) fm
-
 c         write(*,*)'before read chi iout5=',iout5
          read (iout5, 3030) ((chi(i,n),i=0,imax_chi-1),n=0,nmax_chi-1)
-
 c         write(*,*)'iout5 chi'
 c         write(*,3030) ((chi(i,n),i=0,imax_chi-1),n=0,nmax_chi-1)
+         !endif  !On myrank=0   ! myrank=0
+
          do i=1,imax_chi
             do n=1,nmax_chi
-               chi_3d(i,n,n_radial)=chi(i-1,n-1)
+               chi_3d(i,n,n_radial)=chi(i-1,n-1) ! in read_iout5_chi ! MPI_BCAST -ed
 c               write(*,*)'i,n,n_radial,chi_3d(i,n,n_radial)',
 c     &                    i,n,n_radial,chi_3d(i,n,n_radial)
             enddo
@@ -922,10 +927,12 @@ c     &   chi(0:imax_chi-1,0:nmax_chi-1)
       enddo
 
       do n=1,nmax_chi
-         ua(n)=ua1(n-1)
+         ua(n)=ua1(n-1) ! MPI_BCAST -ed
       enddo
      
-      close (iout5)
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      close (iout5) ! in read_iout5_chi
+      !endif  !On myrank=0   ! myrank=0
       return
       end
 
@@ -1034,7 +1041,10 @@ c     &             n_radial_minus,n_radial_plus,weight_radial
       call  find_psis_points(psi_loc,
      & n_radial_minus,n_radial_plus,weight_radial)
 
-c      write(*,*)' CD_adj_LH_efficiency after find_psis_points'
+c      WRITE(*,'(a,2e11.3,2i5)')
+c     + ' CD_adj_LH_efficiency after find_psis_points',
+c     + psi_loc, n_parallel, n_radial_minus,n_radial_plus
+      !pause
 
       if((n_radial_minus.lt.npsi0).and.(n_radial_plus.gt.1)) then
 
@@ -6284,9 +6294,13 @@ c-----local
 
       real*8   psimx,psimn,psi,alenb, bmax, bmin
  
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       
-       open(iout3, file='adjinp', status='old')
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+       open(iout3, file='adjinp', status='old') !in read_out3_chi
+      !endif  !On myrank=0   ! myrank=0
 
 c      write(*,*)'read_iout3_chi iout3=',iout3
  
@@ -6294,19 +6308,17 @@ c      write(*,*)'read_iout3_chi iout3=',iout3
  2010 format(4(2x,e20.12))
  2020 format(5(2x,e20.12))
 
-      read (iout3, 2000) nthp0, npsi0
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      read (iout3, 2000) nthp0, npsi0 !in read_out3_chi
       write(*,*)'read_iout3_chi nthp0, npsi0', nthp0, npsi0
- 
       read (iout3, 2010) psimx, psimn
       write(*,*)'read_iout3_chi psimx, psimn', psimx, psimn
-
       read (iout3, 2020) (thetas(n),n=1,nthp0 + 1)
-
       do nth = 1, nthp0 + 1
          write(*,*)'nth,thetas(nth)',nth,thetas(nth)
       enddo
-
-      read (iout3, 2020) (thetae(n),n=0,nthp0 - 1)
+      read (iout3, 2020) (thetae(n),n=0,nthp0 - 1) !in read_out3_chi
+      !endif  !On myrank=0   ! myrank=0
 
       do n=0,nthp0 - 1
 cSAP110114
@@ -6317,18 +6329,24 @@ cSAP110114
 
       do n_psi=1,npsi0 
 
-         read (iout3, 2010) psi
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2010) psi !in read_out3_chi
+         !endif  !On myrank=0   ! myrank=0
         
          write(*,*)' n_psi,psi', n_psi,psi
          write(*,*)'nthp0',nthp0
 
-         read (iout3, 2020) (dla(n),n=0,nthp0 - 1)
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2020) (dla(n),n=0,nthp0 - 1) !in read_out3_chi
+         !endif  !On myrank=0   ! myrank=0
 
          do n=0,nthp0-1
            write(*,*)'n,dla(n)',n,dla(n)
          enddo
 
-         read (iout3, 2020) (ba(n),n=0,nthp0 - 1)
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read (iout3, 2020) (ba(n),n=0,nthp0 - 1) !in read_out3_chi
+         !endif  !On myrank=0   ! myrank=0
 
          do n=0,nthp0-1
            write(*,*)'n,ba(n)',n,ba(n)
@@ -6338,13 +6356,17 @@ cSAP110114
             ba_2d(nth,n_psi)=ba(nth)
          enddo    
 
-         read(iout3, 2010) alenb, bmax, bmin
+         !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+         read(iout3, 2010) alenb, bmax, bmin !in read_out3_chi
+         !endif  !On myrank=0   ! myrank=0
 
-         write (*,*)'alenb, bmax, bmin',alenb, bmax, bmin
+c         write (*,*)'alenb, bmax, bmin',alenb, bmax, bmin
 
       enddo !n_psi
 
-      close(iout3)
+      !if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+      close(iout3) !in read_out3_chi
+      !endif  !On myrank=0   ! myrank=0
 
       return
       end

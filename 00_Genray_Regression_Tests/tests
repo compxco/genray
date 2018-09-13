@@ -40,6 +40,7 @@ XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301/
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301_updtd170725/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_v10.11_170725/xgenray'
 XGENRAY='../$PWD/xgenray'
+XGENRAY='/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725/xgenray_intel.edison'   #At NERSC, edison.
 
 mkdir test1
 cp genray.dat_SS_Xmode_180_emission test1/genray.dat
@@ -166,7 +167,21 @@ echo "test7: Compare genray.bin_CMod_LH_edge with test7/genray.bin using xdraw"
 cp genray.bin_test7 genray.bin
 xdraw genr &
 
-mkdir test7.1  #Bonoli-Englade LH dispersion
+#An MPI test, if at edison.nersc.gov
+mkdir test7.mpi
+cp genray.in_CMod_LH_edge  test7.mpi/genray.in
+cp g1060728011.01100 drawgenr.in test7.mpi/
+cp edison_batchscript_mpi.slurm test7.mpi/
+cd test7.mpi/
+sbatch edison_batchscript_mpi.slurm
+#Wait for batch job to complete
+xdraw genr &
+cd ..
+echo "test7.mpi: Compare genray.bin_CMod_LH_edge with test7/genray.bin using xdraw"
+cp genray.bin_test7 genray.bin
+xdraw genr &
+
+mkdir test7.1  #Bonoli-Englade LH dispersion with warm plasma term
 cp genray.in_CMod_LH_edge_id16  test7.1/genray.in
 cp g1060728011.01100 drawgenr.in drawonet1.in test7.1/
 cd test7.1/

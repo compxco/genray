@@ -15,6 +15,9 @@ cSm070625
       real(kind=dp) :: zef1
       integer nmax,imax,lmax
 
+      integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+
       select case (ientry)
       case default
 
@@ -24,26 +27,37 @@ c
       icurdr=1
   
 c      write(*,*)'adj_control.f in  adjint ientry=',ientry
-
 c      write(*,*)'adj_control.f before op_file 0 icurdr=',icurdr
 
+c      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
+
       call op_file(0,icurdr)
-  
+c      write(*,*)'adj_control.f adjint after op_file 0'
+      
 c      write(*,*)'adj_control.f adjint before op_file 3 icurdr=',icurdr
-  
       call op_file(3,icurdr)
+c      write(*,*)'adj_control.f adjint after op_file 3'
+      
 c      write(*,*)'adj_control.f adjint before op_file 4 icurdr=',icurdr
       call op_file(4,icurdr)
+c      write(*,*)'adj_control.f adjint after op_file 4'
+      
 c      write(*,*)'adj_control.f adjint before op_file 5 icurdr=',icurdr
       call op_file(5,icurdr)
+c      write(*,*)'adj_control.f adjint after op_file 5'
+      
 c      write(*,*)'adj_control.f adjint before op_file 6 icurdr=',icurdr
       call op_file(6,icurdr)
-c      call op_file(7,icurdr)
-c      call op_file(8,icurdr)
-
-      write(*,*)'adj_control.f in  sub adjint'
-      write(*,*)'iout3,iout4,iout5,iout6,iout7,iout8',
-     &iout3,iout4,iout5,iout6,iout7,iout8
+c      write(*,*)'adj_control.f adjint after op_file 6'
+      
+      !YuP[2018-09-12](not accessed in op_file) call op_file(7,icurdr)
+      !YuP[2018-09-12](not accessed in op_file) call op_file(8,icurdr)
+c      write(*,*)'adj_control.f in  sub adjint'
+c      write(*,*)'iout3,iout4,iout5,iout6,iout7,iout8',
+c     &iout3,iout4,iout5,iout6,iout7,iout8
+c      write(*,*)'adj_control.f adjint after op_file 7, 8'     
+     
+c      endif  !On myrank=0   ! myrank=0
 
       nthpp0=nthp0
 c--------------------------------------------------------------
@@ -58,9 +72,7 @@ c      write(*,*)'adj_control.f adjint before bavorbt nthp0,npsi0',
 c     & nthp0,npsi0
 
       call bavorbt( nthp0,npsi0)
-
 c      write(*,*)'adj_control.f adjint after bavorbt'
-
 c      write(*,*)'adj_control.f adjint after bavorbt1'
 c      write(*,*)'in sub adjint thetas',thetas
 c      write(*,*)'in sub adjint thetae',thetae
@@ -69,7 +81,7 @@ c      write(*,*)'in sub adjint thetae',thetae
       write(*,*)'adj_control.f in  sub adjint'
       write(*,*)'iout3,iout4,iout5,iout6,iout7,iout8',
      &iout3,iout4,iout5,iout6,iout7,iout8
-     
+      !pause
 
       return
       case (2)
@@ -95,10 +107,12 @@ c     to the file with file number: iout5 and file name: 'adjout
 
         write(*,*)'adj_control.f in sub adjint before subadj'
 
+           !WRITE(*,*)'adjint104 before subadj', myrank
         call subadj(nmax,umax,imax,nthp0,dt,tmax,alpha,ze,t,
      &   rho_, lmax, iout3, iout5, iout4, iout7, iout8, iswchi, aerrmx
      &   , rerrmx,
      &  npsi0,dens_averaged_ar)
+           !WRITE(*,*)'adjint109  after subadj', myrank
 
         write(*,*)'adj_control.f adjint after subadj'
         write(*,*)'dens_averaged_ar',dens_averaged_ar
@@ -115,6 +129,7 @@ c         call curadj (nthp0, npsi0, psimx, psimn, nmax, umax1, imax,
 c     1      lmax, psis(1), eden(1), etem(1), zefi(1), sjop(1), nwp, wpmx
 c     2      , wpmn, dwp, wp(1), nthp1, thetp(1), iout4, iout5, iadj,
 c     3      gwk2, gwk3, npnta)
+c      if(myrank.eq.0) then  ! MPI ! YuP[2018-09-10] added
 c         write (iout6, 1000) jopid
 c         write (iout6, 1010) nwp, nthp0, npsi0, nthp1
 c         write (iout6, 1020) psimx, psimn, wpmx, wpmn, dwp
@@ -130,6 +145,7 @@ c               jps = (js - 1)*nthp1*nwp + (jp - 1)*nwp + 1
 c               write (iout6, 1030) (sjop(nw),nw=jps,jps + nwp - 1)
 c            end do
 c         end do
+c      endif  !On myrank=0   ! myrank=0
 c--------------------------------
  1000    format(1x,1a40)
  1010    format(1x,4i8)

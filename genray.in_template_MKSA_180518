@@ -2767,7 +2767,7 @@ eps_xe=1.d-2
 ! epsi_adj  the accuracy used in integration by adaptive Simpson
 !           Works at i_resonance_curve_integration_method_adj=4 case only
 !------------------------------------------------------------------------
-!        choose the integration method for power and CD calulations 
+!        choose the integration method for power and CD calculations 
 !       i_resonance_curve_integration_method_adj=1 !rectangle integration
 !                                              !over angle,
 !                                              !for ellipse case only

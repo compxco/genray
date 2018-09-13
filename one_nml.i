@@ -402,7 +402,7 @@ c               the value of the index: iabsorp
 c               Energy flux "fluxn" will be calculated according to 
 c               the value of the index: iflux 
 c------------------------------------------------------------------
-c For use with Abhay Ram's dispersion relation (id=14) parameters to
+c For use with Abhay Ram\'s dispersion relation (id=14) parameters to
 c control the integration routipne for the Trubnikov integral.
 c
 c relres offers 4 choices for the resolution to use for the relativistic
