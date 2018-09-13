@@ -94,3 +94,8 @@ from other cores to rank=0.
 (But they are not used anymore?)
 
 
+180912
+======
+YuP fixed MPI problem with ADJ calculation (iadj=1) of current
+drive efficiency related to the Francesca Poli test case.
+This led to changes in mpi.ins (mpi makefile inserted mpi statements).

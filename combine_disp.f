@@ -155,8 +155,8 @@ c       ioxm is in common /one/
            cnper_02=cnz*cnz+cnr*cnr+(cm/r)**2-nll*nll
            write(*,*)'cold plasma cnper_02=',cnper_02
            cnper_0=dsqrt(cnper_02)
-           write(*,*)'cold plasma cnper_0=',cnper_0  
-           stop 'in function relativistic_nperp'
+           WRITE(*,*)'cold plasma cnper_0=',cnper_0  
+           STOP 'in function relativistic_nperp'
         endif
       else
         ! calculation of the EBW
@@ -164,10 +164,10 @@ c-------initialization common/nperpcom/, it is in nperpcom.i
         nllc=nll
         nbulkc=nbulk
         if(nbulka.lt.nbulk) then
-          write(*,*)'in forest.f in hotnperp nbulka.lt.nbulk'          
-          write(*,*)'nbulka=',nbulka,'nbulk=',nbulk
-	  write(*,*)'change parameter nbulka in file param.i'  
-          stop
+          WRITE(*,*)'in forest.f in hotnperp nbulka.lt.nbulk'          
+          WRITE(*,*)'nbulka=',nbulka,'nbulk=',nbulk
+	  WRITE(*,*)'change parameter nbulka in file param.i'  
+          STOP
         endif
 
 c       write(*,*)'hotnperp before loop j nbulk=',nbuklk
@@ -492,10 +492,10 @@ c-----locals
 
 c-----check id value
       if ((id.ne.10).and.(id.ne.12).and.(id.ne.13).and.(id.ne.15)) then
-        write(*,*)'hamilt_nperp_npar_Westerhof_Tokman'
-        write(*,*)'it should be id=10,12,13,15'
-        write(*,*)'id=',id
-        stop 'in hamilt_nperp_npar_Westerhof_Tokman'
+        WRITE(*,*)'hamilt_nperp_npar_Westerhof_Tokman'
+        WRITE(*,*)'it should be id=10,12,13,15'
+        WRITE(*,*)'id=',id
+        STOP 'in hamilt_nperp_npar_Westerhof_Tokman'
       endif
 
       k_root=1 !really k_root is not used in the following subroutines

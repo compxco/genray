@@ -976,33 +976,33 @@ c     check parameter dens_nwka value
 c------------------------------------------------------------------
       if (dens_nwka.lt.(1+3*nxeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_temperatur_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_temperatur_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_temperature_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nxeqd_add_a)'
 c         write(*,*)'and recompile code'  
          write(*,*)'**************************************' 
-         stop
+         STOP
       endif
 
 
       if (dens_nwka.lt.(1+3*nyeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_temperature_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_temperature_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_temperature_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nyeqd_add_a)'
 c         write(*,*)'and recompile code'  
          write(*,*)'**************************************' 
-         stop
+         STOP
       endif
       
 c-----creates 2D spline coefficients for temperature_r_z functions
@@ -1114,33 +1114,33 @@ c     check parameter dens_nwka value
 c------------------------------------------------------------------
       if (dens_nwka.lt.(1+3*nxeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_zeff_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_zeff_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nxeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nyeqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_zefft_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nxeqd_add_a)'
 c         write(*,*)'and recompile code'  
 c         write(*,*)'**************************************' 
-         stop
+         STOP
       endif
 
 
       if (dens_nwka.lt.(1+3*nyeqd_add)) then
          write(*,*)'**************************************' 
-         write(*,*)'chamber_wall,f in  splcoef_zeff_r_z'
-         write(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
-         write(*,*)'it shoud be'
-         write(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
-         write(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
+         WRITE(*,*)'chamber_wall,f in  splcoef_zeff_r_z'
+         WRITE(*,*)'dens_nwka.lt.(1+3*nyeqd_add)'
+         WRITE(*,*)'it shoud be'
+         WRITE(*,*)'dens_nwka=1+3*max(nxeqd_add,nyeqd_add)'
+         WRITE(*,*)'dens_nwka,nxeqd_add,nxyqd_add',
      &              dens_nwka,nxeqd_add,nxeqd_add
 c         write(*,*)'Please change parameter in splcoef_zeff_r_z'
 c         write(*,*)'for parameter (dens_nwka=1+3*nyeqd_add_a)'
 c         write(*,*)'and recompile code'  
          write(*,*)'**************************************' 
-         stop
+         STOP
       endif
       
 c-----creates 2D spline coefficients for zeff_r_z functions

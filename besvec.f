@@ -45,15 +45,15 @@ cSAP080422
 c      dimension bes(1),besp(1)
 
       if(n.lt.0) then
-        write(*,*)'in sub besvec n<0 '
-        write(*,*)'n should be .ge.0'
-        stop 'in besvec'
+        WRITE(*,*)'in sub besvec n<0 '
+        WRITE(*,*)'n should be .ge.0'
+        STOP 'in besvec'
       endif
 
       if(bmax.lt.0.d0) then
-        write(*,*)'in sub besvec bmax<0 '
-        write(*,*)'n should bmax .ge.0'
-        stop 'in besvec'
+        WRITE(*,*)'in sub besvec bmax<0 '
+        WRITE(*,*)'n should bmax .ge.0'
+        STOP 'in besvec'
       endif
      
       dbes=bmax/(nbes-1)

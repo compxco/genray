@@ -163,14 +163,14 @@ c-----externals
       integer length_char
 
       real*4 time_loop_ifreq_1,time_loop_ifreq_2,time_loop_ifreq,
-     +time_before_rk,time_after_rk,time_rk,
-     +time_drkgs2_1,time_drkgs2_2,
+     + time_before_rk,time_after_rk,time_rk,
+     + time_drkgs2_1,time_drkgs2_2,
      + time_genray_1,time_genray_1a,time_genray_1b,
      + time_genray_1c, time_genray_1d,
      + time_before_1st_ray, time_after_last_ray,
      + time_genray_2,
-     +time_emission_2,
-     +time_emission_1
+     + time_emission_2,
+     + time_emission_1
 c------------------------------------------------------------
 cfor test CD_adj_LH_efficiency
       real*8 lh_cd_efficiency,cnpar,cnper,thetapol_l,
@@ -375,6 +375,7 @@ CWRITE       write(*,*)' genray.f before call equilib'
       endif  !On myrank.eq.0 
 
       call equilib
+      
       if (myrank.eq.0) then
       call cpu_time(time_genray_1b) !just after equilib
       endif  !On myrank.eq.0 

@@ -816,12 +816,12 @@ c------------------------------------------------------------
             write(*,*)'iray_l',iray_l
             write(*,*)'i=',i
             if(iray_l.gt.nraymax)then
-               write(*,*)'iray_l.gt.nraymax'
-               write(*,*)'please increase nraymax in param.i'
-               write(*,*)'and recompile the code'            
-               write(*,*)'nraymax = ',nraymax               
-               write(*,*)'i=',i,'iray_l',iray_l
-               stop 'incone_ec.f'
+               WRITE(*,*)'iray_l.gt.nraymax'
+               WRITE(*,*)'please increase nraymax in param.i'
+               WRITE(*,*)'and recompile the code'            
+               WRITE(*,*)'nraymax = ',nraymax               
+               WRITE(*,*)'i=',i,'iray_l',iray_l
+               STOP 'incone_ec.f'
             endif
                
             eta_launch=initial_azimuth_angle_degree(j)*pi/180.d0+
@@ -1214,12 +1214,12 @@ c------------------------------------------------------------
             write(*,*)'iray_l',iray_l
             write(*,*)'i=',i
             if(iray_l.gt.nraymax)then
-               write(*,*)'iray_l.gt.nraymax'
-               write(*,*)'please increase nraymax in param.i'
-               write(*,*)'and recompile the code'            
-               write(*,*)'nraymax = ',nraymax               
-               write(*,*)'i=',i,'iray_l',iray_l
-               stop 'incone_ec.f'
+               WRITE(*,*)'iray_l.gt.nraymax'
+               WRITE(*,*)'please increase nraymax in param.i'
+               WRITE(*,*)'and recompile the code'            
+               WRITE(*,*)'nraymax = ',nraymax               
+               WRITE(*,*)'i=',i,'iray_l',iray_l
+               STOP 'incone_ec.f'
             endif
                
             eta_launch=initial_azimuth_angle_degree(j)*pi/180.d0+

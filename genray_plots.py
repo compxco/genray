@@ -36,6 +36,8 @@ if netcdf==4: from netCDF4 import Dataset # YuP
 fnt  = 13 #9   # Font size for axis numbers (see 'param=' below) 
 linw = 1.  # LineWidth for contour plots
 Ncont= 50  # Number of contour levels for PSI (pol.flux)
+# For plots of omega/omega_c in (R,Z) plane ("genray_wwc_inRZ.png"),
+# specify:
 level_mn= 23 # Lowest level of omega/omega_c to be plotted
 level_mx= 45 # Highest level of omega/omega_c to be plotted
 arr_len=5. # Specify arrow length for plots of (Nr,Nz) at start point (disabled)
@@ -89,7 +91,7 @@ c0 = time.clock() # total cpu time spent in the script so far
 #eqdsk_name='g106270.02500'      # /test6/ multi-rays EC
 #eqdsk_name='eqdsk_pegasus'
 #eqdsk_name='equilib_diiid.dat' # for Lohr/fast-run-test
-
+#eqdsk_name='g130608.00352.LRDFIT04.mds.corrected.qscale_1.00000' #test_NSTX_HHFW
 #eqdsk_name='eqdsk_240rays'
 
 eqdsk_name='eqdsk_EAST'
@@ -574,10 +576,11 @@ print 'powtot_cl is: ', powtot_cl.long_name, powtot_cl.shape
 #powtot_s=dat.variables['powtot_s']
 #print 'powtot_s is: ', powtot_s.long_name, powtot_s.shape
 
-ws=dat.variables['ws']
+ws=dat.variables['ws'] #   pol.distance along ray [cm]
 ws_min=np.min(ws)
 ws_max=np.max(ws)
 ws_step= int((ws_max*1.1-ws_min)/4)  # step for xticks() labeling ;
+                     #    ()/4 means 4 labels only
 print 'ws is: ', ws.long_name, ws.shape
 print 'min/max of ws [cm]', ws_min,ws_max
 
@@ -1263,7 +1266,6 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
 plt.savefig('genray_rays_refr-index_R.png') 
 show()
 
-#stop
 
 
 #--------------------------------------------------------------------------
