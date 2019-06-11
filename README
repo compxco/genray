@@ -82,3 +82,8 @@ ADJ calculation of LH current drive efficiency (was OK in the
 serial genray version).  See a_change.i
 version="genray_v10.12_180912"
 
+
+June 10, 2019
+=============
+Got connection to git@github.com:compxco/genray.git working,
+using ssh method for connection to github.com.
