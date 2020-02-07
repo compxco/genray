@@ -22,14 +22,22 @@ c             integration, accuracy of solution etc. see also	   !
 c             drkgs.for).					   !
 c------------------------------------------------------------------
       subroutine arrays(ndim,deru,prmt,ihlf)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ndim,ihlf !YuP[2020-01-14]
+      integer i  !YuP[2020-01-14]
+      real*8 deru,prmt !YuP[2020-01-14]
+      real*8 ttt  !YuP[2020-01-14]
+
       include 'param.i'
       include 'one.i'
       dimension deru(*),prmt(*)
 
-      t=1.d0/ndim
+      ttt=1.d0/ndim !YuP[2020-01-14] Not good to use 't'. 
+      !It is in name_adj.i and adj_nml.i
+      !YuP: changed 't' to 'ttt', just in case.
       do 100 i=1,ndim
-         deru(i)=t
+         deru(i)=ttt
  100  continue
       prmt(7)=prmt(1)+prmt(6)
       prmt(8)=prmt(1)+prmt(3)

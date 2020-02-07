@@ -9,6 +9,30 @@ c
 c
 c***********************************************************************
 
+c[195] version="genray_v10.13_200117"
+c[195] Converted some of "implicit integer ..." to "implicit none" with 
+c[195] explicit declaration of variables. Still many to go...
+c[195] See YuP[2020-01], YuP[2020-01-14]
+
+c[194] Adjusted fourb.i, oxb.i, transport_prof.i, writencdf.i --
+c[194] Collected same-type variables into separate blocks,
+c[194] for better alignment in common blocks. 
+c[194] Also, in some of *.i files, changed "double complex" to "complex*16"
+c[194] (There are still many "double complex" in *.f files, but not in *.i).
+c[194] See YuP[2020-01]
+
+c[193] Adjusted mpi.ins: For wk_pwr_cur() array, changed real to real*4.
+c[193] The default size, for a declaration such as "real val", 
+c[193] can be altered by compiling with options -dbl or -r8, 
+c[193] and we better have it always real*4, for 
+c[193] MPI_SEND(wk_pwr_cur,***, MPI_REAL, ***)
+c[193] See YuP[2020-01]
+
+c[193.1] Added coll_mult multiplier to Bonoli LH collisional damping.
+c[193.1] Paul Parks reexamined coll damping and says it should be about
+c[193.1] half to eighth of what Paul Bonoli obtained. 
+c[193.1] Needs further checking out.  [BH191017]
+
 c[192] version="genray_v10.12_180912"
 c[192] Fixed bugs related to MPI implementation 
 c[192] of ADJ-related subroutines (i_adj=1).

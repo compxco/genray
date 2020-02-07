@@ -2,8 +2,8 @@
 c the arrays for the text and netCDF ray data for FP (CQL3D) code
 c      nrelta is maximum value of nrelt
 c      in all array nfreqa -> nfreq
-       double complex cwexde,cweyde,cwezde
-       double complex w_ceps
+       complex*16 cwexde,cweyde,cwezde !YuP[2020-01] double complex to complex*16
+       complex*16 w_ceps  !YuP[2020-01] double complex to complex*16
 cBH130508:  Variable nfreq and nray made it difficult to set up
 cBH130508:  buffers for MPI send and receive.  Morevover, only
 cBH130508:  a small amount of memory is saved here on this account.

@@ -166,7 +166,9 @@ CMPIINSERTPOSITION SUBS
       real*8 r1(lr1+lr2+lr3+lr4+lr5)
       common/write/ r1
       
-      real wk_pwr_cur(5+NR*(6+nbulk))
+      real*4 wk_pwr_cur(5+NR*(6+nbulk)) !YuP[2020-01] changed real to real*4
+      !YuP: Note, The default size, for a declaration such as "REAL H", 
+      !can be altered by compiling with options -dbl or -r8      
 
       tag=mpi_index  ! Getting invitation: rank=0 is ready to receive 
                      ! data for mpi_index:
@@ -257,7 +259,9 @@ c====================================================================
       common/write/ r1
 
       !Work array for profiles of RF power and driven current (from each ray)
-      real wk_pwr_cur(5+NR*(6+nbulk))
+      real*4 wk_pwr_cur(5+NR*(6+nbulk)) !YuP[2020-01] changed real to real*4
+      !YuP: Note, The default size, for a declaration such as "REAL H", 
+      !can be altered by compiling with options -dbl or -r8      
       
       tag=mpi_index  
       

@@ -1423,7 +1423,11 @@ c      								   !
 c      z, r  the coordinates
 c------------------------------------------------------------------
       double precision function fpsi(r,z)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer nx4,ny4 !YuP[2020-01-14]
+      real*8 z,r !YuP[2020-01-14]
+
       include 'param.i'
       include 'fourb.i'
       include 'five.i'

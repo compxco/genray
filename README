@@ -87,3 +87,16 @@ June 10, 2019
 =============
 Got connection to git@github.com:compxco/genray.git working,
 using ssh method for connection to github.com.
+
+
+200117
+======
+Updating locate git/genray/ and 
+github.com/compxco/genray with this version.
+version="genray_v10.13_200117"
+Changes from earlier versions are listed in a_change.i.
+Make files and instructions for compiling genray and pgplot
+are included.  GENRAY has also been compiled with the
+gnu environment at cori.nersc.gov, and results compared
+closely with results obtained in the intel compiler environment.
+

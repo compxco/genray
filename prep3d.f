@@ -583,13 +583,15 @@ c                write(*,*)'LH maxw cnprim_e', cnprim_e
                 call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
      1                  ,bz,br,bphi,nbulk,bmod,frqncy,z_eff,
      1                   cnprim_e,cnprim_i,cnprim_cl)
+                cnprim_cl=coll_mult*cnprim_cl  !BH191207
               endif
-           else
+           else ! i.e., i_lsc_approach.ne.1
               call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
      1                  ,bz,br,bphi,nbulk,bmod,frqncy,z_eff,
      1                   cnprim_e,cnprim_i,cnprim_cl)
+              cnprim_cl=coll_mult*cnprim_cl  !BH191207
 cyup              write(*,*)'LH iabsorp_2 cnprim_e', cnprim_e
-           endif
+           endif  ! On i_lsc_approach.eq.1
 
 c           call absorplh(u,cnpar,cnper,temp_e,dens_e,tempiar
 c     1                  ,bz,br,bphi,nbulk,bmod,frqncy,z_eff,
@@ -1144,10 +1146,11 @@ c-------------to plot.ps file using PGplot
 
               call map_dhot_nper(m_r_nperp,m_i_nperp, 
      .        dmax_r_nperp,dmin_r_nperp,dmax_i_nperp,dmin_i_nperp,
+     .        n_contour_plot_disp,
      .        nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,
      .        vflow_ar,cnparp,cnperp,cnprim,iabsorp,
      .        n_relt_harm1,n_relt_harm2,n_relt_intgr,
-     .        i_resonance_curve_integration_method,
+     .        i_resonance_curve_integration_method,epsi,
      .        i_diskf,r,z,phi)
            endif
 

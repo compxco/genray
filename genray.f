@@ -941,6 +941,7 @@ c-----Construct names of .txt and .nc ray data files
       write(filenc,1002) mnemonic(1:length_char(trim(mnemonic)))
  1002 format(a,".nc")
 c
+
       if( myrank.eq.0 ) then !----------------------------myrank=0
       
       if(outnetcdf.eq.'enabled')then !YuP[2018-01-17] Added
@@ -1025,6 +1026,8 @@ cSAP080422
          call gr_OX_optimal_direction(ndim)
       endif
       endif  !On myrank=0    !----------------------------myrank=0
+
+
 c---------------------------------------------------------------
 CWRITE       write(*,*)'genray.f before   adj_chi_function'
 CWRITE       write(*,*)'genray.f i_adj=',i_adj
@@ -1872,11 +1875,11 @@ c         write(*,*)'read after wrtnetcdf_EC_launch'
 c         read(*,*)
         endif
 
-        if(myrank.eq.0)then ! MPI write from rank=0 only !
-           close(i1_)
-        endif ! myrank=0 MPI
-      
       endif ! outnetcdf ------------------------------------------------
+      
+      if(myrank.eq.0)then ! MPI write from rank=0 only !YuP[2019-09-30] moved
+         close(i1_) ! closing file=outdat
+      endif ! myrank=0 MPI
 
 cSAP091030
       if(ionetwo.eq.1) then
@@ -2060,8 +2063,11 @@ c     +              time_genray_2-time_genray_1a
      
       WRITE(*,'(a,1pd15.6)') 'CPU time spent in subr.equilib=',
      +              time_genray_1b-time_genray_1a
-      WRITE(*,'(a,1pd15.6)') 'CPU time spent in ADJ-related=',
+
+      if (i_adj.eq.1)
+     +WRITE(*,'(a,1pd15.6)') 'CPU time spent in ADJ-related=',
      +              time_genray_1d-time_genray_1c
+
       WRITE(*,'(a,1pd15.6)') 'CPU time spent for ray-tracing only =',
      +              time_after_last_ray-time_before_1st_ray
      
@@ -2071,7 +2077,9 @@ c     +              time_genray_2-time_genray_1a
       WRITE(*,1004)
  1004 format('genray.f: Normal end of program')
 c-----close PGgplot 
+      if(myrank.eq.0) then  ! MPI
       call plotend
+      endif  !On myrank=0   ! myrank=0
 
  100  continue ! handle to skip plotting and writing, for myrank>0
 
@@ -2212,7 +2220,7 @@ c**********************************************************************
       include 'three.i'
       include 'five.i'
       parameter (nz=20)
-      dimension       zy(nz),ry(100,nz)
+      dimension zy(0:nz),ry(100,0:nz) !YuP[2020-01] (0:nz)
       double precision ias1r,b
       external b
       character jy*2

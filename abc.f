@@ -11,7 +11,13 @@ c       ds2=sin(gam)**2,dc2=cos(gam)**2                             !
 c       gam is the angle between magnetic field and refractiv index !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
       subroutine abc(z,r,phi,ds2,dc2,ad,bd,cd)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ibmx !YuP[2020-01-14]
+      real*8 z,r,phi,ds2,dc2,ad,bd,cd !YuP[2020-01-14]
+      real*8 pc,s1,s2,s3,s4,s6,s7,xib,x,yib,y,delib,xe,ye !YuP[2020-01-14]
+      real*8 peyp,peym,peym2,a0e,a1e,b0e,b1e,c0e,c1e,dele,ppe,pbyp
+      real*8 a0b,a1b,b0b,b1b,c0b,c1b !YuP[2020-01-14]
       include 'param.i'
       include 'one.i'
 c  ---------------------------------------------------------------
@@ -115,7 +121,14 @@ c       ds2=sin(gam)**2,dc2=cos(gam)**2                             !
 c       gam is the angle between magnetic field and refractiv index !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
       subroutine abc_test(z,r,phi,ds2,dc2,ad,bd,cd)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ibmx !YuP[2020-01-14]
+      real*8 z,r,phi,ds2,dc2,ad,bd,cd !YuP[2020-01-14]
+      real*8 y_test
+      real*8 pc,s1,s2,s3,s4,s6,s7,xib,x,yib,y,delib,xe,ye !YuP[2020-01-14]
+      real*8 peyp,peym,peym2,a0e,a1e,b0e,b1e,c0e,c1e,dele,ppe,pbyp
+      real*8 a0b,a1b,b0b,b1b,c0b,c1b !YuP[2020-01-14]
       include 'param.i'
       include 'one.i'
 c  ---------------------------------------------------------------

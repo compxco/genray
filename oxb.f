@@ -2024,7 +2024,7 @@ c     &theta,r_ant,z_ant
       return
       end
 
-      real *8 function x_bin_min(f,x1,x2,xacc)
+      real*8 function x_bin_min(f,x1,x2,xacc)
 c---------------------------------------------------------------
 c     Using the binary metod founds the point x_min=x_bin_min
 c     which gives the minimal value for f(x)

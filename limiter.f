@@ -306,8 +306,10 @@ c       			  		 !
 c    u(1)=z,u(2)=r,u(3)=phi,u(4)=nz,u(5)=nr,u(6)=m               !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       subroutine drkgs0_limiter(t,h,u,deru,ndim,fct,aux)
-      implicit double precision (a-h,o-z)
-
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer i,ndim !YuP[2020-01-14]
+      real*8 t,h,u,deru,aux, up !YuP[2020-01-14]
       dimension u(1),deru(1),aux(8,1),up(1)
 
 c      write(*,*)'in Runge -Kutta drkgs0'

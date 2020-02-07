@@ -2312,7 +2312,7 @@ c-----input
       include 'param.i'
       include 'nperpcom.i'
 c-----external 
-      double  precision rtbis,ddwrap,ddwrap1
+      double precision rtbis,ddwrap,ddwrap1
       double complex dhot_sum
       external rtbis,ddwrap!,ddwrap1
 c-----output

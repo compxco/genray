@@ -5,7 +5,7 @@ c      subroutine netcdfr3d(netcdfnm,iy,iy_,jx,lrz,y,x,rya,vnorm,f)
 c-----It reads the distribution and the mesh from netcdfnm.nc file
 
       implicit none
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
 c       save
 
       
@@ -314,7 +314,7 @@ c              write(*,*)'i,j,k,f(i,j,k,1)',i,j,k,f(i,j,k,1)
        
      
       subroutine wrtnetcdf(kopt)
-c      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
       implicit none
 c
 c     Write ray tracing data (as in mnemonic.txt) into a netCDF file.
@@ -1606,7 +1606,7 @@ c
 
       subroutine wrtnetcdf_prof(netcdfnml,kopt)
       implicit none
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
 
 c     If the namelist ionetwo.eq.1 it will write the current
 c     and power profiles into existing netcdf file: netcdfnml 
@@ -2445,7 +2445,10 @@ c
 c
 
       subroutine wrtnetcdf_eps(netcdfnml)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer error_code  !YuP[2020-01-14]
+      integer neltmax,iray  !YuP[2020-01-14]
 
 c     If the namelist variable dielectric_op="enabled", this routine
 c     will write the complex dielectric tensor elements along the rays
@@ -2750,7 +2753,9 @@ c-----locals
 
 
       subroutine wrtnetcdf_grill_launch(netcdfnml)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer error_code  !YuP[2020-01-14]
 
 c     If the namelist variable istart=2 or =3  this routine
 c     will write the ray starting coordinates 
@@ -2925,8 +2930,9 @@ c     End write netcdf data
 
 
       subroutine wrtnetcdf_EC_launch(netcdfnml)
-      implicit integer (i-n), real*8 (a-h,o-z)
-
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer error_code  !YuP[2020-01-14]
 c     If the namelist variable istart=1  this routine
 c     will write the ray starting coordinates 
 c     into existing netcdf file: netcdfnml 
@@ -3081,7 +3087,8 @@ c      write(*,*)'before ncvid( r_starting)ncid ',ncid
 c      write(*,*)'before ncvid( phi_starting) ncid ',ncid
       call ncvid2(vid,ncid,'phi_starting',istatus)     
 cSAP080704      call ncvpt_doubl2(ncid,vid,1,nrayl,arphiu0,istatus)
-      call ncvpt_doubl2(ncid,vid,1,nrayl,180.d0/pi*phist,istatus)
+      call ncvpt_doubl2(ncid,vid,1,nrayl,180.d0/pi*phistj,istatus)
+      !YuP[2019-10-01] corrected phist --> phistj
    
 c      write(*,*)'before ncvid( alphast ) ncid',ncid
       call ncvid2(vid,ncid,'alphast',istatus)     
@@ -3107,7 +3114,7 @@ c     End write netcdf data
 
       subroutine wrtnetcdf_emission(netcdfnml,nray_emission)
       implicit none   
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
 
 c     If the namelist variable i_emission=1, this routine
 c     will write the emiision data 
@@ -4138,7 +4145,7 @@ c     End write netcdf data
       subroutine put_emission_in_writencdf_i(ifreq,iray_start_point)
 c-----put emission data in writencdf.i 
       implicit none  
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
 
       include 'param.i'     
       include 'one.i'
@@ -4314,7 +4321,7 @@ c-----read output *.nc file to check the resonance curves
 
 c     implicit none
       implicit none
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
       character(*) netcdfnm_out ! input filename
 c      character*9 netcdfnm ! input filename
 
@@ -4519,7 +4526,7 @@ c      write(*,*)'********************************************'
       subroutine wrtnetcdf_emission_spectrum(netcdfnml)
 c     ,nray_emission)
       implicit none
-c      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
 
 c     If the namelist variable i_emission=1 and i_emission_spectrum=1 than
 c     this routine will write the emiision spectrum data 

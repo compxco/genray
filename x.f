@@ -19,13 +19,12 @@ c		  rho is in common one						    !
 c-------------------------------------------------------------------
       double precision
      1function x(z,r,phi,i)
-c      implicit double precision (a-h,o-z)
       implicit none
      
       include 'param.i'
       include 'one.i'
 c-----input
-      real*8 z,r,phi!space coordinates
+      real*8 z,r,phi !space coordinates
 c     rho is in common  /one/
       integer i !number of plasmma specie
 
@@ -65,7 +64,6 @@ c-------------------------------------------------------------------
       double precision
      1function vardens(z,r,phi)
 cSAP090201
-c      implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -103,7 +101,11 @@ cc      write(*,*)'varphi,vartheta,vardens',varphi,vartheta,vardens
 
       double precision
      1function dvarddz(z,r,phi)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi, psif,psi_xr, dro_dpsi,drhopsi,theta,thetapol !YuP[2020-01-14]
+      real*8 vartheta,varphtht,varrho,varphi !YuP[2020-01-14]
+      real*8 dvarrdz,dvarthdz,dvarptdz,dthetadz !YuP[2020-01-14]
       include 'param.i'
       include 'one.i'
 c-----------------------------------------------------
@@ -141,7 +143,11 @@ cc      write(*,*)'in dvarddz=',dvarddz
 
       double precision
      1function dvarddr(z,r,phi)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi, psif,psi_xr, dro_dpsi,drhopsi,theta,thetapol !YuP[2020-01-14]
+      real*8 vartheta,varphtht,varrho,varphi !YuP[2020-01-14]
+      real*8 dvarrdr,dvarthdr,dvarptdr,dthetadr !YuP[2020-01-14]
       include 'param.i'
       include 'one.i'
 c-----------------------------------------------------
@@ -179,7 +185,11 @@ cc      write(*,*)'in dvarddr=',dvarddr
 
       double precision
      1function dvarddph(z,r,phi)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi, psif,psi_xr, dro_dpsi,drhopsi,theta,thetapol !YuP[2020-01-14]
+      real*8 vartheta,varphtht,varrho,varphi !YuP[2020-01-14]
+      real*8 dvarphdp,dvarptdp  !YuP[2020-01-14]
       include 'param.i'
       include 'one.i'
 c------------------------------------------------
@@ -207,7 +217,9 @@ c************  thetapol********
      1function thetapol(z,r)
 c     calculation of the poloidal angle theta (rad)
 c     -pi.gt.theta.le.pi
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r, zcomp,rcomp,theta
       include 'param.i'
       include 'one.i'
       include 'three.i'
@@ -254,7 +266,9 @@ c************ dthetadz********
      1function dthetadz(z,r)
 c     calculation of the derivative D(theta)/Dz
 c     -pi.gt.theta.le.pi
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r, zcomp,rcomp,theta
       include 'param.i'
       include 'one.i'
       include 'three.i'
@@ -292,7 +306,9 @@ c************ dthetadr********
      1function dthetadr(z,r)
 c     calculation of the derivative D(theta)/Dr
 c     -pi.gt.theta.le.pi
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r, zcomp,rcomp,theta
       include 'param.i'
       include 'one.i'
       include 'three.i'
@@ -330,7 +346,10 @@ c      write(*,*)'dthetadr new',dthetadr
 
       double precision
      1function x_test(z,r,phi,i)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi,den,dense,x
+      integer i
       include 'param.i'
       include 'one.i'
 c      write(*,*)'in x z,r,phi,i',z,r,phi,i

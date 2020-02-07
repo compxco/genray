@@ -108,29 +108,41 @@ C---------------------------------------------------------------
      &cweps33_nc(:,:)          !(nrelta,nraya)
 
     
+      integer
+     &nharm,nrayl,irayl
       integer, pointer :: 
      &i_ox_conversion_nc(:),                   !(nraya),
      &nrayelt_nc(:),                           !(nraya),
 c-----emission data-------------------------- 
      &nrayelt_emis_nc(:),                      !(nfreqa),
-     &nrayelt_emis_initial_mesh_nc(:),          !(nfreqa),
+     &nrayelt_emis_initial_mesh_nc(:),         !(nfreqa),
 c-------------------------------------------
-cSAP100514
-     &iray_status_nc(:,:)                          !(nray,nfreq)
+     &iray_status_nc(:,:)                      !(nray,nfreq)
+     
+      common/writencdf_int/     
+     &nharm,nrayl,irayl,
+     &i_ox_conversion_nc,
+     &nrayelt_nc,   
+     &nrayelt_emis_nc,
+     &nrayelt_emis_initial_mesh_nc,
+     &iray_status_nc  
+      !YuP[2020-01] Collected all integer variables into a separate block,
+      !for better alignment
 
 
       real*8    
-     &freqcy,
+     &freqcy,                       ! scalar
 c-----emission data--------------------------    
-     &freqncy0_nc,
+     &freqncy0_nc,                  ! scalar
 c-----data for power absorprion at reflections 
      &w_tot_pow_absorb_at_refl_nc   !scalar
 
-      integer
-     &nharm,nrayl,irayl
 
   
       common/writencdf/
+     &freqcy,                       !scalar
+     &freqncy0_nc,                  !scalar
+     &w_tot_pow_absorb_at_refl_nc,  !scalar
      &cwexde_nc,
      &cweyde_nc,
      &cwezde_nc,
@@ -178,9 +190,6 @@ c-----data for power absorprion at reflections
      &cn_par_optimal_nc,
      &cnpar_ox_nc,
      &cn_b_gradpsi_nc,
-     &i_ox_conversion_nc, !integer 
-     &nrayelt_nc,         !integer
-     &freqcy,             !scalar
 c-----emission data-------------------------- 
      &wsn_nc,  
      &wcnpar_em_nc,
@@ -212,9 +221,6 @@ c-----emission data--------------------------
      &wi_0t_nc,
      &wr_2nd_harm_nc,
      &wtemp_2nd_harm_nc,
-     &freqncy0_nc, !scalar
-     &nrayelt_emis_nc        ,
-     &nrayelt_emis_initial_mesh_nc,
      &wr_emis_initial_mesh_nc,
      &wp_perpmax_dmc_nc,
      &wp_parmin_dmc_nc,
@@ -233,14 +239,9 @@ c------------------plasma profiles VS r at z=0  ------------------
      &w_r_densprof_nc,
 c--------------------------------------------------
      &w_eff_nc,
-     &w_theta_pol_nc,
+     &w_theta_pol_nc
 c-----------------------------------------------------   
-     &w_tot_pow_absorb_at_refl_nc,  !scalar
-c-----------------------------------------------------
-     &nharm,nrayl,irayl,
-c------------------------------------------------------
-cSAP100514
-     &iray_status_nc  
+     
 
 c the data for mnemonic.nc file (output data in netcdf format)
 c nrelta is the max number of the ray elements along any ray

@@ -19,9 +19,12 @@ c     this program uses the function cn 			    !
 c-------------------------------------------------------------------
 	double precision
      1function gamma1(z,r,phi,cnz,cnr,cm)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi,cnz,cnr,cm  !YuP[2020-01-14]
+      real*8 cn,arg,cnt,gg,dc  !YuP[2020-01-14]
       include 'param.i'
-      include'one.i'
+      include 'one.i'
 
 	 cnt=cn(r,cnz,cnr,cm)
 	gg=cnz*bz+cnr*br+cm*bphi/r

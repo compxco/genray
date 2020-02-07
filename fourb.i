@@ -7,9 +7,17 @@ c the arrays from the input eqdskin (default="equilib.dat") file
 c	Set up some variables for re-gridding of input f(1:nveqd), etc.,
 c       arrays onto a equispaced mesh of dimension nxeqd.
 c       BobH020822.
-      integer iworkka,itabl,i1p,n_wall_add,n_limiter_add
 
+      integer iworkka,itabl,i1p,n_wall_add,n_limiter_add
       parameter(iworkka=3*nxeqda+1)
+      common/fourb_int/ n_limiter_add, itabl(3), i1p(2),
+     &                  n_wall_add(0:max_limiters_a)
+      !YuP[2020-01] Collected all integer variables into a separate block,
+      !for better alignment
+
+      
+      
+       
       real*8 psiar,d2feqd,d2pres,d2ffpeqd,d2ppeqd,d2qpsi,workk,r8temp,
      &tabl,
      & thetapol_wall,thetapol_limiter,
@@ -62,7 +70,7 @@ cSAP111012
 c------BobH02022
      &             psiar(nxeqda),d2feqd(nxeqda),d2pres(nxeqda),
      1             d2ffpeqd(nxeqda),d2ppeqd(nxeqda),d2qpsi(nxeqda),
-     2            r8temp(nxeqda),i1p(2),workk(iworkka),tabl(3),itabl(3),
+     2            r8temp(nxeqda),workk(iworkka),tabl(3),
 c-----for wall and limiter
      &             thetapol_wall(n_wall_a),
      &             thetapol_limiter(n_limiter_a,max_limiters_a),
@@ -87,7 +95,6 @@ c-------pointers at rz mesh
      &             zeff_r_z_rr,
      &             zeff_r_z_zz,
      &             zeff_r_z_rrzz,  
-     &   n_wall_add(0:max_limiters_a),
 c-------pointers for density and zeff at rz mesh 
      &dens_r_z_in,  
      &temperature_r_z_in,  
