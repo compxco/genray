@@ -33,7 +33,11 @@ c								    !
 c     i=2,nbulk; ib=1,nbulk; nbulk - number of bulk particles       !
 c-------------------------------------------------------------------
       subroutine se(z,r,phi,s1,s2,s3,s4,s5,s6,s7,s8)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 z,r,phi,s1,s2,s3,s4,s5,s6,s7,s8
+      real*8 ds1,ds2,ds3,ds4,ds5,ds6,ds7,ds8,xi,x,yi,y,pps
+      integer i
       include 'param.i'
       include'one.i'
 	ds1=0.d0

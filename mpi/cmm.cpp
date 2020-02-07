@@ -126,7 +126,7 @@ bool is_uncomment(string& s, string& type, int& pos)
 }
 
 /* check empty lines */
-bool is_empty(string& s)
+bool is_empty_my(string& s)
 {
   int l = s.length();
   for( int i=0; i<l; i++ )
@@ -138,7 +138,7 @@ bool is_empty(string& s)
 /* check line is continuation */
 bool is_cont(string& s)
 {
-  if( is_comment(s) || is_empty(s) || s.length()<6 )
+  if( is_comment(s) || is_empty_my(s) || s.length()<6 )
     return false;
   return str_extract(s,0,5)=="     " && s[5]!=' ';
 }
@@ -155,7 +155,7 @@ string align_line(string& s)
     else
       t += "      ";
   // special cases
-  if( is_comment(t) || is_empty(t) )
+  if( is_comment(t) || is_empty_my(t) )
     return t;
   if( is_cont(t) )
     {

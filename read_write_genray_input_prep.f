@@ -2706,7 +2706,10 @@ c
 
      
       subroutine pack21(a,ibot,itop,jbot,jtop,b,iy,jx)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ibot,itop,jbot,jtop,iy,jx, j,i1
+      real*8 a,b
 c.......................................................................
 c     It sometimes becomes necessary to take a
 c     2-D array dimensioned ibot:itop by jbot:jtop

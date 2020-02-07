@@ -70,20 +70,15 @@ version="genray_v10.11_180410"
 Otherwise, little changed from "genray_v10.11_170725".
 
 
-Sept 6, 2018
-============
-Obtained genray distribution from https://github.com/compxco/genray
-and compiled, placing updated files in trunk/ .
 
-Sept 12, 2018
-=============
-Obtained a few changes related to YuP fix of MPI error in the
-ADJ calculation of LH current drive efficiency (was OK in the
-serial genray version).  See a_change.i
-version="genray_v10.12_180912"
+200117
+======
+Updating locate git/genray/ and 
+github.com/compxco/genray with this version.
+version="genray_v10.13_200117"
+Changes from earlier versions are listed in a_change.i.
+Make files and instructions for compiling genray and pgplot
+are included.  GENRAY has also been compiled with the
+gnu environment at cori.nersc.gov, and results compared
+closely with results obtained in the intel compiler environment.
 
-
-June 10, 2019
-=============
-Got connection to git@github.com:compxco/genray.git working,
-using ssh method for connection to github.com.

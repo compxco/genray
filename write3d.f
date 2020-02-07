@@ -9,7 +9,10 @@ c	 *  frqncy-wave friquency from common block one		  *
 c        *  i_ -number of output file(for 3D FP) from common one  *
 c-----------------------------------------------------------------*
       subroutine write3d1(nray)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer nray  !YuP[2020-01-14]
+      
       include 'param.i'
       include 'one.i'
       include 'writencdf.i'
@@ -60,7 +63,13 @@ c        *  nrayelt -number of ray elements along ray iray from   *
 c        *           common block write(was calculated in prep3d) *				  *
 c-----------------------------------------------------------------*
       subroutine write3d
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer is,io9,jpes,jpis,istarts,keiks,i  !YuP[2020-01-14]
+      integer nurefls,jslofas,jprmt5,jhlfs  !YuP[2020-01-14]
+      real*8 u,deru !YuP[2020-01-14]
+      real*8 sxxrt,skpsi,skth,skphi  !YuP[2020-01-14]
+
       dimension u(6),deru(6)
       include 'param.i'
       include 'write.i'
@@ -287,7 +296,12 @@ c        *  nrayelt -number of ray elements along ray iray from   *
 c        *           common block write(was calculated in prep3d)
 c-----------------------------------------------------------------*
       subroutine read3d(io)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer is,io,nray,nharm,jpes,jpis,istarts,keiks,i  !YuP[2020-01-14]
+      integer nurefls,jslofas,jprmt5,jhlfs  !YuP[2020-01-14]
+      real*8 u,deru !YuP[2020-01-14]
+      real*8 sxxrt,skpsi,skth,skphi, freqcy  !YuP[2020-01-14]
       include 'param.i'
       include 'write.i'
       include 'one.i'
@@ -379,6 +393,7 @@ c        ray iray can not go to plasma
 
 
       subroutine check_err(iret)
+      implicit none !YuP[2020-01-14]
       integer iret
       include 'netcdf.inc'
       if (iret .ne. NF_NOERR) then
@@ -392,104 +407,104 @@ c
 
 
 
-cfor test
-      subroutine pack21_test(a,ibot,itop,jbot,jtop,b,iy,jx)
-      implicit integer (i-n), real*8 (a-h,o-z)
-
-c.......................................................................
-c     It sometimes becomes necessary to take a
-c     2-D array dimensioned ibot:itop by jbot:jtop
-c     and repack it as though it were
-c     dimensioned 1:iy by 1:jx, starting at a(1,1).
-c     This routine does this, transfering relevant data
-c     from array a to b.
-c.......................................................................
-
-      save
-      dimension a(ibot:itop,jbot:jtop)
-      dimension b(iy*jx)
-      write(*,*)'pack21 ibot,itop,jbot,jtop',ibot,itop,jbot,jtop
-      write(*,*)'pack21 iy,jx',iy,jx
-
-      do 1 j=1,jx
-        i1=(j-1)*iy+1
-c        call scopy(iy,a(1,j),1,b(i1),1)
-
-c         write(*,*)'pack21 a(1,j)'
-c         do i=1,iy
-c           write(*,*)'i,a(i,j)',i,a(i,j)
-c         enddo
-        write(*,*)'j,i1',j,i1
-        call dcopy_test(iy,a(1,j),1,b(i1) ,1)
-
-       write(*,*)'pack21_test b(i1,j)'
-c        do k=i1,i1+jx-1
-        write(*,*)'i1,i1+jx-2',i1,i1+jx-2
-        do k=i1,i1+jx-2
-           write(*,*)'k,b(k)',k,b(k)
-       enddo
-
- 1    continue
-      return
-      end
-c
-      subroutine dcopy_test(n,dx,incx,dy,incy)
-c
-c     copies a vector, x, to a vector, y.
-c     uses unrolled loops for increments equal to one.
-c     jack dongarra, linpack, 3/11/78.
-c     modified 12/3/93, array(1) declarations changed to array(*)
-c
-      real*8 dx(*),dy(*)
-      integer i,incx,incy,ix,iy,m,mp1,n
-c
-      write(*,*)'dcopy incx,incy',incx,incy
-
-      if(n.le.0)return
-      if(incx.eq.1.and.incy.eq.1)go to 20
-c
-c        code for unequal increments or equal increments
-c          not equal to 1
-c
-      ix = 1
-      iy = 1
-      if(incx.lt.0)ix = (-n+1)*incx + 1
-      if(incy.lt.0)iy = (-n+1)*incy + 1
-      do 10 i = 1,n
-        dy(iy) = dx(ix)
-        ix = ix + incx
-        iy = iy + incy
-   10 continue
-      return
-c
-c        code for both increments equal to 1
-c
-c
-c        clean-up loop
-c
-   20 m = mod(n,7)
-      write(*,*)'dcopy_test n,m',n,m
-      if( m .eq. 0 ) go to 40
-      do 30 i = 1,m
-        dy(i) = dx(i)
-        write(*,*)'i,dy(i),dx(i)',i,dy(i),dx(i)
-   30 continue
-      if( n .lt. 7 ) return
-   40 mp1 = m + 1
-      write(*,*)'dcopy_test mp1',mp1
-      do 50 i = mp1,n,7
-        dy(i) = dx(i)
-        dy(i + 1) = dx(i + 1)
-        dy(i + 2) = dx(i + 2)
-        dy(i + 3) = dx(i + 3)
-        dy(i + 4) = dx(i + 4)
-        dy(i + 5) = dx(i + 5)
-        dy(i + 6) = dx(i + 6)
-        write(*,*)'dx(i),dx(i+1),dx(i+2),dx(i+3)',
-     &             dx(i),dx(i+1),dx(i+2),dx(i+3)
-        write(*,*)'dx(i+4),dx(i+5),dx(i+6)',
-     &             dx(i+4),dx(i+5),dx(i+6)
-   50 continue
-      return
-      end
+!for test
+!      subroutine pack21_test(a,ibot,itop,jbot,jtop,b,iy,jx) !Not used
+!      !implicit integer (i-n), real*8 (a-h,o-z)
+!
+!c.......................................................................
+!c     It sometimes becomes necessary to take a
+!c     2-D array dimensioned ibot:itop by jbot:jtop
+!c     and repack it as though it were
+!c     dimensioned 1:iy by 1:jx, starting at a(1,1).
+!c     This routine does this, transfering relevant data
+!c     from array a to b.
+!c.......................................................................
+!
+!      save
+!      dimension a(ibot:itop,jbot:jtop)
+!      dimension b(iy*jx)
+!      write(*,*)'pack21 ibot,itop,jbot,jtop',ibot,itop,jbot,jtop
+!      write(*,*)'pack21 iy,jx',iy,jx
+!
+!      do 1 j=1,jx
+!        i1=(j-1)*iy+1
+!c        call scopy(iy,a(1,j),1,b(i1),1)
+!
+!c         write(*,*)'pack21 a(1,j)'
+!c         do i=1,iy
+!c           write(*,*)'i,a(i,j)',i,a(i,j)
+!c         enddo
+!        write(*,*)'j,i1',j,i1
+!        call dcopy_test(iy,a(1,j),1,b(i1) ,1)
+!
+!       write(*,*)'pack21_test b(i1,j)'
+!c        do k=i1,i1+jx-1
+!        write(*,*)'i1,i1+jx-2',i1,i1+jx-2
+!        do k=i1,i1+jx-2
+!           write(*,*)'k,b(k)',k,b(k)
+!       enddo
+!
+! 1    continue
+!      return
+!      end
+!
+!      subroutine dcopy_test(n,dx,incx,dy,incy) !Not used
+!c
+!c     copies a vector, x, to a vector, y.
+!c     uses unrolled loops for increments equal to one.
+!c     jack dongarra, linpack, 3/11/78.
+!c     modified 12/3/93, array(1) declarations changed to array(*)
+!c
+!      real*8 dx(*),dy(*)
+!      integer i,incx,incy,ix,iy,m,mp1,n
+!c
+!      write(*,*)'dcopy incx,incy',incx,incy
+!
+!      if(n.le.0)return
+!      if(incx.eq.1.and.incy.eq.1)go to 20
+!c
+!c        code for unequal increments or equal increments
+!c          not equal to 1
+!c
+!      ix = 1
+!      iy = 1
+!      if(incx.lt.0)ix = (-n+1)*incx + 1
+!      if(incy.lt.0)iy = (-n+1)*incy + 1
+!      do 10 i = 1,n
+!        dy(iy) = dx(ix)
+!        ix = ix + incx
+!        iy = iy + incy
+!   10 continue
+!      return
+!c
+!c        code for both increments equal to 1
+!c
+!c
+!c        clean-up loop
+!c
+!   20 m = mod(n,7)
+!      write(*,*)'dcopy_test n,m',n,m
+!      if( m .eq. 0 ) go to 40
+!      do 30 i = 1,m
+!        dy(i) = dx(i)
+!        write(*,*)'i,dy(i),dx(i)',i,dy(i),dx(i)
+!   30 continue
+!      if( n .lt. 7 ) return
+!   40 mp1 = m + 1
+!      write(*,*)'dcopy_test mp1',mp1
+!      do 50 i = mp1,n,7
+!        dy(i) = dx(i)
+!        dy(i + 1) = dx(i + 1)
+!        dy(i + 2) = dx(i + 2)
+!        dy(i + 3) = dx(i + 3)
+!        dy(i + 4) = dx(i + 4)
+!        dy(i + 5) = dx(i + 5)
+!        dy(i + 6) = dx(i + 6)
+!        write(*,*)'dx(i),dx(i+1),dx(i+2),dx(i+3)',
+!     &             dx(i),dx(i+1),dx(i+2),dx(i+3)
+!        write(*,*)'dx(i+4),dx(i+5),dx(i+6)',
+!     &             dx(i+4),dx(i+5),dx(i+6)
+!   50 continue
+!      return
+!      end
 

@@ -846,7 +846,7 @@ c      real p_perps,p_perpar,bjs
 c      integer n_abs,ier,k
 c      complex snc(3,3)
 
-      double  complex i    
+      double complex i    
       double precision  bj,bj1,bj_prim,b,b_abs,bj_prim1
       double precision  p_perps,p_perpar,bjs
       integer n_abs,ier,k
@@ -1510,7 +1510,11 @@ c      write(*,*)'in fdens_fdist dens0,dens',dens0,dens
      +fdens_fkin2(n,k,r,z)
 c     calculates the density from the mesh distribution f
 c     in the momentum space u=p/m  in the point with minimal b
-      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none  !YuP[2020-01-14]
+      integer initial,jxa !YuP[2020-01-14]
+      real*8 fdist,dfdx,dfdpitch,dfdp  !YuP[2020-01-14]
+      
       include 'param.i'
       include 'dskin.i'
 cSm030514
@@ -3136,7 +3140,7 @@ c      real p_perps,p_perpar,bjs
 c      integer n_abs,ier,k
 c      complex snc(3,3)
 
-      double  complex i    
+      double complex i    
       double precision  bj,bj1,bj_prim,b,b_abs,bj_prim1
       double precision  p_perps,p_perpar,bjs
       integer n_abs,ier,k

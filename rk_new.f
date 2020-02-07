@@ -53,7 +53,6 @@ c    u(1)=z,u(2)=r,u(3)=phi,u(4)=nz,u(5)=nr,u(6)=m               !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       subroutine drkgs(prmt,u,deru,ndim,ihlf,fct,outp,aux)
       implicit none 
-c      implicit double precision (a-h,o-z)
 c-----input
       integer ndim,ihlf 
       real*8 u(*),deru(*),aux(8,*),prmt(*),t
@@ -695,7 +694,6 @@ c    u(1)=z,u(2)=r,u(3)=phi,u(4)=nz,u(5)=nr,u(6)=m               !              
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       subroutine drkgs2(prmt,u,deru,ndim,ihlf,fct,outp,aux,i_output)
       implicit none
-c      implicit double precision (a-h,o-z)
 cSAP100514
       include 'param.i'
       include 'write.i'
@@ -1514,10 +1512,12 @@ c       			  		 !
 c    u(1)=z,u(2)=r,u(3)=phi,u(4)=nz,u(5)=nr,u(6)=m               !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       subroutine drkgs0(h,u,deru,ndim,fct,aux)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 h,u,deru,aux,up, t
+      integer ndim,i
 
       dimension u(*),deru(*),aux(8,*),up(6)
-      double precision u,deru,aux,h,up
 
 c      write(*,*)'in Runge -Kutta drkgs0'
 

@@ -44,7 +44,7 @@ c
 c     output     fdist,dfdx,dfdpitch
 c..................................................................
       implicit none
-c      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
       include 'dskin.i'
@@ -1014,10 +1014,11 @@ c-------------x_(i-1)=< x = < x_(iement-0.5)
 
       subroutine set_f(iya,jxa,lrza,ngena,iy_,jx,lrz,ngen,y,x,rovera,f)
 c     put the test distribution to array f
-      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none !YuP[2020-01]
       integer iya,jxa,lrza,ngena,jx,lrz,ngen
       double precision f(iya,jxa,lrza,ngena),
-     +y(iya,lrza),x(jxa),rovera(lrza)
+     +y(iya,lrza),x(jxa),rovera(lrza), distrib1
       integer iy_(lrza)
 c     local
       integer n,k,j,i
@@ -1381,7 +1382,11 @@ c      write(*,*)'in fdens_fkin1: dens,dens1',dens,dens1
       subroutine test_fdist
 c-----calculates the distribution in the 3d mesh points using dskin
 c     and compares the results with the array f            
-      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none  !YuP[2020-01-14]
+      integer i_f,initial,ir,i,j !YuP[2020-01-14]
+      real*8 rmass_e, rholoc,pitch,energy,fdist,dfdx,dfdpitch,dfdp !YuP[2020-01-14]
+      
       include 'param.i'
       include 'dskin.i'
       include 'one.i'

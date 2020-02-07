@@ -358,7 +358,7 @@ c-----close the work with pgplot
    
 c     Close the currently selected graphics device.
       CALL PGCLOS
-      write(*,*)'plotend after PGCLOS'
+      WRITE(*,*)'plotend after PGCLOS. myrank=',myrank
 
       close(unit=100)
       return

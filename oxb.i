@@ -1,11 +1,19 @@
 c    The data for  subroutine in oxb.f 
+
+      !YuP[2020-01] Collected same-type variables into separate blocks,
+      !for better alignment
+
       logical was_in_ox_vicinity
-      real*8  transm_ox_old
+      common/oxb_logical/was_in_ox_vicinity
+      
       integer nrayelt_o_cutoff,
      &i_call_prep3d_in_output_at_i_ox_conversion_eq_1
-      common /oxb/was_in_ox_vicinity,transm_ox_old,
-     & nrayelt_o_cutoff,
+      common/oxb_int/nrayelt_o_cutoff,
      &i_call_prep3d_in_output_at_i_ox_conversion_eq_1
+      
+      real*8  transm_ox_old
+      common /oxb/transm_ox_old
+     
 c     was_in_ox_vicinity !for OX jump 
 c     transm_ox_old the previous value of the transmission coefficient
 c

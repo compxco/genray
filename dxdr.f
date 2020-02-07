@@ -21,52 +21,53 @@ c          v,dense0,denseb,rn1de,rn2de,rho,idens   from common 'one'
 c           psilim,psimag            from common 'three'
 c           functions psif, drhopsi, ddnsdrho
 c----------------------------------------------------------------------
-      double precision FUNCTION dxdr_old(z,r,phi,i)
-      IMPLICIT double precision (a-h,o-z)
-      include 'param.i'
-      include 'one.i'
-      include 'three.i'
-      include 'five.i'
-
-c      write(*,*)' dxdr.f z,r,phi,i,iboundb',z,r,phi,i,iboundb
-c      write(*,*)'rho',rho
-      if(iboundb.ge.1)then
-c       the point is outside the plasma
-c	if(iboundb.eq.2) dxdr=0.d0
-c   	if(iboundb.eq.1) then
-c	  dn_drho=ddnsrho(rho,i)
-c          delr=0.5d0*(rmax-rmin)
-c          if (r.le.rzmin) drhodr=-1.d0/delr
-c          if (r.ge.rzmin) drhodr=1.d0/delr
-c          dxdr=v(i)*dn_drho*drhodr
-c	endif
-cSm070325
-        dn_drho=ddnsrho(rho,i)
-        dxdr=v(i)*dn_drho*drhodr(z,r,phi)
-      else
-        psi_xr=psif(z,r)
-        dro_dpsi=drhopsi(psi_xr)
-c------------------------------------------------------------
-c       the spline form only  !
-c------------------------------------------------------------
-c        write(*,*)'dxdr.f rho,i',rho,i
-
-	dn_drho=ddnsrho(rho,i)
-
-c        write(*,*)'dxdr.f dn_drho,dro_dpsi,dpdrd',
-c     &                    dn_drho,dro_dpsi,dpdrd
-
-        dxdr=v(i)*dn_drho*dro_dpsi*dpdrd*(1.d0+vardens(z,r,phi))
-        den=densrho(rho,i)
-        if(den.lt.0.d0)then
-           den=0.d0
-           write(*,*)'in dxdr den.lt.0.0 rho,i',rho,i
-        endif
-        dxdr=dxdr+v(i)*den*dvarddr(z,r,phi)
-      endif
-
-      return
-      END
+!YuP[2020-01] This function is not used. Commenting out.
+!      double precision FUNCTION dxdr_old(z,r,phi,i)
+!      IMPLICIT double precision (a-h,o-z)
+!      include 'param.i'
+!      include 'one.i'
+!      include 'three.i'
+!      include 'five.i'
+!
+!c      write(*,*)' dxdr.f z,r,phi,i,iboundb',z,r,phi,i,iboundb
+!c      write(*,*)'rho',rho
+!      if(iboundb.ge.1)then
+!c       the point is outside the plasma
+!c	if(iboundb.eq.2) dxdr=0.d0
+!c   	if(iboundb.eq.1) then
+!c	  dn_drho=ddnsrho(rho,i)
+!c          delr=0.5d0*(rmax-rmin)
+!c          if (r.le.rzmin) drhodr=-1.d0/delr
+!c          if (r.ge.rzmin) drhodr=1.d0/delr
+!c          dxdr=v(i)*dn_drho*drhodr
+!c	endif
+!cSm070325
+!        dn_drho=ddnsrho(rho,i)
+!        dxdr=v(i)*dn_drho*drhodr(z,r,phi)
+!      else
+!        psi_xr=psif(z,r)
+!        dro_dpsi=drhopsi(psi_xr)
+!c------------------------------------------------------------
+!c       the spline form only  !
+!c------------------------------------------------------------
+!c        write(*,*)'dxdr.f rho,i',rho,i
+!
+!	dn_drho=ddnsrho(rho,i)
+!
+!c        write(*,*)'dxdr.f dn_drho,dro_dpsi,dpdrd',
+!c     &                    dn_drho,dro_dpsi,dpdrd
+!
+!        dxdr=v(i)*dn_drho*dro_dpsi*dpdrd*(1.d0+vardens(z,r,phi))
+!        den=densrho(rho,i)
+!        if(den.lt.0.d0)then
+!           den=0.d0
+!           write(*,*)'in dxdr den.lt.0.0 rho,i',rho,i
+!        endif
+!        dxdr=dxdr+v(i)*den*dvarddr(z,r,phi)
+!      endif
+!
+!      return
+!      END
 
 
 cSAP090209

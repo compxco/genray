@@ -40,7 +40,6 @@ c     hamilt1    						    !
 c-------------------------------------------------------------------
       subroutine rside1(t,u,deru)
 cSm070130
-c      implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'

@@ -43,6 +43,30 @@ c     b,gamma1,dxdz,dxdr,dxdphi,dydz,dydr,dydphi,x,y,s,sdr	    !
 c-------------------------------------------------------------------
         subroutine rsideb1(t,u,deru,i0,epsten)
         implicit double precision (a-h,o-z)
+        !implicit none !YuP[2020-01-14]
+        real*8 t,u,deru, epsten
+        integer i0,i 
+        real*8 sdr1,z,r,phi,cnz,cnr,cm,wf,step,hz,hr,hphi,hnz,hnr,hms,hw
+        real*8 hfrqnc,cnzplus,cnzmins,b,gamma1,hamilt1,hp,hm
+        real*8 dddcnz,dddcnr,cmplus,cmminus,cnrplus,cnrmins
+        real*8 hmin,dddcm,zplus,zminus,dddz,rplus,rminus,dddr
+        real*8 phipls,phimin,dddphi,vp,wp,df,frqncpl,frqncmn
+        real*8 dddw,p,p1,px,px2,py2,py3,py4,pz,pz2,x,xi,y,yi,oxm
+        real*8 delib,ds,dc,ds2,dc2,dxdz,dxdr,dxdphi
+        real*8 dydz,dydr,dydphi,sign_del
+        real*8 s1,s2,s3,s4,s6,s7,pc,zer,dddx,dddy,dddc2,dxdw,dydw
+        real*8 dpzdx,dpzdyddetdx,ddetdy,cnrminus,cnzminus
+        real*8 dxidz,dxidr,dxidph,dyidz,dyidr,dydph,ds4,det,sqrdet
+        real*8 ddetdx,dpzdy,xib,yib,xe,ye,peyp,a0e,a1e,b0e,b1e,c0e,c1e
+        real*8 dele,ad,bd,cd,a0b,a1b,b0b,b1b,c0b,c1b,dadz,dadr,dadphi
+        real*8 ppe,peym,peym2,pbyp,pyim,pyip,pyim2
+        real*8 dyidph,da1edc,da0edc,db1edc,db0edc,dc1edc,dc0edc
+        real*8 dadc2,dbdc2,dcdc2
+        real*8 ds1dxi,ds2dxi,ds3dxi,ds4dxi,ds6dxi,ds7dxi
+        real*8 ds1dyi,ds2dyi,ds3dyi,ds4dyi,ds6dyi,ds7dyi
+        real*8 dadxi,dbdxi,dcdxi,dadw,dbdw,dcdw
+        real*8 dbdz,dbdr,dbdphi, dcdz,dcdr,dcdphi
+        real*8 dadyi,dbdyi,dcdyi
         include 'param.i'
         include 'one.i'
         dimension u(*),deru(*)

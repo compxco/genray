@@ -17,9 +17,12 @@ c      rho is from common one.i
 c------------------------------------------------------------------
 	double precision
      1function dydr(z,r,phi,i)
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer i !YuP[2020-01-14]
+      real*8 z,r,phi !YuP[2020-01-14]
       include 'param.i'
-      include'one.i'
+      include 'one.i'
 
 	dydr=w(i)*dbmdr
 

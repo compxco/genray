@@ -28,7 +28,7 @@ c     nraya  is max value of nray
      +flux_phi_1_nc,
      +wdye_nc_1_nc
 
-      double complex cwexde_1_nc,cweyde_1_nc,cwezde_1_nc
+      complex*16 cwexde_1_nc,cweyde_1_nc,cwezde_1_nc  !YuP[2020-01] double complex to complex*16
 c     &cweps11_1_nc,cweps12_1_nc,cweps13_1_nc,
 c     &cweps21_1_nc,cweps22_1_nc,cweps23_1_nc,
 c     &cweps31_1_nc,cweps32_1_nc,cweps33_1_nc

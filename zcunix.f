@@ -1,7 +1,9 @@
 c     
 c
       real*8 function taper(x,x0,x1,x2)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      real*8 x,x0,x1,x2, pi, xx  !YuP[2020-01-14]
 
 c     A multiplication factor between 0. and 1., giving a tapered
 c     (i.e., smoothed) box function.
@@ -673,7 +675,7 @@ c     dimension       x(n)       ,f(n*int)       ,w(n*int)      ,iop(2),
 c     1  wk(n,*)
       dimension       x(*)       ,f(*)       ,w(*)      ,iop(2),
      1  wk(n,*)
-cdir$ nobounds
+!YuP cdir$ nobounds
       logical q8q4
       save q8q4
       data q8q4 /.true./
@@ -834,7 +836,7 @@ c
  113  continue
       w(1) = w(in)
  114  continue
-cdir$ bounds
+!YuP cdir$ bounds
       return
       end
 
@@ -1906,8 +1908,10 @@ c      write(*,*)'xb,yb,terp2p',xb,yb,terp2p
       end
 c
       subroutine lookup(x,xarray,length,weightu,weightl,lement)
-      implicit integer (i-n), double precision (a-h,o-z)
-
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer length,lement,luf  !YuP[2020-01-14]
+      real*8 x,xarray,weightu,weightl  !YuP[2020-01-14]
 c..................................................................
 c     This routine uses luf to do a table look up. Then it interpolates
 c     to gain a bit of accuracy.
@@ -1955,7 +1959,10 @@ c      write(*,*)'in lookup after luf lement',lement
 
 
       integer function luf(x,table,n)
-      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer n,i_c,i_l,i_r  !YuP[2020-01-14]
+      real*8 x,table  !YuP[2020-01-14]
 c
 c     THIS ROUTINE SHOULD BE A BINARY SEARCH.  IT NEEDS
 C        WORK!
@@ -2021,7 +2028,11 @@ c
 
 
       subroutine lin_interp(x,f,ix,xx,ff,ixx)
-      implicit integer (i-n), double precision (a-h,o-z)
+      !implicit integer (i-n), double precision (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ix,ixx,ii,lx  !YuP[2020-01-14]
+      real*8 x,f,xx,ff  !YuP[2020-01-14]
+      real*8 weightu,weightl
 
 c this routine linearly interpolates the values of array f on x
 c to the values ff on xx. (BobH, 050522).
