@@ -164,7 +164,7 @@ c------------------------------------------
       dddnper=(6.d0*p6*cnper4+4.d0*p4*cnper2+2.d0*p2)*cnper
       cnprim_e=-(di_e/dddnper)
       cnprim_i=-(di_i/dddnper)
-      cnprim_cl=-(di_ic/dddnper)
+      cnprim_cl=-(di_ic/dddnper) !   *coll_mult !BH: added 191017, Needs passing
       cnprim_e=dabs(cnprim_e)
       cnprim_i=dabs(cnprim_i)
       cnprim_cl=dabs(cnprim_cl)

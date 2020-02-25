@@ -1,0 +1,139 @@
+2020-01-16 18:06:10 PST - Johannes Blaschke Additional comments
+Hi Yuri,
+ Thank you for your patience in trying/iterating different solutions with me. I have
+been able to find a solution to the MPI finalizing problem: the error was due to the
+old pgplot library (the pgplot.edison) library that you linked to. As this library
+was built for edison, and for an older version of cori's software environment.
+Something must have broken due to the software updates that have taken place in the
+meantime.
+ The solution is to build your own pgplot library, and link to that instead. The
+MPI_FINALIZE SIGABRT problem should then not occur on N>1 haswell nodes. I am
+detailing the solution below. If you want to see an implementation in action, please
+look at:
+ /global/cscratch1/sd/ypetrov/.consulting/INC0149139/GENRAY_wk
+ Where I have built and tested the solution. If you build pgplot in a folder called
+`pgplot.intel` in the same director as `GENRAY_wk`, you can simply take
+`/global/cscratch1/sd/ypetrov/.consulting/INC0149139/GENRAY_wk/makefile_mpi_intel.cori`
+and it should work.
+ Please let me know if this works.
+ CHANGES TO MAKEFILE:
+ There are several issues with your make file that I had to diagnose first. 
+ 1. Add `-lX11` to the LIBS variable (Note that the LIBRARIES variable is no longer
+used. Instead the make file uses LIBS). So LIBS should read:
+```
+LIBS = $(LOCATION) -lpgplot -lX11
+```
+this should fix all those linker errors. (note the `-lnetcdf` `-lnetcdff` flags are
+also no longer needed, cf. point 2 below)
+ 2. You should rely on the compiler wrappers to find all loaded module libraries
+(such as NetCDF). So you don't need to manually include `$(NETCDF_DIR)` and
+`-lnetcdf`, etc. The compiler wrapper already does that if the `cray-netcdf` module
+has been loaded. You can find out what the compiler wrapper already contains by
+running `cc -v` or `ftn -v`.
+ 3. The location of your `pgplot` library now needs to be included in `LOCATION`.
+Assuming that you build pgplot in a folder called `pgplot.intel`, which is in the
+same folder that contains `GENRATY_wk` then `LOCATION` should be:
+LOCATION= -L../pgplot.intel
+ (note the relative path)
+More recently, use this path:
+LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.intel
+The folder should contain these files (see below):
+       libpgplot.a
+       libpgplot.so
+       grfont.dat
+       rgb.txt
+       pgxwin_server
+
+
+========== BUILDING PGPLOT ====================================
+Take source from: `/global/cscratch1/sd/ypetrov/.consulting/INC0149139/pgplot.tar.gz` 
+---------------------------------------------------------------
+Go to home directory:
+   cd ~/
+Create a target directory for pgplot-intel build:
+   mkdir pgplot.intel
+  [ For GNU: mkdir pgplot.gnu   ]
+Create a pgplot source directory:
+   mkdir pgplot
+Copy pgplot.tar.gz into ~/pgplot , then go there:
+   cd ~/pgplot
+   tar -xvf pgplot.tar.gz
+   mv pgplot ~/pgplot.intel
+
+  [ For GNU, also execute  module swap PrgEnv-intel PrgEnv-gnu   ]
+   module load cdt/19.11
+   cd ~/pgplot.intel/pgplot/pgplot
+   make
+
+This should end with 
+...
+*** Finished compilation of PGPLOT ***
+Note that if you plan to install PGPLOT in a different
+directory than the current one, the following files will be
+needed.
+       libpgplot.a
+       libpgplot.so
+       grfont.dat
+       rgb.txt
+       pgxwin_server
+----------------------------------------------------------------
+Copy all necessary files into ~/pgplot.intel/  directory:
+    cd ~/pgplot.intel/pgplot/pgplot/
+    cp libpgplot.a ~/pgplot.intel
+    cp libpgplot.so ~/pgplot.intel
+    cp grfont.dat ~/pgplot.intel
+    cp rgb.txt ~/pgplot.intel
+    cp pgxwin_server ~/pgplot.intel
+More recently:
+Copy these files into  /global/cfs/cdirs/m77/CompX/pgplot.intel
+[ For GNU: copy files from   ~/pgplot.gnu/   to 
+                       /global/cfs/cdirs/m77/CompX/pgplot.gnu    ]
+====================================================================
+
+
+cp 
+ RUNNING GENRAY_WK
+
+ Now that you're not longer using `pgplot` as a module, It's necessary to tell the
+dynamic linker where to find it. This is most easily accomplished by modifying the
+LD_LIBRARY_PATH variable before running the `srun` command. Your jobscript should
+look something like this:
+```
+#!/bin/bash -l
+ #SBATCH -J GENRAY
+#SBATCH -p regular
+#SBATCH --qos=premium
+#SBATCH --account=m77
+#SBATCH -t 0:00:50
+#SBATCH -C haswell
+#SBATCH -N 2 
+ cd $SLURM_SUBMIT_DIR 
+ #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/homes/y/ypetrov/pgplot.intel
+ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/project/projectdirs/m77/pgplot.intel
+srun -n 32 -c 4 --cpu_bin=cores ./xgenray_mpi_intel.cori
+```
+ The line: 
+`export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/homes/y/ypetrov/pgplot.intel` 
+assumes that you've extracted the `pgplot.tar.gz` file into `pgplot.intel` in your home
+directory.
+ Please note that this solution is not good if you're running on a lot of nodes. If
+you plan to do so, please use shifter:
+https://docs.nersc.gov/programming/shifter/how-to-use/ For now though, this solution
+works fine with with 2 nodes (and it is a bit easier to test/set up)
+
+Regarding "many nodes": for 4 nodes, this solution is still perfectly fine. With this
+solution, you will notice that the time your program takes to launch will increase
+as you add nodes (as the dynamic linker on each node is loading the pgplot). I
+suggest you keep an eye out for any performance decreases and the error message:
+ _pmi_mmap_tmp: Warning bootstrap barrier failed
+ This would be our "smoking gun", and we can deal with it if it comes up.
+ Let me know if you need anything else.
+
+ GNU
+ For the record, you don't need to build for GNU anymore, and so you can keep using
+the intel compiler. If at any time you want to use the GNU compiler, then the
+process is pretty much identical. You just need to remember to build your own pgplot
+library for GNU also.
+
+ Cheers,
+Johannes

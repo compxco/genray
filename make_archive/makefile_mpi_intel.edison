@@ -41,6 +41,7 @@
 #130912:  Adjusted, Get executable, [BH]  
 
 #BH180125: Updated the makefile, based on what recently worked for cql3d.
+#          module unload darshan; module load cray-netcdf
 
 SHELL=		/bin/sh
 NAME=		xgenray_mpi_intel.edison
