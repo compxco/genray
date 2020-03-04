@@ -20,6 +20,6 @@ jobs:
     - name: Install deps
       run: sudo apt -y install nco netcdf-bin libnetcdff-dev
     - name: Build
-      run: make -f makefile_gfortran
+      run: make -f makefile_gfortran64
     - name: Test
       run: ctest
