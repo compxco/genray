@@ -20,13 +20,19 @@ args = helpers.ArgumentParser(pyctest.PROJECT_NAME,
 pyctest.BUILD_COMMAND = "make -f makefile_gfortran64"
 
 test = pyctest.test()
-test.SetName("Cmod_LH_edge")
+test.SetName("test-CMod-LH-edge")
 test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/ci-tests/test-CMod-LH-edge")
 test.SetCommand(["../test.sh"])
 
 test = pyctest.test()
-test.SetName("Cmod_LH_edge_id16")
+test.SetName("test-CMod-LH-edge-id16")
 test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/ci-tests/test-CMod-LH-edge-id16")
 test.SetCommand(["../test.sh"])
+
+test = pyctest.test()
+test.SetName("EC-ITER-Centra-CD")
+test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/ci-tests/test-EC-ITER-Centra-CD")
+test.SetCommand(["../test.sh"])
+
 
 pyctest.run()
