@@ -8,3 +8,4 @@ rm -f zrn.dat
 rm -f genray.nc
 rm -f *.txt
 rm -f logfile
+rm -f joptab scrach adjout adjinp

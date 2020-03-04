@@ -21,7 +21,12 @@ pyctest.BUILD_COMMAND = "make -f makefile_gfortran64"
 
 test = pyctest.test()
 test.SetName("Cmod_LH_edge")
-test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/test-CMod-LH-edge")
-test.SetCommand(["./test.sh"])
+test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/ci-tests/test-CMod-LH-edge")
+test.SetCommand(["../test.sh"])
+
+test = pyctest.test()
+test.SetName("Cmod_LH_edge_id16")
+test.SetProperty("WORKING_DIRECTORY","00_Genray_Regression_Tests/ci-tests/test-CMod-LH-edge-id16")
+test.SetCommand(["../test.sh"])
 
 pyctest.run()
