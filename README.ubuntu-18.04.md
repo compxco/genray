@@ -13,25 +13,12 @@ sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-
 Install dependencies
 ```
 sudo apt -y install nco
-sudo apt -y install netcdf-bin
+sudo apt -y install netcdf-bin libnetcdff-dev pgplot5
 ```
-Build
+Build & test
 ```
 make -f makefile_gfortran64 clean
 make -f makefile_gfortran64
-```
-Run some tests
-```
-cd 00_Genray_Regression_Tests
-mkdir test-CMod-LH-edge
-cd test-CMod-LH-edge
-cp ../genray.in_CMod_LH_edge genray.in
-cp ../g1060728011.01100 .
-../../xgenray
-ncdump gold-genray.nc > gold.txt
-ncdum genray.nc > run.txt
-tail -n +2 gold.txt > gold0.txt
-tail -n +2 run.txt > run0.txt
-diff gold0.txt run0.txt
+ctest
 ```
 
