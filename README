@@ -69,7 +69,10 @@ Put in to git version control on CompX2.
 version="genray_v10.11_180410"  
 Otherwise, little changed from "genray_v10.11_170725".
 
-
+June 10, 2019
+=============
+Got connection to git@github.com:compxco/genray.git working,
+using ssh method for connection to github.com.
 
 200117
 ======
