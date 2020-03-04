@@ -14,7 +14,7 @@ jobs:
     - name: Update apt
       run: sudo apt update
     - name: Install gfortran-9
-      run: sudo apt -y install gcc-9 gfortan-9
+      run: sudo apt -y install gfortran-9
     - name: Add gfortran-7 as an alternative
       run: sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-7 7
     - name: Add gfortran-9 as an alternative
