@@ -3,7 +3,7 @@ First get gfortran9
 ```
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt -y install gfortan-9
+sudo apt -y install gfortran-9
 ```
 Then make gfortran-9 be the default gfortran (so we don't have to change the makefile)
 ```
