@@ -18,7 +18,7 @@ jobs:
     - name: Add gfortran-9 as an alternative
       run: sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 9
     - name: Install deps
-      run: sudo apt -y install nco netcdf-bin
+      run: sudo apt -y install nco netcdf-bin libnetcdff-dev
     - name: Build
       run: make -f makefile_gfortran
     - name: Test
