@@ -289,12 +289,8 @@ cSAP120517 for Nicola scattering
       us_total_old=us_total
       us_total=us_total+dels_total
       call outp(us,up,deru,ihlf,ndim,prmt,iflagh,iraystop,
-cSAP100202
-c     & i_go_to_previous_output_step)
-cSAP120517
      &i_go_to_previous_output_step,us_total,us_total_old )
 c--------------------------------------------------------------------
-c      call outp(t,up,deru,ihlf,ndim,prmt,iflagh,iraystop)
       if (iraystop.eq.1) then
         goto 100
       end if
@@ -1327,7 +1323,6 @@ c     & i_go_to_previous_output_step)
 cSAP120517
      &  i_go_to_previous_output_step,s_total,s_total_old )
 
-c        call outp(x,y0,dery,ihlf,n,prmt,iflagh,iraystop)
 c        write(*,*)'rk_new after outp iraystop',iraystop
         if (iraystop.eq.1) then
 cyup          write(*,*)'rk_new iraystop=1 goto 200'
@@ -1630,3 +1625,256 @@ c     &d4,d2,d0,cn2,hamilt_id2
 
       return
       end
+c======================================================================
+c======================================================================
+
+c        4_th order  Runge-Kutta method with automatic 
+c        time step selection
+c
+c        **********************  drkgs_auto  ****************
+c        *                      -----                       
+c        * this Runge-Kutta subroutine finds the solution of the 
+c        *      system of ordinary differential equations          
+c        ****************************************************
+c
+c        drkgs_auto: called if(isolv=1 & irkmeth=3)
+c
+c The set of equations to be solved :
+!        Integration in time (default):
+!        ray-tracing equations right hand side=
+!        dr^/dt_code = -(dD/dN^)/(dD/domega)
+!        dN^/dt_code = +(dD/dr^)/(dD/domega)
+! sqrt(deru(1)^2 + deru(2)^2 +(R*deru(3))^2) gives v_group (normalized).
+c        Note: dt_code here is NOT an actual physical time, but
+c        normalized as dt_code= dt_physical[sec]*c/omega  
+c                                               
+c-----------------------------------------------------------------
+c                                                                !
+c       1. method of solution                                    !
+c                                                                !
+c          runge-kutta method  of  4th-order                  
+c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
+c                                                                !
+c       2. input parameters                                      !
+c                         
+c          dL_step
+c          dN_step  
+c     dL_step=1.d-3 ! [m]  max allowed change in cartesian coords.
+c     dN_step=1.d-2 ! max allowed change in refraction index.
+c     The code will set the time step h = dt_code for integration
+c     in such a way that the change |dr| in configuration space
+c     is not larger than dL_step, and also
+c     the change in refr. index |N| is not larger than dN_step.
+c          prmt(3)=initial step of integration (not really needed)  
+c              Step h is set below, based on dL_step and dN_step.                                  
+c          prmt(6)= distance step along ray [m] for saving data.
+c                  Does NOT affect the step of integration 
+!                  in this subroutine!
+!     Other prmt* values are not needed.
+!     This new option (irkmeth=3) is ~4x faster than irkmeth=2 (per ray element)
+!     ! The advantage of using both drdt/dL_step and dNdt/dN_step is:
+!     ! At plasma edge, for example, when starting as O-mode,
+!     ! the value of N is ~1, change of N is also small, dN ~1 
+!     ! (going down to 0 at O-X cutoff), while the group velocity 
+!     ! is large Vgr~c. In this case the time step is determined by 
+!     ! step_inv= drdt/dL_step, so that dt_code= dL_step/drdt.
+!     ! In opposite case of slow electrostatic waves, 
+!     ! the group velocity can be very low, so that drdt~0.
+!     ! On the other hand, the change in N can be very steep,
+!     ! dN>10 over a short travel distance.
+!     ! In this case the time step is determined by dNdt/dN_step term
+!     ! so that dt_code= dN_step/dNdt .
+c
+c          u()   - the input vector of initial values. later     !
+c                  it becomes the vector of results obtained     !
+c                  at the intermediate points u;                 !
+c        
+c          deru() - the  vector of derivatives at point z,r,phi	 !
+c                                                                !
+c          ndim  - the number of system equations;               !
+c                                                                !
+c          aux   - the auxiliary array (working array).  
+c                                                                !
+c      
+c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
+c                                                                !
+c       3. subroutines and functions used                        !
+c                                                                !
+c          fct - calculates the right hand sides of  the  ode    !
+c                system. It has not to change the  values  of    !
+c                u().     Its formal parameters are: u, deru.                                     !
+c                                                                !
+c          outp - output subroutine. it should not change the
+c                 values of all its  formal  parameters.  
+c                 output data:                                   !
+c          u(1)=z, u(2)=r, u(3)=phi, u(4)=Nz, u(5)=Nr, u(6)=cm     !                                         !
+c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
+      subroutine drkgs_auto(prmt,u,deru,ndim,ihlf,fct,outp,
+     +  aux,dL_step,dN_step)
+      implicit none !integer (i-n), real*8 (a-h,o-z)
+      integer ndim,ihlf !Input
+      real*8 dL_step,dN_step !input
+      dimension u(6),deru(6),aux(8,6),prmt(9),up(6),uu(6),startu(6)
+      integer i_output
+      dimension uplus(6)
+      double precision prmt,u,deru,aux,t,tend,h,up,hh,uu,startu,
+     1 dd,uplus
+      double precision us, dels1,dels2, uz,ur,uphi
+      integer iflag,iflagh, i, iraystop, i_go_to_previous_output_step !local
+      real*8 tdum,dt_code, us_total, us_total_old, dndt,drdt,step_inv
+      
+      
+      external fct !=rside1() !YuP: Does not actually dep. on t
+      external outp != outpt()
+
+      h=prmt(3) !step of integration; not really needed here:
+      !h is set below, based on dL_step and dN_step.
+      !(But reserve for future, maybe will be used?)
+      prmt(5)=0.d0 ! YuP: if =1.d0, it will stop the ray after 1 step
+      iflag=0  ! control of the RK method accuracy
+      iflagh=3 !drkgs_auto: initialize (control of the plasma edge intersection)
+      us=0.d0  !cumulative distance along ray (initial value)
+      dels2= 0.d0 !  to initialize
+      tdum=0.d0 !YuP: rside1 does not actually dep. on t, so we use tdum
+      
+c---------------------------------------------------------------
+ 10   continue ! handle for time-advancing (loop)
+      ! Save values from previous time step:
+      uz=u(1) !=Z
+      ur=u(2) !=R
+      uphi=u(3) !=phi
+      do i=1,ndim
+        uu(i)=u(i)
+        startu(i)=u(i)
+      enddo
+      call fct(tdum,u,deru) ! rhs of ODE: get dr/dt and dN/dt
+      !Note: deru(1)= dD/dN_z, deru(2)= dD/dN_r, deru(3)= dD/dCM
+      !      deru(4)=-dD/dZ,   deru(5)=-dD/dR,   deru(6)=-dD/dphi
+      
+      !Set the time step.
+      ! This is the speed of ray propagation (normalized Vgroup):
+      drdt= sqrt(deru(1)*deru(1)+deru(2)*deru(2)+(ur*deru(3))**2)
+      ! This is the normalized "speed" of change of refr. index:
+      dNdt= sqrt(deru(4)*deru(4)+deru(5)*deru(5)+(deru(6)/ur)**2)
+      
+      ! consider the inverse time steps 
+      ! 1/dt ~ (dr/dt)/dL_step
+      ! and 
+      ! 1/dt ~ (dN/dt)/dN_step
+      ! Select the larger of the two - it will correspond to the smaller 
+      ! value of dt
+      step_inv= max( drdt/dL_step , dNdt/dN_step )
+      ! Why we need to consider the inverse time step:
+      ! because one of these speeds, dr/dt or dN/dt, can be exactly 0
+      ! or at least very close to 0.
+
+      if(step_inv.gt.0.d0)then
+        dt_code= 1.d0/step_inv !Normalized units: dt_code= dt[sec]*c/omega
+        h= dt_code
+      else ! both drdt and dNdt are 0 
+           !(could be very small, below rounding error)
+        write(*,*)'***** In Runge-Kutta subroutine drkgs_auto *****'
+        write(*,*)'***** time step is too small.'
+        write(*,*)'***** dr/dt, dN/dt=',drdt,dNdt
+        write(*,*)'***** dL_step=',dL_step
+        write(*,*)'***** dN_step=',dN_step
+        write(*,*)'  iraystop->1'
+        iraystop=1 ! step_inv is too small (=0)
+        goto 100 ! exit
+      endif
+      ! The advantage of using both drdt/dL_step and dNdt/dN_step is:
+      ! At plasma edge, for example, when starting as O-mode,
+      ! the value of N is ~1, change of N is also small, dN ~1 
+      ! (going down to 0 at O-X cutoff), while the group velocity 
+      ! is large Vgr~c. In this case the time step is determined by 
+      ! step_inv= drdt/dL_step, so that dt_code= dL_step/drdt.
+      ! In opposite case of slow electrostatic waves, 
+      ! the group velocity can be very low, so that drdt~0.
+      ! On the other hand, the change in N can be very steep,
+      ! dN>10 over a short travel distance.
+      ! In this case the time step is determined by dNdt/dN_step term
+      ! so that dt_code= dN_step/dNdt .
+      
+      do i=1,ndim	       
+        aux(1,i)=h*deru(i)
+        aux(5,i)=u(i)+0.5*aux(1,i)
+        up(i)=aux(5,i)
+      enddo
+
+      call fct(tdum,up,deru)
+      do i=1,ndim
+         aux(2,i)=h*deru(i)
+         aux(5,i)=u(i)+0.5*aux(2,i)
+         up(i)=aux(5,i)
+      enddo
+
+      call fct(tdum,up,deru)
+      do i=1,ndim
+         aux(3,i)=h*deru(i)
+         aux(5,i)=u(i)+aux(3,i)
+         up(i)=aux(5,i)
+      enddo
+      
+      call fct(tdum,up,deru)
+      do i=1,ndim
+        aux(4,i)=h*deru(i)
+      enddo
+      
+      do i=1,ndim
+        up(i)=u(i)+1.d0/6.d0*
+     1        (aux(1,i)+2.d0*aux(2,i)+2.d0*aux(3,i)+aux(4,i))
+      enddo
+      ! Done: new u(i) after one step is obtained.
+      do i=1,ndim
+        u(i)=up(i)
+      enddo
+c--------------------------------------------------------------------
+c     This section can be used for hamiltonian (dispersion D=0) control,
+c     but we skip it for now.
+c      zu=  u(1)
+c      ru=  u(2)
+c      phiu=u(3)
+c      cnzu=   u(4)    !=Nz refr.index
+c      cnru=   u(5)    !=Nr
+c      cmu=    u(6)
+c      cnphiu= u(6)/ru !=Nphi
+c      cn2u= cnzu*cnzu + cnru*cnru + cnphiu*cnphiu
+c      bmod=b(zu,ru,phiu) !-> get b and derivs of b
+c      gam=  gamma1(zu,ru,phiu,cnzu,cnru,cmu) ! uses bz,br,bphi,bmod
+c      ham= hamilt1(zu,ru,phiu,cnzu,cnru,cmu) ! uses gam
+c--------------------------------------------------------------------      
+
+c-----------------------------------------------------------
+c     total distance traveled in one step
+      dels2= (uz-u(1))**2 + (ur-u(2))**2 + (ur*uphi-u(2)*u(3))**2
+      dels1= dsqrt(dels2)
+      us= us+dels1 ! accumulate the distance with each step. 
+      iflagh=3 !drkgs_auto/before outp : initialize
+      !========================================================
+      call outp(us,u,deru,ihlf,ndim,prmt,iflagh,iraystop,
+     & i_go_to_previous_output_step,us_total,us_total_old )
+      !outpt, among other control, increments the time step
+      !nstep_rk ; if nstep_rk is bigger than maxsteps_rk
+      !it will stop the ray.
+      !Among other staff, the outpt checks: if(us>prmt(7)),
+      !which is initially prmt(7)=prmt(6), 
+      !then save ray data and also increase prmt(7): add prmt(6), 
+      !so the new value of prmt(7) will be used 
+      !during next call of outpt.
+      !This way, the data is saved each prmt(6) steps.
+      !========================================================
+      !Ray can also be stopped if Vgroup/c >2, or 
+      ! D/(N|gradD|) > toll_hamilt
+      ! Also, the value of iflagh can be changed 3->1
+      ! if(iflref.eq.1)
+      if(iraystop.eq.1) then
+         goto 100 ! finish and stop the ray
+      endif
+      
+      goto 10  !drkgs_auto: another time step
+      
+  100 continue !drkgs_auto: exit handle
+      return
+      end subroutine drkgs_auto
+c======================================================================
+c======================================================================

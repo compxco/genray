@@ -3,7 +3,7 @@ c        *                      -----                             *
 c        *  prepripl -subroutine to prepar the  data for styding  *
 C        *  the influence of the ripple magnetic field on N_par   *
 c        **********************************************************
-      subroutine prepripl(t,u,is)
+      subroutine prepripl(t,u,is) !YuP: not used
       implicit double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
@@ -225,14 +225,19 @@ c        *  prepebw -subroutine to prepar the  data for studying   *
 C        *  ebw                                                   *
 c        **********************************************************
       subroutine prepebw(t,u,is)
-      implicit double precision (a-h,o-z)
+      implicit none !double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
       include 'write.i'
       include 'three.i'
       include 'n_parb.i'
-      double precision modr,modrold
-      dimension u(6)
+      real*8 modr,modrold
+      real*8 t,u(6)
+      integer is
+      real*8 z,r,phi,cnz,cnr,cm, zcomp,rcomp,zoldcomp,roldcomp,cnphi
+      real*8 sindelth,cosdelth,deltheta
+      real*8 xe
+      real*8 x ! external
 c---------------------------------------------
 c     z,r (m)
       z=u(1)
@@ -252,6 +257,9 @@ c     along the ray trajectory (ir radians)
       btor(is)=bphi
       btot(is)=bmod
       gradpsi(is)=dsqrt(dpdzd**2+dpdrd**2)
+      if(gradpsi(is).eq.0.d0)then
+        write(*,*)'prepebw: gradpsi(is)=',gradpsi(is)
+      endif
       gradpdr(is)=gradpsi(is)/r
 c--------------------------------------------------------------------
 c     e_theta=e_psi x e_phi		   (x is a vector production)
@@ -309,7 +317,7 @@ c--------------------------------------------------------------------
 
       xe=x(z,r,phi,1)
       wxe(is)=dsqrt(xe)
-c     wnrho is the radial component of the refructive index.
+c     wnrho is the radial component of the refractive index.
 c     It is positive if it is directed along the gradient 
 c     of the flux surface. 
       wnrho(is)=(cnr*dpdrd+cnz*dpdzd)/gradpsi(is)

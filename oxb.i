@@ -13,6 +13,17 @@ c    The data for  subroutine in oxb.f
       
       real*8  transm_ox_old
       common /oxb/transm_ox_old
+      
+      real*8 rhoconv, rho_plasm_vac !YuP[2020-07-29] added
+      common /oxb/ rhoconv, rho_plasm_vac
+      ! rhoconv is rho at Xe=1.0 conversion layer,
+      ! calculated in sub.ox_conversion_grill_in_poloidal_point.
+      ! rho_plasm_vac is rho at plasma-vacuum border;
+      ! normally, it would be at rho=1.0, but if edge density is high,
+                    ! Xe=1 layer could be just outside of rho=1.0
+      ! Then, we define rho_plasm_vac as max(rhoconv,1.0)+0.1
+      !  (or slightly different, see sub.bound)
+      ! The value of rho_plasm_vac is used in sub.bound in i_ox=1 run.
      
 c     was_in_ox_vicinity !for OX jump 
 c     transm_ox_old the previous value of the transmission coefficient

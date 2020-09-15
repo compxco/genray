@@ -3,8 +3,9 @@
 
 c************************************************************
       character version*64
-      parameter(version="genray_v10.13_200117")
-      ! previous: genray_v10.12_180912; genray_v10.12_180529; 
+      parameter(version="genray_v10.14_200831")
+      ! previous: genray_v10.13_200117 genray_v10.12_180912; 
+      !           genray_v10.12_180529; 
 c************************************************************
 
 c************************************************************
@@ -28,6 +29,13 @@ c      parameter (nxeqda=201,nyeqda=201,nlimit=101)
 c      parameter (nxeqda=129,nyeqda=257,nlimit=101)
 c      parameter (nxeqda=136,nyeqda=257,nlimit=101)
       parameter (nxeqda=257,nyeqda=257,nlimit=101)
+      !parameter (nxeqda=257,nyeqda=257,nlimit=501) !YuP[2020-03] Increased nlimit
+      !However, it slightly changes the results,
+      !probably because of accuracy for tracing surfaces in subr.gr2new.
+      !Need to keep it in mind when performing auto-tests 
+      !(verification against data in genray.nc)
+      
+
 cSAP091211
 c      parameter (nxeqda=136,nyeqda=257,nlimit=10001)
 
@@ -37,12 +45,13 @@ c It should be nrya=max(nxeqda,nyeqda)+4
 c************************************************************
 c     for common/fourb/
       integer nves
-      parameter (nves=62)
+      parameter (nves=202) !YuP[2020-03] Increased nves; was (nves=62)
 c************************************************************
 c     for common gr.i
       INTEGER NL,NP,nteta,npsi,nteta1
       real*8 epspsi
-      parameter (nteta=100,npsi=50,epspsi=0.0001d0,nteta1=nteta+1)
+      parameter (nteta=nlimit-1,npsi=50,epspsi=0.0001d0,nteta1=nteta+1)
+      !YuP[2020-03] set nteta=nlimit-1, as required by code
 cSAP091211
 c      parameter (nteta=10000,npsi=50,epspsi=0.0001d0,nteta1=nteta+1)
 cSAP080819

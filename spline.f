@@ -1,9 +1,10 @@
 c*****************************************************************
 c*                   Spline programs                             *
 c*****************************************************************
+! YuP[2020-08-20] Renamed b into bsp, to avoid conflict with function b()
       subroutine iac1r(x,nx,nx4,fx,lx,mxa,fxa,mxb,fxb,tx,cx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
 
          integer lx,mxa,mxb,nx,nx4
          double precision cx,fx,fxa,fxb,tx,x
@@ -13,8 +14,8 @@ c         dimension cx(nx4),fx(nx),tx(nx4),x(nx)
 
          external iac1r1,iac1r2,iac1r3,iac1r4
          integer i,j,k,k1,k2,k3
-         double precision a,b,iac1r1
-         dimension a(3),b(3)
+         double precision a,bsp,iac1r1
+         dimension a(3),bsp(3)
          data k1/1/,k2/2/,k3/3/
        call iac1r2(x,nx,nx4,mxa,tx)
        if (mxa .lt. k3) go to 10
@@ -28,14 +29,14 @@ c         dimension cx(nx4),fx(nx),tx(nx4),x(nx)
           cx(i) = fx(k3)
           go to 20
    10  continue
-       call iac1r3(tx,nx,nx4,cx,lx,mxa,mxb,a,b)
+       call iac1r3(tx,nx,nx4,cx,lx,mxa,mxb,a,bsp)
    20  continue
        do 30 i = k1, nx
           j = i + k2
           cx(j) = fx(i)
    30  continue
        if (mxa .gt. k2) go to 40
-          call iac1r4(tx,nx,nx4,cx,lx,mxa,fxa,mxb,fxb,a,b)
+          call iac1r4(tx,nx,nx4,cx,lx,mxa,fxa,mxb,fxb,a,bsp)
    40  continue
        i = nx + k2
        do 50 j = k1, i
@@ -43,10 +44,13 @@ c         dimension cx(nx4),fx(nx),tx(nx4),x(nx)
           cx(j) = iac1r1(tx,cx,nx4,lx,k)
    50  continue
        return
-      end
+      end subroutine iac1r
+      
+      
+      
       double precision function iac1r1(tx,cx,nx4,lx,jx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer jx,lx,nx4
          double precision cx,tx
 cSm011006
@@ -54,7 +58,7 @@ c         dimension cx(*),tx(*)
          dimension cx(nx4),tx(nx4)
 
          integer i,j,k1
-         double precision a,b,c,c1,c112,c13,c240,c3,c438,d
+         double precision a,bsp,c,c1,c112,c13,c240,c3,c438,d
          data c1/1.0d0/,c112/112.0d0/,c13/13.0d0/,c240/240.0d0/,
      1        c3/3.0d0/,
      1        c438/438.0d0/,k1/1/
@@ -63,26 +67,28 @@ c         dimension cx(*),tx(*)
           i = jx + k1
           j = jx - k1
           if (lx .gt. k1) go to 10
-             b = tx(i) - tx(jx)
+             bsp = tx(i) - tx(jx)
              c = tx(jx) - tx(j)
-             d = c*c/b/(b + c)
-             c = b*b/c/(b + c)
-             b = c1/c/d
-             a = (b*a - c*cx(j) - d*cx(i))/c3
+             d = c*c/bsp/(bsp + c)
+             c = bsp*bsp/c/(bsp + c)
+             bsp = c1/c/d
+             a = (bsp*a - c*cx(j) - d*cx(i))/c3
              go to 20
    10  continue
-       b = cx(j) + cx(i)
+       bsp = cx(j) + cx(i)
        i = i + k1
        j = j - k1
        c = cx(j) + cx(i)
-       a = (c438*a - c112*b + c13*c)/c240
+       a = (c438*a - c112*bsp + c13*c)/c240
    20  continue
        iac1r1 = a
        return
-      end
+      end function iac1r1
+      
+      
       subroutine iac1r2(x,nx,nx4,mx,tx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer mx,nx,nx4
          double precision tx,x
 cSm011006
@@ -118,10 +124,12 @@ c         dimension tx(nx4),x(nx4)
        tx(i) = x(nx) + k2*a
    30  continue
        return
-      end
+      end subroutine iac1r2
+      
+      
       subroutine iac1r3(tx,nx,nx4,cx,lx,mxa,mxb,ac,bc)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer lx,mxa,mxb,nx,nx4
          double precision ac,bc,cx,tx
 cSm011006
@@ -129,7 +137,7 @@ c        dimension ac(3),bc(3),cx(nx4),tx(nx4)
          dimension ac(3),bc(3),cx(*),tx(*)
          external iac1r1,ias1r2
          integer i,j,k,k0,k1,k2,k3,k4,l
-         double precision a,b,c,c0,c1,d,e,f,g,iac1r1,ias1r2
+         double precision a,bsp,c,c0,c1,d,e,f,g,iac1r1,ias1r2
          data c0/0.0d0/,c1/1.0d0/,k0/0/,k1/1/,k2/2/,k3/3/,k4/4/
        i = k4 + k2
        do 10 j = k1, i
@@ -141,11 +149,11 @@ c        dimension ac(3),bc(3),cx(nx4),tx(nx4)
        j = i + k1
        k = j + k1
        l = k + k1
-       b = c1
+       bsp = c1
        cx(k1) = c1
        a = ias1r2(tx,cx,nx4,k4,mxa,tx(k3),k3,k1)
        if (lx .eq. k0) go to 30
-          b = iac1r1(tx,cx,nx4,lx,k2)
+          bsp = iac1r1(tx,cx,nx4,lx,k2)
           cx(k1) = c0
           cx(k2) = c1
           c = iac1r1(tx,cx,nx4,lx,k3)
@@ -166,13 +174,13 @@ c        dimension ac(3),bc(3),cx(nx4),tx(nx4)
        a = g
    30  continue
        cx(k1) = c0
-       ac(k1) = c1/a/b
+       ac(k1) = c1/a/bsp
        cx(j) = c1
        a = ias1r2(tx,cx,nx4,k4,mxb,tx(j),i,k1)
        if (lx .eq. k0) go to 50
           cx(j) = c0
           cx(l) = c1
-          b = iac1r1(tx,cx,nx4,lx,k)
+          bsp = iac1r1(tx,cx,nx4,lx,k)
           cx(l) = c0
           cx(k) = c1
           c = iac1r1(tx,cx,nx4,lx,j)
@@ -195,12 +203,14 @@ c        dimension ac(3),bc(3),cx(nx4),tx(nx4)
        a = g
    50  continue
        cx(j) = c0
-       bc(k1) = c1/a/b
+       bc(k1) = c1/a/bsp
        return
-      end
+      end subroutine iac1r3
+      
+      
       subroutine iac1r4(tx,nx,nx4,cx,lx,mxa,fxa,mxb,fxb,ac,bc)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer lx,mxa,mxb,nx,nx4
          double precision ac,bc,cx,fxa,fxb,tx
 cSm011006
@@ -209,7 +219,7 @@ c         dimension ac(3),bc(3),cx(nx4),tx(nx4)
 
          external iac1r1,ias1r2
          integer i,j,k,k0,k1,k2,k3,k4,l,m
-         double precision a,b,c,c0,iac1r1,ias1r2
+         double precision a,bsp,c,c0,iac1r1,ias1r2
          dimension a(4)
          data c0/0.0d0/,k0/0/,k1/1/,k2/2/,k3/3/,k4/4/
        cx(k1) = c0
@@ -240,8 +250,8 @@ c         dimension ac(3),bc(3),cx(nx4),tx(nx4)
           cx(k2) = (fxa - c)*ac(k1)
           go to 60
    50  continue
-       b = ias1r2(tx,a,nx4,k4,k0,tx(k3),k3,k0)
-       cx(k2) = ac(k3)*(fxa - c) - ac(k2)*(cx(k3) - b)
+       bsp = ias1r2(tx,a,nx4,k4,k0,tx(k3),k3,k0)
+       cx(k2) = ac(k3)*(fxa - c) - ac(k2)*(cx(k3) - bsp)
        m = k0
        go to 20
    60  continue
@@ -269,17 +279,17 @@ c         dimension ac(3),bc(3),cx(nx4),tx(nx4)
           cx(j) = (fxb - c)*bc(k1)
           go to 120
   110  continue
-       b = ias1r2(tx,a,nx4,k4,k0,tx(k),l,k0)
-       cx(j) = bc(k3)*(fxb - c) - bc(k2)*(cx(k) - b)
+       bsp = ias1r2(tx,a,nx4,k4,k0,tx(k),l,k0)
+       cx(j) = bc(k3)*(fxb - c) - bc(k2)*(cx(k) - bsp)
        m = k0
        go to 80
   120  continue
        return
-      end
+      end subroutine iac1r4
 
       double precision function ias1r(tx,nx,nx4,cx,idx,xx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer idx,nx,nx4
          double precision cx,tx,xx
 cSm011006
@@ -299,10 +309,12 @@ cc	 write(*,*)cx
        i = ias1r1(tx,nx,nx4,xx)
        ias1r = ias1r2(tx,cx,nx4,k4,idx,xx,i,k1)
        return
-      end
+      end function ias1r
+      
+      
       integer function ias1r1(tx,nx,nx4,xx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer nx,nx4
          double precision tx,xx
 cSm011006
@@ -326,10 +338,12 @@ c         dimension tx(nx4)
    30  continue
        ias1r1 = k
        return
-      end
+      end function ias1r1
+      
+      
       double precision function ias1r2(tx,cx,nx4,kx,idx,xx,ix,jx)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer idx,ix,jx,kx,nx4
          double precision cx,tx,xx
 cSm011006
@@ -337,8 +351,8 @@ c         dimension cx(nx4),tx(nx4)
          dimension cx(*),tx(*)
 
          integer i,j,k,k1,l,m,n,n1
-         double precision a,b,c
-         dimension a(8),b(7),c(7)
+         double precision a,bsp,c
+         dimension a(8),bsp(7),c(7)
          data k1/1/
        i = jx*(ix - kx + k1)
        do 10 j = k1, kx
@@ -360,7 +374,7 @@ c         dimension cx(nx4),tx(nx4)
        if (i .lt. k1) go to 80
           do 50 j = k1, i
              k = ix + j
-             b(j) = tx(k) - xx
+             bsp(j) = tx(k) - xx
              k = ix + k1 - j
              c(j) = xx - tx(k)
    50     continue
@@ -371,13 +385,15 @@ c         dimension cx(nx4),tx(nx4)
              do 60 l = k1, k
                 m = k + k1 - l
                 n = l + k1
-                a(l) = (a(n)*c(m) + a(l)*b(l))/(c(m) + b(l))
+                a(l) = (a(n)*c(m) + a(l)*bsp(l))/(c(m) + bsp(l))
    60        continue
    70     continue
    80  continue
        ias1r2 = a(k1)
        return
-      end
+      end function ias1r2
+      
+      
       subroutine iac2r(x,nx,y,ny,fxy,nfx,nfy,lx,ly,mxa,fxa,mxb,fxb,
      1                 mya,fya,myb,fyb,tx,ty,cxy,ncx,ncy,nry,cy)
 	implicit none
@@ -391,8 +407,8 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
      1             fya(*),fyb(*),tx(*),ty(*),x(*),y(*)
          external iac1r1,iac1r2,iac1r3,iac1r4
          integer i,j,k,k0,k1,k2,k3,l,m,n
-         double precision a,b,fa,fb,iac1r1
-         dimension a(3),b(3)
+         double precision a,bsp,fa,fb,iac1r1
+         dimension a(3),bsp(3)
          data k0/0/,k1/1/,k2/2/,k3/3/
        call iac1r2(x,nx,ncx,mxa,tx)
        call iac1r2(y,ny,ncy,mya,ty)
@@ -406,7 +422,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
        m = nx + k2
        n = ny + k2
        if (mxa .gt. k2) go to 50
-          call iac1r3(tx,nx,ncx,cy,lx,mxa,mxb,a,b)
+          call iac1r3(tx,nx,ncx,cy,lx,mxa,mxb,a,bsp)
           do 40 i = k3, n
              j = i - k2
              if (mxa .ge. k1) fa = fxa(j)
@@ -414,7 +430,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              do 30 j = k3, m
                 cy(j) = cxy(j,i)
    30        continue
-             call iac1r4(tx,nx,ncx,cy,lx,mxa,fa,mxb,fb,a,b)
+             call iac1r4(tx,nx,ncx,cy,lx,mxa,fa,mxb,fb,a,bsp)
              cxy(k1,i) = cy(k1)
              cxy(k2,i) = cy(k2)
              k = m + k1
@@ -424,7 +440,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
    40     continue
    50  continue
        if (mya .gt. k2) go to 110
-          call iac1r3(ty,ny,ncy,cy,ly,mya,myb,a,b)
+          call iac1r3(ty,ny,ncy,cy,ly,mya,myb,a,bsp)
           do 70 i = k3, m
              j = i - k2
              if (mya .ge. k1) fa = fya(j)
@@ -432,7 +448,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              do 60 j = k3, n
                 cy(j) = cxy(i,j)
    60        continue
-             call iac1r4(ty,ny,ncy,cy,ly,mya,fa,myb,fb,a,b)
+             call iac1r4(ty,ny,ncy,cy,ly,mya,fa,myb,fb,a,bsp)
              cxy(i,k1) = cy(k1)
              cxy(i,k2) = cy(k2)
              k = n + k1
@@ -441,13 +457,13 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              cxy(i,k) = cy(k)
    70     continue
           if (mxa .gt. k2) go to 130
-             call iac1r3(ty,ny,ncy,cy,ly,k0,k0,a,b)
+             call iac1r3(ty,ny,ncy,cy,ly,k0,k0,a,bsp)
              do 100 i = k1, k2
                 k = k3 - i
                 do 80 j = k3, n
                    cy(j) = cxy(k,j)
    80           continue
-                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,b)
+                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,bsp)
                 cxy(k,k1) = cy(k1)
                 cxy(k,k2) = cy(k2)
                 l = n + k1
@@ -458,7 +474,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
                 do 90 j = k3, n
                    cy(j) = cxy(k,j)
    90           continue
-                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,b)
+                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,bsp)
                 cxy(k,k1) = cy(k1)
                 cxy(k,k2) = cy(k2)
                 l = n + k1
@@ -523,11 +539,13 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
   200     continue
   210  continue
        return
-      end
+      end subroutine iac2r
+      
+      
       double precision function ias2r(tx,nx,ty,ny,cxy,
      1 ncx,ncy,idx,idy,xx,yy)
 cSm030221
-         implicit double precision(a-h,o-z)
+         implicit none !double precision(a-h,o-z)
          integer idx,idy,ncx,ncy,nx,ny
          double precision cxy,tx,ty,xx,yy
 cSm020321
@@ -536,8 +554,8 @@ c         dimension cxy(ncx,ncy),tx(ncx),ty(ncy)
 
          external ias1r1,ias1r2
          integer i,j,k,k0,k1,k4,l,m,n,ias1r1
-         double precision a,b,ias1r2
-         dimension a(4),b(4)
+         double precision a,bsp,ias1r2
+         dimension a(4),bsp(4)
          data k0/0/,k1/1/,k4/4/
        i = ias1r1(tx,nx,ncx,xx)
        j = ias1r1(ty,ny,ncy,yy)
@@ -547,11 +565,13 @@ c         dimension cxy(ncx,ncy),tx(ncx),ty(ncy)
              n = j - k4 + m + k1
              a(m) = cxy(l,n)
    10     continue
-          b(k) = ias1r2(ty,a,ncy,k4,idy,yy,j,k0)
+          bsp(k) = ias1r2(ty,a,ncy,k4,idy,yy,j,k0)
    20  continue
-       ias2r = ias1r2(tx,b,ncx,k4,idx,xx,i,k0)
+       ias2r = ias1r2(tx,bsp,ncx,k4,idx,xx,i,k0)
        return
-      end
+      end function ias2r
+      
+      
 c*****************************************************************
 c*              End of Spline programs                           *
 c*****************************************************************
@@ -580,8 +600,8 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
 
          external iac1r1,iac1r2,iac1r3,iac1r4
          integer i,j,k,k0,k1,k2,k3,l,m,n
-          double precision a,b,fa,fb,iac1r1
-         dimension a(3),b(3)
+          double precision a,bsp,fa,fb,iac1r1
+         dimension a(3),bsp(3)
          data k0/0/,k1/1/,k2/2/,k3/3/
        call iac1r2(x,nx,ncx,mxa,tx)
        call iac1r2(y,ny,ncy,mya,ty)
@@ -595,7 +615,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
        m = nx + k2
        n = ny + k2
        if (mxa .gt. k2) go to 50
-          call iac1r3(tx,nx,ncx,cy,lx,mxa,mxb,a,b)
+          call iac1r3(tx,nx,ncx,cy,lx,mxa,mxb,a,bsp)
           do 40 i = k3, n
              j = i - k2
              if (mxa .ge. k1) fa = fxa(j)
@@ -603,7 +623,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              do 30 j = k3, m
                 cy(j) = cxy(j,i)
    30        continue
-             call iac1r4(tx,nx,ncx,cy,lx,mxa,fa,mxb,fb,a,b)
+             call iac1r4(tx,nx,ncx,cy,lx,mxa,fa,mxb,fb,a,bsp)
              cxy(k1,i) = cy(k1)
              cxy(k2,i) = cy(k2)
              k = m + k1
@@ -613,7 +633,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
    40     continue
    50  continue
        if (mya .gt. k2) go to 110
-          call iac1r3(ty,ny,ncy,cy,ly,mya,myb,a,b)
+          call iac1r3(ty,ny,ncy,cy,ly,mya,myb,a,bsp)
           do 70 i = k3, m
              j = i - k2
              if (mya .ge. k1) fa = fya(j)
@@ -621,7 +641,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              do 60 j = k3, n
                 cy(j) = cxy(i,j)
    60        continue
-             call iac1r4(ty,ny,ncy,cy,ly,mya,fa,myb,fb,a,b)
+             call iac1r4(ty,ny,ncy,cy,ly,mya,fa,myb,fb,a,bsp)
              cxy(i,k1) = cy(k1)
              cxy(i,k2) = cy(k2)
              k = n + k1
@@ -630,13 +650,13 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
              cxy(i,k) = cy(k)
    70     continue
           if (mxa .gt. k2) go to 130
-             call iac1r3(ty,ny,ncy,cy,ly,k0,k0,a,b)
+             call iac1r3(ty,ny,ncy,cy,ly,k0,k0,a,bsp)
              do 100 i = k1, k2
                 k = k3 - i
                 do 80 j = k3, n
                    cy(j) = cxy(k,j)
    80           continue
-                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,b)
+                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,bsp)
                 cxy(k,k1) = cy(k1)
                 cxy(k,k2) = cy(k2)
                 l = n + k1
@@ -647,7 +667,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
                 do 90 j = k3, n
                    cy(j) = cxy(k,j)
    90           continue
-                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,b)
+                call iac1r4(ty,ny,ncy,cy,ly,k0,fa,k0,fb,a,bsp)
                 cxy(k,k1) = cy(k1)
                 cxy(k,k2) = cy(k2)
                 l = n + k1
@@ -713,7 +733,7 @@ c     1             fya(nx),fyb(nx),tx(ncx),ty(ncy),x(nx),y(ny)
   210  continue
       
        return
-      end
+      end subroutine iac2r_Sm
 
 
 
@@ -726,8 +746,8 @@ c      are bigger then the used dimensions:(nxa,nya).ge.(nx,ny)
 c      nxa is a maximal value nx: nxa.ge.nx
 c      nx4x is a maximal value of nx4: nx4a.ge.nx4
 c----------------------------------------------------------
-      implicit double precision(a-h,o-z) 
-         integer idx,idy,ncx,ncy,nx,ny
+      implicit none !double precision(a-h,o-z) 
+         integer idx,idy,ncx,ncy,nx,ny, nx4a
          double precision cxy,tx,ty,xx,yy
 cSm030218
 c         dimension cxy(ncx,ncy),tx(ncx),ty(ncy)
@@ -737,8 +757,8 @@ c         dimension cxy(ncx,*),tx(*),ty(*)
 
          external ias1r1,ias1r2
          integer i,j,k,k0,k1,k4,l,m,n,ias1r1
-         double precision a,b,ias1r2
-         dimension a(4),b(4)
+         double precision a,bsp,ias1r2
+         dimension a(4),bsp(4)
          data k0/0/,k1/1/,k4/4/
 
 c       write(*,*)'ncx,ncy,nx4a',ncx,ncy,nx4a
@@ -757,8 +777,8 @@ c       enddo
              n = j - k4 + m + k1
              a(m) = cxy(l,n)
    10     continue
-          b(k) = ias1r2(ty,a,ncy,k4,idy,yy,j,k0)
+          bsp(k) = ias1r2(ty,a,ncy,k4,idy,yy,j,k0)
    20  continue
-       ias2r_Sm = ias1r2(tx,b,ncx,k4,idx,xx,i,k0)
+       ias2r_Sm = ias1r2(tx,bsp,ncx,k4,idx,xx,i,k0)
        return
-      end
+      end function ias2r_Sm

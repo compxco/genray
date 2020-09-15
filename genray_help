@@ -1,10 +1,48 @@
 !
-!This file contains namelist input for the GENRAY ray tracing code.
-!GENRAY will read it as a file called genray.dat.   Units are mixed.
-!This file genray.dat is read before genray.in (alternative namelist
-!  input file in MKSA system units).  Thus, to use genray.in, there
-!  should be no genray.dat in the current working directory.
 !
+!This file contains an explanation of namelist input for the all frequencies
+!  GENRAY ray tracing code.  Several dispersion relations are implemented.
+!  Ray trajectories and absorption is calculated with the various dispersion relations. 
+!  Several RF current drive efficiency formulas area available,
+!  including using the ADJ self-adjoint method of Karney, Fisch, Reiman.
+!  
+!  There is a 1D-in-velocity QL calc of lower hybrid wave absorption and current,
+!  following methods in Dave Ignat's LSC code.
+!
+!  In addition, the code can be used to calculate nonthermal electron cyclotron
+!  emissions (ECE), using namelist specified non-Maxwellisan distributions, or 
+!  3D distributions imported from the CQL3D Fokker-Planck code.
+!  The ECE calculation is a non-circular equilibrium eqdsk-based generalization
+!  R.W. Harvey, M.R. O'Brien et al., Phys. Fl. B5, 446 (1993).
+!
+!GENRAY can read the present file as a namelist file called genray.in with inputs
+!  in the MKSA system (given that there is no genray.dat file), except 
+!  temperatures given in keV.
+!  If there is a genray.dat file, it becomes the namelist input file.
+!  The file, genray.in, differs from an alternative genray.dat namelist file 
+!  in that the latter uses mixed units (the preference of some users).  
+!  In this genray_help file we include the units to be used for genray.in and
+!  and indicate differences for the genray.dat files with !genray.dat: at the
+!  beginning of the line.
+!
+!Several use cases/regression tests are available in a subdirectory 
+!  00_Genray_Regression_tTests/,illustrating various functionalities of the code.
+!Also, there are several README* files in the distribution.
+!
+!For a general outline/manual of the GENRAY code capabilities, see 
+!  http://www.compxco.com/genray.html  and https://www.github.com/compxco/genray
+!
+!The code is open source, available at https://www.github.com/compxco .
+!
+!The primary references we use for code attribution are:
+!  A.P. Smirnov, R.W. Harvey, and K. Kupfer, A general ray tracing code GENRAY, 
+!     Bull Amer. Phys. Soc. Vol 39, No. 7, p. 1626 Abstract 4R11 (1994). 
+!  A.P. Smirnov and R.W. Harvey, "The GENRAY Ray Tracing Code", Report 
+!     CompX-2000-01. Ver/ 2, March 17, 2003.  
+!     Available at http://www.compxco.com/genray.html .
+!  Dr. Yuri V. Petrov, CompX, is the primary continuing developer and 
+!     maintainer of the code.
+
 
 !Normalization constants:
 !-------------------------------------------------------------------------
@@ -69,9 +107,9 @@
  outdat='zrn.dat'
  stat='new'
  partner="disabled"
- outnetcdf='enabled' ! to save data into netcdf files
- outprint='enabled'  ! to print data to the screen
- outxdraw='enabled'  ! to save files for xdraw
+ outnetcdf='enabled' ! 'enabled' means - save data into netcdf files
+ outprint='enabled'  ! 'enabled' means - print data to the screen (mostly debug information)
+ outxdraw='enabled'  ! 'enabled' means - save files for xdraw
  &end
 !--------------------------------------------------------------------------
 !/tokamak/
@@ -262,7 +300,8 @@
 !-------------------------------------------------------------------------
 !Waves
 !-------------------------------------------------------------------------
-! frqncy [GHZ] frequency f=w/2pi 
+! genray.in:  frqncy [Hz] frequency f=w/2pi in Hz (1/sec), MKSA difference from genray.dat
+! genray.dat: frqncy [GHZ] frequency f=w/2pi 
 ! 
 ! ioxm ( 1 - om, -1  - xm )   ! Wave mode in the equation N=N(gam).
 !                             ! gam is the angle between the refractive vector
@@ -394,7 +433,8 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
  &wave
- frqncy=45.0d+0   !GHZ
+ frqncy=45.0d+9   !MKSA difference from genray.dat
+ !genray.dat: frqncy=45.0d+0   !GHZ
  ioxm=+1
  ioxm_n_npar=0
  ireflm=1
@@ -405,7 +445,8 @@
  i_vgr_ini=+1
  poldist_mx=1.d+5  
 !&wave
-      frqncy=60.00d-3 !GHZ
+      frqncy=60.00d6 !HZ MKSA difference from genray.dat
+!genray.dat:   frqncy=60.00d-3 !GHZ   
       ioxm=-1
       ireflm=3
       jwave=1
@@ -426,6 +467,17 @@
       rho_step_find_hot_nperp_roots=1.d-2
       rho_min_find_hot_nperp_roots=0.9d0
       no_reflection=0
+      istep_in_lcfs=1    !YuP[2020-09-03] Added:
+         !  For istart=1 (EC cone) starting method, choose
+         !  how the EC ray is launched with respect to the LCFS:
+         ! istep_in_lcfs=1 means Step inside LCFS (slightly).
+         !  This is the default option, for reverse consistency with original coding.
+         ! istep_in_lcfs=0 means Start ray-tracing directly from {rst,zst} even
+         !  if it is far outside  of the LCFS. That is, no stepping inside LCFS.
+         !  This is more physical, because there is
+         !  some plasma outside of LCFS (exponential drop-off of density),
+         !  and this option is required for model accracy in cases when O-X conversion
+         !  happens just outside of LCFS.
       shift_rho_geom=1.d0
 !&end
 !---------------------------------------------------------------------
@@ -806,6 +858,21 @@
 !                prmt3=1.000d-04
 !                prmt4=5.000d-04
 !                prmt6=1.0d-03
+!  irkmeth=3   [2020-08-26] NEW option [adapted from GENRAY-C]
+!     For irkmeth=3 option (usage of drkgs_auto), set (Example):
+!      dL_step=1.d-3 ! [m]  max allowed change in cartesian coords.
+!      dN_step=1.d-2 ! max allowed change in refraction index.
+!     The code will set the time step h = dt_code for integration
+!     in such a way that the change |dr| in configuration space
+!     is not larger than dL_step, and also
+!     the change in refr. index |N| is not larger than dN_step.
+!     Also needed (example):
+!      prmt6=1.d-3 [m] ! distance along ray [m] for saving data.
+!     With this option (usage of drkgs_auto) the value of prmt6 
+!     does NOT affect the step of Ruge-Kutta integration.
+!     Other prmt* values are not needed.
+!     This new option (irkmeth=3) is ~4x faster than irkmeth=2 (per ray element)
+!     Value of toll_hamilt is still operational, as usually.
 !--------------------------------------------------------------------------
 ! ndim1 (number of used ray tracing equations)
 !        it should be ndim1=6 for isolv=1
@@ -1188,7 +1255,8 @@
  beta_freq=90.d0                             !degree 
  nsteps_freq=100
  n_ec_harmonics_freq=6
- max_plot_freq=200.d0                        !GHZ
+ max_plot_freq=200.d9                        !HZ MKSA difference
+ !genray.dat:  max_plot_freq=200.d0                        !GHZ
  npar_freq=0.d0
  &end
 
@@ -1316,17 +1384,21 @@
 !            if (nbulk.gt.2) nbulk1=nbulk-2
 !	 endif
 ! -----------------------------------------------------
-! dense0(i)   central density in 10**19 meter**(-3) i=1,nbulk1
+! dense0(i)   central density in meter**(-3) i=1,nbulk1, MKSA difference
+!genray.dat: dense0(i)   central density in 10**19 meter**(-3) i=1,nbulk1
 ! -----------------------------------------------------
-! denseb(i)  edge density in 10**19 meter**(-3) i=1,nbulk1
+! denseb(i)  edge density in meter**(-3) i=1,nbulk1, MKSA difference
+!genray.dat denseb(i)  edge density in 10**19 meter**(-3) i=1,nbulk1
 ! -----------------------------------------------------
 ! rn1de(i) i=1,nbulk1
 ! -----------------------------------------------------
 ! rn2de(i) i=1,nbulk1
 ! -----------------------------------------------------
  &denprof
- dense0(1)=3.575d+0
- denseb(1)=1.22d+0
+ dense0(1)=3.575d+19 !MKSA difference
+ denseb(1)=1.22d+19  !MKSA difference
+!genray.dat:  dense0(1)=3.575d+0
+!genray.dat:  denseb(1)=1.22d+0 
  rn1de(1)=3.2d+0
  rn2de(1)=1.2d+0
  &end
@@ -1508,7 +1580,8 @@
 !                    P(n_parallel)
 !  nnkpar(i)=...     i=1,ngrill
 !----------------------------------------------------------------------
-!  powers(1:ngrill)  [MWatts] power in one grill 
+!  powers(1:ngrill)  [Watt] power in one grill, MKSA difference
+!genray.dat:  powers(1:ngrill)  [MWatts] power in one grill 
 !  (total power of grill(in MWatts) will be powtot=sum{powers}
 !  powers(i)=...     i=1,ngrill
 !-------------------------------------------------------------------
@@ -1620,7 +1693,8 @@
  anmin(1)= -0.5d+0
  anmax(1)= -0.6d+0
  nnkpar(1)=1
- powers(1)=1.0                     !Mwatt
+ powers(1)=1.0d6                   !Watt, MKSA difference
+!genray.dat:  powers(1)=1.0                     !Mwatt
  antormin(1)=0.1d0
  antormax(1)=1.d0
  nnktor(1)=1 
@@ -1773,58 +1847,87 @@
 !
 ! ----input data for disk to disk launching, raypatt='diskdisk':
 !     power distribution at the first disk has the gaussian variation
-!     w.r.t. disk radius rho:
-!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!     w.r.t. radius rho (at radial bin centers):
+!     power(rho)=Const*exp[-(rho/sigma_launching_disk)**2]
 !
-!     The radius of the launching disk will be determine by the
+!     The power distribution at the launching disk will be determined by the
 !     parameter : 0. < part_gauss_power =< 1.
-!     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
-!     (2/sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!     part_gauss_power= Integral(0,rho_launchin_disk){ rho*d(rho)*
+!     (2/sigma_launching_disk**2) * exp[-(rho/sigma_launching_disk)**2] }
+!       when part_gauss_power<1, sigma_launching_disk is calculated
+!       as sigma_launching_disk= rho_launching_disk/sqrt(ln(1./(1-part_gauss_power)))
 !
 !     input parameters for diskdisk case are
-!     sigma_launching_disk [meter] It works at 0.<part_gauss_power<1.
-!     d_disk [meter] is distance between the disks perpendicular to disks
+!     sigma_launching_disk [m] It is an input when part_gauss_power>1.,
+!                              otherwise it is calculated.
+!     d_disk is distance between the disks perpendicular to disks [m]
 !     part_gauss_power  It is from 0. to 1.
-!                              if 0.<part_gauss_power<1.    
+!                              if 0.<part_gauss_power<1. then   
 !                              sigma_launching_disk will be calculated using:
-!                                sigma_launching_disk=rho_launching_disk/
-!                                dsqrt(dlog(1.d0/(1-part_gauss_power))))
+!                              sigma_launching_disk=rho_launching_disk/
+!                                sqrt(ln(1./(1-part_gauss_power))))
 !                             
 !                              If part_gauss_power.ge.1 then
 !                              sigma_launching_disk will be taken from         
-!                              genray.dat and the code will recalculate
+!                              genray.dat(in) and the code will recalculate
 !                              part_gauss_power using given
 !                              sigma_launching_disk
-!     rho_launching_disk  [meter] the first disk radius
-!     rho_focus_disk  [meter] the second disk radius
+!     rho_launching_disk  [m] radius of the first (launching) disk
+!           Suggestion: set rho_launching_disk as ~2*sigma_launching_disk.
+!     rho_focus_disk  [m] the second disk radius
+!           Note that each disk is divided into radial shells (or bins),
+!           and the rays in each shell (bin) are started from the CENTER
+!           of given bin.  However, the values of rho_launching_disk and 
+!           rho_focus_disk point to the OUTER BOUNDARY of the last radial bin.
+!           The sizes of radial bins are found automatically by the code,
+!           in such a way that the power density (= [number of rays 
+!           in given radial bin] * [power in each ray] / [area of bin] )
+!           is C*exp[-(rho_bin_center/sigma_launching_disk)**2] .
+!           The power in each ray is set to be the same.
+!           Therefore, the radial width of each bin depends on number of
+!           rays that are set for this bin (see n_mesh_disk_angle_bin below).
 !     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!           (and same number of radial bins is set at the second disk).
+!           The number of radial bins should not exceed the max value:
+!           Presently, n_mesh_disk_radial_bin_a=5 (see param.i for changes).
 !     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
-!                 of angle bins at each radius bin
-!     initial_azimuth_angle_degree((n_mesh_disk_radial_bin) are initial
+!                 of angle bins in each radial bin
+!           (i.e. they are the number of rays in each radial bin in disk)
+!         Suggestion for setting:
+!         n_mesh_disk_angle_bin(1)=1 ! The central ray (should always be 1)
+!         n_mesh_disk_angle_bin(2)=4 
+!         n_mesh_disk_angle_bin(3)=8
+!         n_mesh_disk_angle_bin(4)=12
+!         n_mesh_disk_angle_bin(5)=16
+!     initial_azimuth_angle_degree(n_mesh_disk_radial_bin) are initial
 !                  angles on the first disk around the central ray
-!
+!         (this is like an angular phase of rays in each radial bin on disk)
 !     The central ray will be directed from the center of the first
-!     disk to the center of the second disk
-!     The other rays will be directed from the first disk
-!     to edge of the second disk
+!     disk to the center of the second disk;
+!     The other rays will be directed from the centers of radial bins of the 
+!     first disk to centers of corresponding radial bins of the second disk.
+!
 !
 ! ----the input data for diskbeam launching, raypatt='diskbeam'
+!     [YuP: this option is not really needed, as everything here
+!      can be reproduced with the 'diskdisk' option, 
+!      if rho_focus_disk=rho_launching_disk ]
 !     Rays will be launched from the launching disk parallel to
-!     the central ray
+!     the central ray.
 !     power distribution at the launching disk has the gaussian form
-!     on disk radius: rho
-!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!     on disk radius rho (at radial bin centers)
+!     power(rho)=Const*exp[-(rho/sigma_launching_disk)**2]
 !
-!     The radius of the launching disk will be determine by the
+!     The power at the launching disk will be determined by the
 !     parameter : 0. < part_gauss_power =< 1.
 !     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
-!     (2/sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!     (2/sigma_launching_disk**2) * exp[-(rho/sigma_launching_disk)**2] }
 !
 !                               
-!     input parameters for diskdisk case are
-!     sigma_launching_disk [meter] It works for 0.<part_gauss_power<1.
+!     input parameters for diskbeam case are
+!     sigma_launching_disk [m] Needed when part_gauss_power.ge.1.
 !     part_gauss_power  It is from 0. to 1.
-!                              if <part_gauss_power<1    
+!                              if 0<part_gauss_power<1    
 !                              sigma_launching_disk will be calculated using:
 !                                sigma_launching_disk=rho_launching_disk/
 !                                dsqrt(dlog(1.d0/(1-part_gauss_power)))
@@ -1834,18 +1937,21 @@
 !                              genray.dat.  Then the code will recalculate
 !                              part_gauss_power using given
 !                              sigma_launching_disk
-!
-!     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!     rho_launching_disk  [m] radius of the launching disk
+!           Suggestion: set rho_launching_disk as ~2*sigma_launching_disk.
+!     n_mesh_disk_radial_bin is the number of radial bins at the disk
 !     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
-!                 of angle bins at each radius bin
-!                 It should be n_mesh_disk_angle_bin(1)=1.
+!                 of angle bins at each radial bin.
+!                 In the 1st radial bin, should have n_mesh_disk_angle_bin(1)=1.
 !
 !     initial_azimuth_angle_degree(n_mesh_disk_radial_bin) are initial
-!                  angles on the first disk around the central ray
-!
+!                  angles on the disk around the central ray 
+!                  directed clockwise from the vector R_0 
+!         (this is like an angular phase of rays in each radial bin on disk)
+!                
 !     The central ray will be directed from the center of the launching
 !     disk. The central ray direction is set by angles:
-!     alfast[degree] and betast[degree] 
+!     alfast(degree) and betast(degree) 
 !-----------------------------------------------------------------
  &eccone
 ! ncone=1
@@ -1880,8 +1986,11 @@
  alpha2(2)=+1.500d+1
  na1=0
  na2=6
- powtot(1)=1.0d-1    !MWatt
- powtot(2)=1.0d-1    !MWatt 
+ powtot(1)=1.0d+5            !Watt, MKSA difference
+ powtot(2)=1.0d+5            !Watt, MKSA difference
+!genray.dat:  powtot(1)=1.0d-1    !MWatt
+!genray.dat:  powtot(2)=1.0d-1    !MWatt 
+
 
 ! raypatt='toray'
 ! zst(1)=+0.712812d0
@@ -2018,7 +2127,9 @@
 !      is used in dispersion relation.In this case  Z_effective
 !      is used for current drive efficiency calculations.   
 !------------------------------------------------------------------------
-! dens1(ndens,nbulk) (10**13/cm**3)
+! dens1(ndens,nbulk) (1/m**3), MKSA difference
+!generay.dat:  dens1(ndens,nbulk) (10**13/cm**3)
+
 !------------------------------------------------------------------------
 ! If  ((izeff.eq.0).or.(izeff.eq.3)) then the electron density
 ! will be calculated from the charge neutrality.
@@ -2043,7 +2154,8 @@
 !            0.,     4.2,   4.3,       
 !            0.,     5.2,   5.3, 
 !
-! prof in [10**13/cm**3)]
+! prof in [1/m**3)], MKSA difference
+!genray.dat:  prof in [10**13/cm**3)]
 !
 !For izeff=1 case we should set the profiles of the electron density and 
 !ion densities(i) with i=1,nbulk-2      
@@ -2073,29 +2185,52 @@
 ! If (izeff.ne.0) and (izeff.ne.3) then we should set the electron density
 ! dens1(k,1)  and ion densities dens1(k,i) i=2:nbulk1
 !------------------------------------------------------------------------
-! prof in [10**13/cm**3)]
+! prof in [1/m**3)], MKSA difference
+!genray.dat:  prof in [10**13/cm**3)]
  &dentab
- prof    =   4.2000000,
-             4.1400000,
-             4.0500000,
-             3.9500000,
-             3.8900000,
-             3.8100000,
-             3.7400000,
-             3.6700000,
-             3.6100000,
-             3.5500000,
-             3.4900000,
-             3.3500000,
-             3.1900000,
-             3.0100000,
-             2.7600000,
-             2.4500000,
-             2.1400000,
-             1.8500000,
-             1.5100000,
-             1.2500000,
-             0.8500000,
+ prof    =   4.2000000d19,
+             4.1400000d19,
+             4.0500000d19,
+             3.9500000d19,
+             3.8900000d19,
+             3.8100000d19,
+             3.7400000d19,
+             3.6700000d19,
+             3.6100000d19,
+             3.5500000d19,
+             3.4900000d19,
+             3.3500000d19,
+             3.1900000d19,
+             3.0100000d19,
+             2.7600000d19,
+             2.4500000d19,
+             2.1400000d19,
+             1.8500000d19,
+             1.5100000d19,
+             1.2500000d19,
+             0.8500000d19,
+!genray.dat:   prof    =   4.2000000,
+!genray.dat:               4.1400000,
+!genray.dat:               4.0500000,
+!genray.dat:               3.9500000,
+!genray.dat:               3.8900000,
+!genray.dat:               3.8100000,
+!genray.dat:               3.7400000,
+!genray.dat:               3.6700000,
+!genray.dat:               3.6100000,
+!genray.dat:               3.5500000,
+!genray.dat:               3.4900000,
+!genray.dat:               3.3500000,
+!genray.dat:               3.1900000,
+!genray.dat:               3.0100000,
+!genray.dat:               2.7600000,
+!genray.dat:               2.4500000,
+!genray.dat:               2.1400000,
+!genray.dat:               1.8500000,
+!genray.dat:               1.5100000,
+!genray.dat:               1.2500000,
+!genray.dat:               0.8500000,
+	     
  &end
 !/dentab_nonuniform_line/ at non-uniform grid 
 !                         for  nonuniform_profile_mesh='enabled'
@@ -2162,7 +2297,8 @@
 !         if (nbulk.gt.2) nbulk1=nbulk-2
 !      endif !izeff
 !------------------------------------------------------------------------
-! densities given in prof_2d are in (10**13/cm**3)
+! densities given in prof_2d are in (1/cm**3), MKSA difference
+!genray.dat:  densities given in prof_2d are in (10**13/cm**3)
 !---------------------------------------------------------------------------
 ! If  ((izeff.eq.0).or.(izeff.eq.3)) then the electron density
 ! will be calculated from the charge neutrality.
@@ -2170,16 +2306,21 @@
 !------------------------------------------------------------------------
 !Example for nbulk1=3
 !---------------------------------------------------------------------------
-! prof_2d in (10**13/cm**3)
+! prof_2d in (1/m**3), MKSA difference
+!genray.dat:  prof_2d in (10**13/cm**3)
 
 &dentab_nonuniform_line
 nj_tab(1)=3
-nj_tab(2)=5       
+nj_tab(2)=5
 nj_tab(3)=7
 
-prof_2d(1,1)= 1.d0, 0.5d0, 0.001d0,
-prof_2d(1,2)= 1.d0, 0.7d0, 0.5d0,  0.25d0, 0.001d0,
-prof_2d(1,3)= 1.d0, 0.9d0, 0.7d0,  0.5d0,  0.25d0,  0.12d0,  0.001d0,
+prof_2d(1,1)= 1.d19, 0.5d19, 0.001d19,
+prof_2d(1,2)= 1.d19, 0.7d19, 0.5d19,  0.25d19, 0.001d19,
+prof_2d(1,3)= 1.d19, 0.9d19, 0.7d19,  0.5dd19, 0.25d19,  0.12d19,  0.001d19,
+!genray.dat:  prof_2d(1,1)= 1.d0, 0.5d0, 0.001d0,
+!genray.dat:  prof_2d(1,2)= 1.d0, 0.7d0, 0.5d0,  0.25d0, 0.001d0,
+!genray.dat:  prof_2d(1,3)= 1.d0, 0.9d0, 0.7d0,  0.5d0,  0.25d0,  0.12d0,  0.001d0,
+
 
 radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
 radii_2d(1,2)=0.d0, 0.2d0, 0.5d0,  0.7d0,  1.d0,
@@ -2331,7 +2472,6 @@ radii_2d(1,2)=0.d0, 0.2d0, 0.3d0,  0.5d0,  0.7d0,   0.9d0,   1.d0
  &end
 
 !---------------------------------------------------------------------------
-
 !/tpoptab_nonuniform_line/ at non-uniform grid 
 !                       for nonuniform_profile_mesh='enabled'
 !--------------------------------------------------------------------------
@@ -2630,7 +2770,8 @@ radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
 !         nfreq.gt.1 gives spectra covering the specified frequency
 !         range
 !   if nfreq=1 code will use the frequency determined by 
-!              frqncy(GHz) given in namelist wave
+!              frqncy(Hz) given in namelist wave, MKSA difference
+!genray.dat:              frqncy(GHz) given in namelist wave
 !   freq00=<freq01 are ratios of the minimal and maximal emission
 !         frequencies to electron gyro-frequency f_ce(rho=0) at the
 !         magnetic axis.  Search screen dump for "magnetic axis bmag"
@@ -2728,6 +2869,15 @@ eps_xe=1.d-2
 
 !------------------------------------------------------------------------
 !/adj_nml/
+!Current drive efficiency based on methods developed by 
+! C. F. F. Karney, N.J. Fisch and A.H. Reiman, Radio-Frequency Power in Plasmas,
+! Eighth Topical Conf, Irvine, AIP Conf. Proceedings 190, p. 430 (1989),
+! in circular tokamak equilibria incuding trapping effects.
+! This was adapted to non-cirular (2D) tokamak equilibria, as specified in
+! the "eqdsk" format.  CompX-2002-3 report, "Current Drive Calculations Functions
+! Using Adjoint Functions", A.P. Smirnov and R.W. Harvey, Sept. 27, 2002.
+! This report can be found at www.compxco.com/genray.
+
 !------------------------------------------------------------------------
 ! INTEGER
 ! i_adj  =1 to use adj calculations
@@ -3204,7 +3354,11 @@ i_chi_interpolation=1
                                         ![normalized to small radius]
                                         !at the given poloidal mesh
 !-------- minimal density and temperature outside LCFS------------------
- dens_min_edge=1.d-6  ! 10**13/cm**3           
+!SAP100909
+! dens_min_edge=1.d11  ! 1/m**3 MKSA
+ dens_min_edge=1.d13  ! 1/m**3 MKSA to coinside with genray.dat case
+                      ! which uses  1.d-6 1/cm*3
+!genray.dat:  dens_min_edge=1.d-6  ! 10**13/cm**3		      
  temp_min_edge=1.d-3  ! keV 
 !---------density fall near the chamber wall and limiters---------------- 
  sigma_wall_n=3.d-3  !exponential density fall off distance [meter]
@@ -3224,8 +3378,10 @@ i_chi_interpolation=1
 !--------------------------------------------------------------------------
 !     data for namelist /lsc_approach_nml/  
 !     to calculate LH absorption and CD for nonmaxwellian
-!     electron distribution function
-!     and given DC electric field radial profile
+!     self-consistent 1D-in-vpar electron distribution function
+!     and given DC electric field radial profile.
+!     This is a re-implementation of the LSC code:
+!        D.W. Ignat, E.J. Valeo, S.C. Jardin, Nuclear Fusion 34, 837 (1994).
 !-------------------------------------------------------------------------
 !     i_lsc_approach     !=0 do not use lsc_approach
 !                        !=1 to use lsc_approach
@@ -3312,7 +3468,7 @@ i_chi_interpolation=1
 !    at uniform grid with points given at the centers of radial bins
 !    rho(i)=(i-0.5)/n_psi_TSC  i=1,..., n_psi_TSC
 c
-c    Example fo case  n_psi_TSC=200
+c    Example for case  n_psi_TSC=200
 &JparTSCtab
  prof=   200.*0.d-2
 &end

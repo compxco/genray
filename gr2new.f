@@ -240,7 +240,7 @@ c**********************************************************************
 c
       subroutine gr2new
       implicit none
-c      implicit real*8 (a-h,o-z)
+      !implicit real*8 (a-h,o-z)
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -274,9 +274,9 @@ c-----externals
       hteta=2.d0*pi/dble(nteta)
       if (nnlim.eq.0) then
 c        In this case:
-c        2)we will create the limiter points using the close flux
-c        surface psi(r,z)=psilim*psifactr, here
-c	 psifactr is a parameter (it must be .le.1) to avoide the
+c        2)we will create the limiter points using the closed flux
+c        surface psi(r,z)=psimag+(psilim-psimag)*psifactr, here
+c        psifactr is a parameter (it must be .le.1) to avoide the
 c        problems with the nonmonotonic psi function near the separatrix.
 c        psifactr is given in genray.in file (it is in common/one/
 c        3) the number of limiter points nlimit let equal to the number
@@ -285,12 +285,13 @@ c        blocks: gr.cb, fourb.cb  and five
 c        ------------------------------------
          write(*,*)'gr2new nnlim=0 eqdsk data without limiter points'
 cSAP091030
-         write(*,*)'gr2new psilim,psifactr,psimag',
-     &                     psilim,psifactr,psimag
+         write(*,*)'gr2new/before adjustment by psifactr: psilim=',
+     &                     psilim
 
 	 psilim=psimag+(psilim-psimag)*psifactr
 c	 psilim=psisep
-         write(*,*)'psisep,psilim,psifactr',psisep,psilim,psifactr
+         write(*,*)'gr2new/after adjustment by psifactr: psilim=',
+     &                     psilim
       endif
 c-------------------------------------------------------
       hpsi=(psilim-psimag)/dble(npsi-1)
@@ -327,8 +328,8 @@ c        ipsi=0 !  to read contours data from file:psi.bin
       endif ! ipsi
 c------------------------------------------------------------------      
       do  i=1,nteta1
-         zpsi(1,i)=yma
-         rpsi(1,i)=xma
+         zpsi(1,i)=yma  ! Z of magnetic axis [m]
+         rpsi(1,i)=xma  ! R of magnetic axis [m]
       end do
 
 cSAP091123
@@ -459,13 +460,15 @@ c          endif
            call calc_r_z_psi_theta_binary(psi0,
      &     yma,xma,rt0,zt0,teta)
  
-c          write(*,*)'in gr2new after zrcntrbin zt0,rt0,t0',zt0,rt0,t0
+!           write(*,'(a,2e12.4)')
+!     &      'gr2new after calc_r_z_psi_theta_binary zt0,rt0=',
+!     &      zt0,rt0
  
            zpsi(j,i)=zt0
            rpsi(j,i)=rt0
           
-20       continue
-10    continue
+20       continue ! j=2,npsi
+10    continue  ! i=1,nteta
 cSAP091030
 c       stop 'in gr2new after 10'
 

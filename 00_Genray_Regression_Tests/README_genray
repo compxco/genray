@@ -194,10 +194,15 @@ Definitely, test8.1 setup is preferable for this type of run.
 Test9:
 ======
 
-Compare genray.bin_CMod_LH_edge_LSC with test7/genray.bin using xdraw.
+This test compares application of the LSC-like QL calc of damping on 
+a Maxwellian, with a second pass through the damping with the QL plateau
+turned on, versus poloidal distance along the ray. 
+Thus, compare genray.bin_CMod_LH_edge_LSC with test7/genray.bin using xdraw.
 The single run produces plots of QL damping on Maxwellian as calculated
 with the LSC-like option (in xdraw genr op), and the result is very close to 
 linear damping in test7.  A second plot shows results of
 QL damping, for which an LH plateau reduces damping for all rays.
 
 
+Test10:
+=======

@@ -9,7 +9,7 @@ c***************************************************************
 c
 
 c      double precision FUNCTION RTBIS(FUNC,X1,X2,XACC)
-c      implicit none
+      !implicit none
 c      double precision func,x1,x2,dx,xmid,fmid,xacc,f
 c      integer*4 j,jmax
 c      external func
@@ -183,7 +183,7 @@ C
       END IF
 C
       RETURN
-      END
+      END SUBROUTINE CZETA
 
       subroutine CZETA0(n_parallel,CX,CZ0,CZ1,IERR)
 c     Z_0=CZ0 and its derivative d(Z_0)/d(CX)=CZ1 calculations
@@ -197,6 +197,7 @@ c     output
       double complex CZ0,CZ1
 c     local
       double complex cp,cpz0,cpz1
+      integer j, jmax
 
       double complex CZ2,cpz2
       double precision X
@@ -247,28 +248,40 @@ c        CZ1=zp
 c      endif
 
 c-----zfunc and pfunc from curray code
+c      jmax=200
+c      do j=1,jmax
+c         x=-5.+ 10.*(j-1.)/(jmax-1.)
+c         call ZFUN_cur(x, CZ0, CZ1,CZ2) 
+c         write(*,'(5e12.3)')x,CZ0,CZ1
+c      enddo
+c      pause
       
+       ! x=dble(CX)  ! YuP 120430 added; skip n_parallel part below
+       ! call ZFUN_cur(X, CZ0, CZ1, CZ2)   ! CZ2 is not used here 
+       ! return
+
       if (n_parallel.ge.0.d0) then  
         x=dble(CX)
-        call ZFUN_cur(X, CZ0, CZ1,CZ2)    
+        call ZFUN_cur(X, CZ0, CZ1, CZ2)   ! CZ2 is not used here 
       else
         cp=-CX
         x=dble(cp)
-        call ZFUN_cur(x, cpz0, cpz1, cpz2)
+        call ZFUN_cur(x, cpz0, cpz1, cpz2)  ! cpz2 is not used here 
 c        write(*,*)'forest x,cpz0,cpz1',x,cpz0,cpz1
         CZ0=-cpz0
         CZ1=cpz1
-        CZ2=cpz2 !?
+        !CZ2=cpz2 !?
       endif
 cc      write(*,*)'curray CZ0,CZ1',CZ0,CZ1
 
       return
-      end
+      end subroutine CZETA0
 
 
 
-      subroutine DHOT_s(mass,X,Y,T_av,tpop,vflow,
+      subroutine DHOT_s(mass,X,Yc,T_av,tpop,vflow,
      .nll_in,np_in,iherm,K)
+c Revised by YuP [2020-08-24]
 c-----------------------------------------------------------
 c     calculates sucseptibilities K(3,3) for the given hot (non-relativistic)
 c     plasma specie, T.Stix, Waves in plasmas,(1992), p.258 (57)  make
@@ -291,103 +304,147 @@ c               (for the given specie)
 c          evaluated at (mass,X,Y,Te,tpop,vflow,Nll,np)
 c-----------------------------------------------------------
 
-      Implicit none
+      implicit none
 c     input
       double precision mass
-      double precision  X, Y,T_av,tpop,vflow
+      double precision  X, Y, Yc, T_av, tpop, vflow
       double precision np_in,nll_in
       integer iherm      
       integer n        !n.lt.nharmmax is the number of ECR harmonics
-cSm060815
       integer n_new
       integer nmax     ! max number of ECR harmonics in arrays
-c      parameter (n=20) !it will be calculated inside this routine 
-
-cSAP081214
-c      parameter (nmax=3000)
-      parameter (nmax=30)
-
-c      parameter(nmax=3)     
-      
+      parameter(nmax=300)
  
 c     output
       double complex K(3,3)
 c     locals
-      double precision np,nll
+      double precision np,nll, nll_adj
       double precision nps,nlls,c
       double precision te, beta
-      double precision pi,k4,vte,lambda,ri01
+      double precision pi,k4,vte,lambda,ri01, omega,rho_larm, one_lambda
+      real*8 nll_min
 
-      double precision dr,di,xne(nmax),drp
-cSAP090204
-c      double precision Ibess(nmax),Ibessp(nmax),Ibesspp(nmax)
+      double precision dr,di,xne(nmax),drp, ox,resn, resn_min, vkw_min,
+     + vkw_in, vkw_adj, err_vkw
       double precision Ibess(-(2*nmax+1):(2*nmax+1)),
      &Ibessp(-(2*nmax+1):(2*nmax+1)),
      &Ibesspp(-(2*nmax+1):(2*nmax+1))
 
       double complex   dp
-cSAP090204
-c      double complex A(nmax),B(nmax)
       double complex A(-(2*nmax+1):(2*nmax+1)),B(-(2*nmax+1):(2*nmax+1))
       double complex i
       double complex  Kxx, Kxy, Kxz, Kyx, Kyy, Kyz, Kzx, Kzy, Kzz
 
-      double complex cx,cz0,cz1,cd,cxp
-      integer q,ierr,j
+      double complex cx,cz0, cz0_vkw, cz0_resn_vkw, cz1,cd,cxp
+      integer q,qmin,qmax,ierr,j
 
       integer n_harm0,n_harm1,n_harm2 ! the boundaries for the harmonic numbers
       integer istop   
+      real*8 qIbess_lambda !local: q*Ibess/lambda
+      
 c      istop=1, it is possible to calculate the susceptibility tensor
 c      istop=0, it is impossible to calculate the susceptibilty tensor
-
-c      write(*,*)'dhot_s n=',n
-  
       pi = 4*datan(1.d0)
-      c = 3.0d10                !speed of light
+      c= 2.99792458d10          !speed of light
       k4 = 4.19d7               !constant for elec therm vel
       i = ( 0.0d0,1.0d0)        !imaginary number
 
 c-----tpop =  ratio of Te_perp / Te_parallel 
 c-----vflow = flow velocity of electrons
-      te=3.d0*T_av/(1.d0+2.d0*tpop) !longitudinal
+      te=   3.d0*T_av/(1.d0+2.d0*tpop) !longitudinal           
+      vte=  k4*dsqrt(2.0d0*te/mass)    !vth= sqrt(2.0*kT/m) longitudinal
+      beta= vte / c 
+      
+!YuP      call npnllmin(nll_in,np_in,nll,np) !in DHOT_s: Not called anymore.
+      nll=  nll_in ! original Npar
+      nll_min=1.d-7 !Must be a positive value
+      ! YuP[11-2016]: Adjust the value of nll:
+      if (dabs(nll_in).lt.nll_min) then
+         if (nll_in.ge.0.d0) then
+            nll= nll_min
+         else 
+            nll=-nll_min
+         endif 
+         !Adjusted, with lower-limit value of |nll|, 
+         !to avoid a jump in plasma dispersion function at resonance  
+         !(jump in Real part of CZ0) when Npar~0.
+         !However, for calculation of damping (Im part of CZ0),  
+         !we will use the original nll_in, i.e. using vkw_in, see below. 
+      endif
+      
+      np=   max(0.d0,np_in)
+      !YuP[2020-09-02] Note: this subr.DHOT_s is called by func.dhot_sum,
+      ! which may use negative np (perpendicular refr.index) values.
+      ! See subr.hotnp which searches the root of hot dispersion determinant,
+      ! and it may use a range of np from negative values.
+      ! In original version, np would be adjusted by npnllmin() to a small
+      ! positive value (1.d-7). Now, we adjusted it to be a non-negative value.
+      
+      nps=  np**2   ! nperp^2
+      nlls= nll**2
 
-c       write(*,*)'dhot_s longitudinal te,mass',te,mass      
-ctest
- 27   format(2D25.17)
-c      write(*,*)'dhot_s tpop,vflow'
-c      write(*,27)tpop,vflow
-           
-      vte =k4*dsqrt(2.0d0*te/mass)   !vte = sqrt(2.0*kTe/me) longitudinal
-      beta = vte / c                 !longitudinal
+      Y=Yc  ! Y=omega_c/omega == n_harm0
+      ! Note: B=0 points exist in FRC, so that Y can approach 0.
+      ! But if ray was not absorbed at multiple resonances
+      ! when approaching to B=0 point, 
+      ! it would not be absorbed anyway, 
+      ! so just pass through such B=0 point, using nmax harmonics.
+      if (abs(Y).lt. 1.d0/dfloat(nmax-4)) then 
+         !YuP120430 omega/omega_ce > nmax   Need more harmonics
+         !omega=2*pi*60.d9
+         !rho_larm= vte/(Yc*omega) ! [cm] Larmor radius of ion species
+         lambda= 0.5d0*tpop*nps*(beta/Yc)**2 ! 0.5 k_perp^2 * rho_gyro^2
+         write(*,'(a,3e12.3)')
+     +    'DHOT_s: wce/w, lambda, 1/(nmax-4) =', 
+     +     Yc, lambda, 1.d0/dfloat(nmax-4)
+         write(*,*)'DHOT_s: omega/omega_ce >nmax-4  Need more harmonics'
+         write(*,*)'DHOT_s: POSSIBLE B~0 POINT. ADJUSTING Y to 1/nmax'
+         !stop 'DHOT_s:  Increase nmax'
+         !write(*,*)'in DHOT_s before Y-adjusted:   Y,nmax=',Y,nmax
+         Y= dsign(1.d0/dfloat(nmax-4), Y)
+         !write(*,*)'in DHOT_s after Y-adjusted:    Y,nmax=',Y,nmax
+         !pause !!!
+      endif
+  
      
-c      write(*,*)'dhot vte, beta'
-c      write(*,27)vte,beta
-c      write(*,*)'dhot_s befor npnllmin nll_in,np_in',
-c     .nll_in,np_in
-      call npnllmin(nll_in,np_in,nll,np)
-
-      nps = np**2
-      nlls = nll**2
- 
-c-----lambda = 0.5 k_perp^2 * rho_e^2
-
-      lambda = nps*beta**2.0D0*tpop/2.0d0/Y**2.0D0 
-c      write(*,*)'dhot_s nps,beta,tpop,Y,lambda',nps,beta,tpop,Y,lambda
-
- 26   format(d25.17) 
-c      write(*,*)'dhot_s nps,bete,lambda',nps,beta,lambda
-
-
+c-----lambda= 0.5 k_perp^2 * rho_gyro^2
+      if(abs(Yc).ne.0.d0)then
+        lambda= 0.5d0*tpop*nps*(beta/Yc)**2 ! 0.5 k_perp^2 * rho_gyro^2
+      else ! Yc=0 which means B=0 null point.  Use "adjusted" Y:
+        lambda= 0.5d0*tpop*nps*(beta/Y)**2 
+      endif
+      
+      if(abs(tpop*nps*beta**2).ne.0.d0)then ! Basically, when lambda>0
+        one_lambda= Yc**2/(0.5d0*tpop*nps*beta**2) !=1/lambda, used below
+      else ! could happen at far edge, where Vte=0 and so beta=0
+        !When lambda=0, use this:
+        one_lambda=0.d0 !Be careful how it is used, see below.
+      endif
+      
+      vkw_in= nll_in*beta  ! same as Vthermal*Kpar/omega, using original nll
+      vkw_adj= nll*beta ! Adjusted, with lower-limit value of |nll|, 
+      !to avoid a jump in plasma dispersion function (Real part of CZ0) 
+      !when Npar~0.
+      !However, for calculation of damping (Im part of CZ0), we will use 
+      !the original nll_in, i.e. using vkw_in, see ZFUN_vkw below. 
+      
+      ! Initialize:
+      Kxx = (0.0D0,0.0D0)
+      Kyy = (0.0D0,0.0D0)
+      Kzz = (0.0D0,0.0D0)
+      !if(abs(nll*beta).ge. 1.d-2)then
+      !Kzz = dcmplx(vflow/(c*tpop), 0.0D0) *2*X/(nll*beta**2)
+      ! YuP: this term (vflow/c) cancels with 
+      ! (-vflow/c) in B0 (q=0) term
+      !endif
+      Kxy = (0.0D0,0.0D0)
+      Kxz = (0.0D0,0.0D0)
+      Kyz = (0.0D0,0.0D0)
+     
 c   Now, calculate the modified bessel functions 
 c   Remember that these are actually exp(-lambda) * In(lambda)
-
-cSAP090204
       do j = 1,nmax
          xne(j) = 0.0D0
-c         ibess(j) = 0.0D0
-c         ibessp(j) = 0.0D0
-c         A(j) = dcmplx(0.0D0,0.0D0)
-c         B(j) = dcmplx(0.0D0,0.0D0)
       enddo
       do j = -(2*nmax+1),(2*nmax+1)
          ibess(j) = 0.0D0
@@ -397,134 +454,198 @@ c         B(j) = dcmplx(0.0D0,0.0D0)
          B(j) = dcmplx(0.0D0,0.0D0)
       enddo
 
-c-----calulations of the max and minimal numbers of the harmonics
-c      write(*,*)'in DHOT_s before harmon_z nmax',nmax     
+c-----calculations of the max and minimal numbers of the harmonics
+!      istop=1 ! initialize
+!      call harmon_z(X,Y,nll,vflow,c,beta,lambda,nmax,
+!     .n_harm1,n_harm2,n,istop)
+!
+!      if (istop.eq.0) then
+!         write(*,*)'DHOT_s istop=0 it is impossible to calculate' 
+!         write(*,*)'the harmonics of susceptibily tensor  1/Y=',1/Y,nll
+!         write(*,*)'n_harm1,n_harm2,n,nmax =',n_harm1,n_harm2,n,nmax
+!         pause !!!  
+!      endif      
 
-      call harmon_z(X,Y,nll,vflow,c,beta,lambda,nmax,
-     .n_harm1,n_harm2,n,istop)
+      ! YuP[Oct-2014] 
+      ! Alternative definition of summation range over harmonics
+      n_harm0= ceiling(1.d0/Y)  ! can be negative
+      n_harm0= min(n_harm0,nmax-2) 
+      if(lambda.le. 0.4d0)then
+         ! small lambda:  0 < lambda < 0.4 
+         n_harm2=  iabs(n_harm0) + 3
+         if(n_harm2.gt.nmax)then
+            write(*,'(a,e12.3,i7)')
+     +       'DHOT_s: n_harm2>nmax;  lambda,n_harm2=',lambda,n_harm2
+            !pause !!!
+         endif
+         n_harm2=  min(n_harm2,nmax-1) ! not to exceed nmax-1
+         n_harm1= -n_harm2
+      elseif(lambda.le.10.d0)then
+         ! 0.4 < lambda < 10.
+         n_harm2=  iabs(n_harm0) + 8
+         if(n_harm2.gt.nmax)then
+            write(*,'(a,e12.3,i7)')
+     +       'DHOT_s: n_harm2>nmax;  lambda,n_harm2=',lambda,n_harm2
+            !pause !!!
+         endif
+         n_harm2=  min(n_harm2,nmax-1) ! not to exceed nmax-1
+         n_harm1= -n_harm2
+      else
+         ! large lambda: lambda > 10.
+         n_harm2=  iabs(n_harm0) + int(3*sqrt(lambda))
+         if(n_harm2.gt.nmax)then
+            write(*,'(a,2e12.3,i15)')
+     +       'DHOT_s: n_harm2>nmax;  omega/omega_c, lambda, n_harm2=',
+     +                                 1.0/Y,       lambda, n_harm2
+            !pause !!!
+         endif
+         n_harm2= min(n_harm2,nmax-1) ! not to exceed nmax-1
+         !n_harm2= min(n_harm2,20) ! not to exceed 20
+         n_harm2= max(n_harm2, iabs(n_harm0)+3) ! but not less than w/wc
+         n_harm1= -n_harm2
+      endif
+      !Tests O-X-EBW, with cases of large lambda (up to lambda=160.) 
+      ! and w/wc ~ 2 (edge) to 1(core):  
+      ! results are same as with original harmon_z method,
+      ! but the range is much smaller (not more than n_harm2=40).
+          
+c yup      if (istop.eq.0) goto 10
+!      n_new=n
+!      do j=1,n 
+!        if (dabs(xne(j)).lt.1.d-14) then
+!          !skip terms that are too small because of small exp(-lambda)*In
+!           istop=1 ! initialize
+!           call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
+!     .     n_harm1,n_harm2,n_new,istop)
+!           goto 9          
+!        endif
+!      enddo
+! 9    continue
+!      n=n_new
 
-c      write(*,*)'in DHOT_s after harmon_z nmax',nmax,'istop',istop
-c      write(*,*)'dhot_s n',n
-c      write(*,*)'in DHOT_s after harmon_z mass,n_harm1,n_harm2,n,istop',
-c     .mass,n_harm1,n_harm2,n,istop
-
-      if (istop.eq.0) then
-         write(*,*)'DHOT_s istop=0 it is impossible to calulate' 
-         write(*,*)'the harmonics of susceptibily tensor n_harm0 nmax',
-     .   nmax        
-      endif      
-       
-      if (istop.eq.0) goto 10
-  
-c       write(*,*)'in DHOT_s 1 n=',n
-
-      call ibess0(lambda,ri01)
-      call ibessn(lambda,n+1,ri01,xne)
-
-cSAP090204    
-      n_new=n
-      do j=1,n
-c        write(*,*)'j,dabs(xne(j)',j,dabs(xne(j))
-        if (dabs(xne(j)).lt.1.d-14) then
-c          write(*,*)'dhot_s j',j
-cSm060816     
-c          call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
-c     .    n_harm1,n_harm2,n,istop)
-           call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
-     .     n_harm1,n_harm2,n_new,istop)
-
-c           write(*,*)'dhot_s after harmon_z n,n_new',n,n_new
-c          goto 10
-           goto 9          
-        endif
-      enddo
-
-cSm060816
- 9    continue
-      n=n_new
-c       write(*,*)'in DHOT_s 2 n,n_harm1,n_harm2',n,n_harm1,n_harm2
 
  10   continue
 
 c      write(*,*)'dhot_s j, xne(j)',j,xne(j)
 c      write(*,*)'dhot_s n,n_harm1,n_harm_2',n,n_harm1,n_harm2
-c      do q  = -n,n
 c      write(*,*)'dhot_s before goto 20 istop=',istop     
-      if (istop.eq.0) goto 20
-      do q  = n_harm1,n_harm2 
+cyup      if (istop.eq.0) goto 20
+      ! Be sure to include q=0 harmonic (plus 2 extra):
+      qmin=min(-2,n_harm1)
+      qmax=max(n_harm2,2)
+      n= max(iabs(qmin),iabs(qmax))
 
-         cx = (1.d0 - nll*vflow/c - q *  Y) / nll / beta
-
-c         write(*,*)'dhot_s cx q',q 
-c         write(*,27)dreal(cx),dimag(cx)
+c      write(*,'(a, 5e13.4,3i6)') 
+c     + 'DHOT_s nper2,beta*nll,X,Y,lambda, qmin,qmax,n',
+c     +           nps,beta*nll,X,Y,lambda, qmin,qmax,n
            
-         call CZETA0(nll,CX,CZ0,CZ1,IERR)
-c         write(*,*)'dhot_s q,IERR,cz0',q,IERR,cz0      
+      if (n+1.gt.nmax) then
+         write(*,*)'DHOT_s:  n+1>nmax' 
+         write(*,*)'qmin,qmax,n+1,nmax =',qmin,qmax,n+1,nmax
+         stop !!!  
+      endif      
+      
+      call ibess0(lambda,ri01)
+      call ibessn(lambda,n+1,ri01,xne) ! xne== In(lambda)/exp(lambda) in DHOT_s
 
-c---- Use the Stix notation of A(n) and B(n)
-c
-c---- My functions A(n) = omega * Astix(n)
-c           and    B(n) = omega * Bstix(n) / c
+      err_vkw=1.d-6 !for checking:  sqrt(resn*resn+vkw*vkw) .LE. err_vkw
+      !
+      do q  = qmin,qmax
+         resn= 1.d0 -q*Yc - nll*vflow/c   ! resonance term  
+         !--------------
+         if (q.eq.0) then
+            Ibess(q+n+1)  = ri01   !== I0/exp(lambda)
+            Ibessp(q+n+1) = xne(1) !== I0'/exp() = I1/exp()
+c            Ibesspp(q+n+1)= xne(2)+xne(1)/lambda ! Not used?
+            !YuP[2020-09-02] Below, we will use a combination q*I_q/lambda.
+            !For q=0, it is simply 0 at all lambda:
+            qIbess_lambda=0.d0
+         elseif(iabs(q).eq.1)then
+            Ibess(q+n+1)  = xne(iabs(q))
+            !-- Special care for the derivative I1' when lambda-->0.
+            !Note: one_lambda== 1/lambda= Yc**2/(0.5d0*tpop*nps*beta**2)
+            !      and it was set to be 0 when lambda=0.
+            !YuP[2020-09-02] Note that for nps=0 (Nperp=0), 
+            ! we get lambda=0. In this case, for I1'
+            ! we should use asymptotic expansion of I1(lambda):
+            !  I1'(x) = I2(x) + I1(x)/x = [x-->0] = 
+            !         = 0     + (x/2)/x == 1/2
+            if(lambda.lt.1.d-7)then
+              Ibessp(q+n+1)=0.5d0
+              qIbess_lambda=q*0.5d0 ! q*I_q(lambda)/lambda  at lambda-->0
+            else ! lambda>0, which means one_lambda is properly set
+              ! Use the usual I_n' = I_{n+1} + I_n*(n/x)
+              Ibessp(q+n+1) = xne(1+iabs(q))
+     .                      + iabs(q)* xne(iabs(q)) *one_lambda
+              qIbess_lambda= q*Ibess(q+n+1)*one_lambda
+            endif
+         else ! q=+/-2 or higher
+            Ibess(q+n+1)  = xne(iabs(q))
+            Ibessp(q+n+1) = xne(1+iabs(q))
+     .                    + iabs(q)* xne(iabs(q)) *one_lambda
+            !Note that for higher q, e.g. q=2, we have at small x:
+            ! I2' = I3(x) +I2(x)*(2/x) --> 
+            !     =   0   +(x/2)^2/2! *(2/x) --> 0
+            !So, using one_lambda->0 is justified.
+            qIbess_lambda= q*Ibess(q+n+1)*one_lambda ! q*I_q(lambda)/lambda
+         endif
+         !vkw_adj== nll*beta, where nll was adjusted
+         !vkw_in=nll_in*beta with original nll_in
+         call ZFUN_vkw(resn, vkw_in,vkw_adj, CZ0_vkw, CZ0_resn_vkw) 
+         ! no 1/npar divergence in CZ0_vkw or CZ0_resn_vkw
+         !In case  |resn| > 10*|vkw|  including npar=0 case,
+         ! cz0_vkw ~~ -1/resn
+         ! cz0_resn_vkw ~ -1. (No divergence)
+         A(q+n+1)= (tpop-1.d0) + ( CZ0_resn_vkw*tpop + CZ0_vkw*q*Yc )
+         ! In this shape, A has no 1/npar divergence 
+         ! (but may have 1/resn divergence from cz0_vkw)
+         Kxx=  Kxx + X*q*qIbess_lambda * A(q+n+1) 
+         Kxy=  Kxy -i*q*X *(Ibess(q+n+1)-Ibessp(q+n+1))*A(q+n+1)
+         Kyy=  Kyy + X*( q*qIbess_lambda +
+     .         2.d0*lambda*(Ibess(q+n+1)-Ibessp(q+n+1)) )*A(q+n+1)
+!         write(*,*)'DHOT_s: np,q,n=',
+!     &    np,q,n, Ibess(q+n+1), Ibessp(q+n+1), A(q+n+1)
+         !if(abs(nll*beta).lt.abs(resn)*1.d-2)then ! 1d-2 or 1d-3 ~same result
+         if(dsqrt(resn*resn+vkw_adj*vkw_adj) .LE. err_vkw)then
+            ! Both npar~0 and resn~0 
+            ! do nothing: assume no contribution to Kzz
+            !write(*,*)'DHOT_s: sqrt(resn*resn+vkw*vkw)<err_vkw',resn,vkw_adj
+            !pause
+         elseif( abs(vkw_adj).lt.0.001*abs(resn) )then ! |vkw/resn|<<1, no damping
+            !YuP case of nll->0, including nll=0.    
+            !(in general, case of |vkw/resn|<<1 )
+            ! The following is valid when also vflow=0:
+            ox= vkw_adj/resn 
+            B(q+n+1)=-( (resn+q*Yc)*vflow/c + 
+     +                  (1.d0-q*Yc)*(tpop+q*Yc/resn)*0.5*ox*beta  )/resn 
+            Kzz= Kzz+ Ibess(q+n+1)*(tpop+q*Yc/resn)*(-X)
+            !if(abs(nll).lt.0.02 .and. abs(resn).lt.1.d-3)then
+            !  write(*,*)'DHOT_s: abs(vkw)<0.001*abs(resn)',resn,vkw_adj,Kzz
+            !endif
+         else ! General case:  nll.ne.0  (resn can be any value here)
+            ! Absorption becomes large when |resn/vkw|~1 or less
+            ! which can be written as abs(vkw)>abs(resn).
+            B(q+n+1)= (1.0 + CZ0_resn_vkw*(resn*tpop+q*Yc) 
+     +                  + resn*(tpop-1.d0)   )/nll  
+     +              + ( A(q+n+1)-1.d0 )*vflow/c
+            Kzz= Kzz+(1.d0-q*Yc)*Ibess(q+n+1)*B(q+n+1)*2*X/(nll*beta**2)
+            !if(abs(nll).lt.0.02 .and. abs(resn).lt.1.d-3)then
+            !  write(*,*)'  DHOT_s: abs(vkw)>0.001*abs(resn)',resn,vkw
+            !  write(*,*)'    DHOT_s:Kzz         ', Kzz
+            !  write(*,*)'    DHOT_s:CZ0_vkw     ', CZ0_vkw
+            !  write(*,*)'    DHOT_s:CZ0_resn_vkw', CZ0_resn_vkw
+            !  !if(abs(vkw)*0.1>abs(resn)) pause
+            !endif
+         endif
+         Kxz= Kxz +   X*np*  qIbess_lambda * B(q+n+1)/Yc
+         Kyz= Kyz + i*X*np*(Ibess(q+n+1)-Ibessp(q+n+1)) * B(q+n+1)/Yc
+      enddo ! q  = qmin,qmax
+          
+ 20   continue ! handle for istop=0
 
-
-         A(q+n+1)  =  (tpop - 1.d0) +  
-     .   ((1.0D0-nll*vflow/c-q* Y) * tpop + q*  Y ) * cz0 /nll / beta
-
-         B(q+n+1)  =  (
-     .                 (1.D0 - q*Y) *A(q+n+1)
-     .                 +(1.D0 - nll*vflow/c)   
-     .                )/nll
-                  
-         if (q.eq.0)  Ibess(q+n+1) = ri01
-         if (q.ne.0)  Ibess(q+n+1) = xne(Iabs(q))
-
-         if (q.eq.0)  Ibessp(q+n+1) = xne(1) 
-         if (q.ne.0)  Ibessp(q+n+1)=xne(1+iabs(q))
-     .                 +Iabs(q)* xne(iabs(q)) / lambda
-
-         if (q.eq.0)  Ibesspp(q+n+1) = xne(2)+xne(1)/lambda 
-         if (q.ne.0)  Ibesspp(q+n+1)=xne(2+iabs(q)) 
-     .     +(2.0D0*Iabs(q)+ 1)*xne(iabs(q)+1 )/lambda
-     .     +(Iabs(q)*Iabs(q)/lambda**2 - Iabs(q)/lambda**2)*xne(iabs(q))
-
-      enddo
- 20   continue
-
-       Kxx = (0.0D0,0.0D0)
-       Kyy = (0.0D0,0.0D0)
-       Kzz = (0.0D0,0.0D0)
-       Kzz = dcmplx(2.d0 * X * vflow/c / nll / (beta**2 * tpop),0.0D0)
-       Kxy = (0.0D0,0.0D0)
-       Kxz = (0.0D0,0.0D0)
-       Kyz = (0.0D0,0.0D0)
-
-
-c      do q = -n,n
-
-      if (istop.eq.0) goto 30 
-      do q  = n_harm1,n_harm2
-        
-        Kxx=  Kxx+ X * q**2.0D0 * Ibess(q+n+1) * A(q+n+1) / lambda
-
-        Kxy=  Kxy-i* q *  X *(Ibess(q+n+1)-Ibessp(q+n+1))*A(q+n+1)
-
-
-        Kyy=  Kyy+ X*(q**2*Ibess(q+n+1)/lambda +
-     .  2.0D0*lambda*Ibess(q+n+1)
-     *     - 2.d0*lambda*Ibessp(q+n+1))* A(q+n+1)
-        Kxz=  Kxz + X* np*q*Ibess(q+n+1) * B(q+n+1) / lambda /  Y
-        Kyz= Kyz+i* X*np*(Ibess(q+n+1)-Ibessp(q+n+1))*B(q+n+1)/ Y
-        Kzz=  Kzz+ 2.0D0* X*(1.D0 - q* Y)*Ibess(q+n+1)*B(q+n+1)
-     *      /nll/beta**2
-
-      enddo
+   
  30   continue
-
-cSm991110
-c      Kxx = Kxx + dcmplx(1.0D0,0.0D0)
-c      Kyy = Kyy + dcmplx(1.0D0,0.0D0)
-c      Kzz = Kzz + dcmplx(1.0D0,0.0D0)
-
+ 
       Kyx = -1.0D0* Kxy
       Kzx =  Kxz
       Kzy = -1.0D0* Kyz
@@ -543,13 +664,13 @@ c     Hermitian part
       if (iherm.eq.1) then
        Kxx = 0.5D0 * ( K(1,1) + dconjg(K(1,1) )) !kxx
        Kyy = 0.5D0 * ( K(2,2) + dconjg(K(2,2) )) !kyy
-       Kzz = 0.5D0 * ( K(3,3) + dconjg(K(3,3) )) !kxx
+       Kzz = 0.5D0 * ( K(3,3) + dconjg(K(3,3) )) !kzz
        Kxy = 0.5D0 * ( K(1,2) + dconjg(K(2,1) )) !kxy
        Kxz = 0.5D0 * ( K(1,3) + dconjg(K(3,1) )) !kxz
-       Kyz = 0.5D0 * ( K(2,3) + dconjg(K(3,2) )) !kxz
+       Kyz = 0.5D0 * ( K(2,3) + dconjg(K(3,2) )) !kyz
        Kyx = 0.5D0 * ( K(2,1) + dconjg(K(1,2) )) !kyx
        Kzx = 0.5D0 * ( K(3,1) + dconjg(K(1,3) )) !kzx
-       Kzy = 0.5D0 * ( K(3,2) + dconjg(K(2,3) )) !kxz
+       Kzy = 0.5D0 * ( K(3,2) + dconjg(K(2,3) )) !kzy
       endif
 
       K(1,1) =  Kxx
@@ -563,14 +684,14 @@ c     Hermitian part
       K(3,2) =  Kzy
 
       return
-      end
+      end subroutine DHOT_s
 
       
 
 
 
-      subroutine DKtens( X, Y,T_av,tpop,vflow,nll_in,np_in,
-     .K,dK,dd,ddn)
+      subroutine DKtens(X,Y,T_av,tpop,vflow,nll_in,np_in,  !Not called
+     & K,dK,dd,ddn)
 c
 c     This function returns the derivatives of the Hermitian
 c     part of the hot, nonrelativistic dielectric tensor
@@ -616,14 +737,10 @@ c     derivatives of the determinant of the dielectric tensor
 c
 c     DDN    d D(w,k) / d np   
 
-      Implicit none
+      implicit none
 
       integer nmax     ! max number of ECR harmonics in arrays
-cSAP081214
-c      parameter (nmax=3000)
-
-      parameter (nmax=30)
-c      parameter (nmax=3)      
+      parameter(nmax=300)
 
       double precision np_in,nll_in,np,nll,npi
       double precision nps,nlls,c
@@ -658,7 +775,7 @@ cSm060816
       integer istop
 
       pi = 4.d0*datan(1.d0)
-      c = 3.0d10                !speed of light
+      c= 2.99792458d10                !speed of light
       k4 = 4.19d7               !constant for elec therm vel
       i = ( 0.0d0,1.0d0)        !imaginary number
 c      n = 20                   !max number of the cyclotron harmonics
@@ -668,7 +785,7 @@ c      n = 20                   !max number of the cyclotron harmonics
       beta = vte / c
       vflowdc=vflow/c
 
-      call npnllmin(nll_in,np_in,nll,np)
+      call npnllmin(nll_in,np_in,nll,np) !in subroutine DKtens
      
       nps = np**2
       nlls = nll**2
@@ -714,11 +831,21 @@ c      write(*,*)'DKtens after harmon_s nmax',nmax
 c   Now, calculate the modified bessel functions 
 c   Remember that these are actually exp(-lambda) * In(lambda)
 
-      if (istop.eq.0) goto 10
+cyup      if (istop.eq.0) goto 10
+      if(istop.eq.0)then
+      if(n_harm1.lt.0 .and. n_harm2.lt.0)then
+         n_harm1=-nmax
+         n_harm2=n_harm1+2
+         n=min(n,nmax)
+         else
+         n_harm1=nmax-2
+         n_harm2=n_harm1+2
+         n=min(n,nmax)
+      endif
+      endif
+      
       call ibess0(lambda,ri01)
-cSm990823
-c      call ibessn(lambda,n,ri01,xne)
-      call ibessn(lambda,n+2,ri01,xne)
+      call ibessn(lambda,n+2,ri01,xne) !in DKtens
 
 cSAP090306
 cSAP090204
@@ -727,8 +854,6 @@ c      n=n_new
       do j=1,n
         if (dabs(xne(j)).lt.1.d-14) then
 cSm060816           
-c          call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
-c     .    n_harm1,n_harm2,n,istop)
           call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
      .    n_harm1,n_harm2,n_new,istop)
 
@@ -788,7 +913,7 @@ c     A(2n+ 1) -> +n harmonic
 c     etc for B,Ibess...
 
 c      do q = -n,n
-       if (istop.eq.0) goto 20 
+cyup       if (istop.eq.0) goto 20 
        do q = n_harm1,n_harm2 
 
 cSm990728
@@ -902,7 +1027,7 @@ c  There is no shortcut: just do it!!!!
 c  Derivative of all the other terms
 
 c      do q = -n,n
-      if (istop.eq.0) goto 30
+cyup      if (istop.eq.0) goto 30
       do q  = n_harm1,n_harm2
 
       Kxxp = Kxxp +  Xp* q**2 * Ibess(q+n+1) * A(q+n+1) / lambda 
@@ -1057,7 +1182,7 @@ c      write(*,*)'j,DD(j)',j,DD(j)
 
 
       return
-      end
+      end subroutine DKtens
 
       subroutine DKtens_s(mass,X,Y,T_av,tpop,vflow,nll_in,np_in,
      .dK)
@@ -1096,14 +1221,10 @@ c     dK(*,*,7)  (the partial derivatives hermitian K_s wrt  vflow)[sec/cm]
 c
 c     dK(*,*,8)  (the partial derivatives complete  K_s wrt np)   
 
-      Implicit none
+      implicit none
  
       integer nmax
-cSAP081214
-c      parameter(nmax=3000)
-      parameter(nmax=30)
-
-c      parameter(nmax=3)      
+      parameter(nmax=300)
 
       double precision mass
       double precision np_in,nll_in,np,nll,npi
@@ -1129,14 +1250,14 @@ c      double complex A(nmax),B(nmax),Ap(nmax),Bp(nmax)
       double complex kyyp,kyzp,kzxp,kzyp,kzzp
       double precision vflowdc
       double complex cx,cz0,cz1,cd,cxp,cz1_p
-      integer*4 q,n,ierr,j,jj
+      integer*4 q,n,ierr,j,jj, qmin,qmax
 cSm060816
       integer*4 n_new
       integer n_harm0,n_harm1,n_harm2 ! the limits for the harmonic numbers
       integer istop
         
       pi = 4.d0*datan(1.d0)
-      c = 3.0d10                    !speed of light
+      c= 2.99792458d10                    !speed of light
       k4 = 4.19d7                   !constant for elec therm vel
       i = ( 0.0d0,1.0d0)            !imaginary number
       n = 20                        !max number of the cyclotron harmonics
@@ -1146,10 +1267,10 @@ cSm060816
       beta = vte / c
       vflowdc=vflow/c
 
-      call npnllmin(nll_in,np_in,nll,np)
+      call npnllmin(nll_in,np_in,nll,np) !in subroutine DKtens_s
      
       nps = np**2
-      nlls = nll**2
+      nlls= nll**2
 
 c     lambda = 0.5 k_perp^2 * rho_larm^2
 
@@ -1182,22 +1303,21 @@ c      write(*,*)'dk_tens_s bef harmon_z nmax',nmax
       call harmon_z(X,Y,nll,vflow,c,beta,lambda,nmax,
      .n_harm1,n_harm2,n,istop)
         
-c      write(*,*)'dk_tens_s aft harmon_z n_harm1,n_harm2,n', 
+c      write(*,*)'dktens_s aft harmon_z n_harm1,n_harm2,n', 
 c     &            n_harm1,n_harm2,n
 
       if (istop.eq.0) then
-         write(*,*)'DKtens_s istop=0 it is impossible to calulate' 
+         write(*,*)'DKtens_s istop=0 it is impossible to calculate' 
          write(*,*)'the harmonics for susceptibily tensor n_harm0,nmax'
      .   ,nmax
+         pause
       endif
     
 c   Now, calculate the modified bessel functions 
 c   Remember that these are actually exp(-lambda) * In(lambda)
       if (istop.eq.0) goto 10
       call ibess0(lambda,ri01)
-cSm990823
-c      call ibessn(lambda,n,ri01,xne)
-      call ibessn(lambda,n+2,ri01,xne)
+      call ibessn(lambda,n+2,ri01,xne) !in DKtens_s
 
 cSAP090306
 cSAP090204
@@ -1210,8 +1330,6 @@ c         write(*,*)'j,xne(j)',j,xne(j)
         if (dabs(xne(j)).lt.1.d-14) then
 c          write(*,*)'dktens_s nmax,j',j
 cSm060816
-c          call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
-c     .    n_harm1,n_harm2,n,istop)
           call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
      .    n_harm1,n_harm2,n_new,istop)
 
@@ -1265,10 +1383,15 @@ c     etc for B,Ibess...
 
 c      do q = -n,n
       if (istop.eq.0) goto 20
+      
+      !!YuP[11-2016] Be sure to include q=0 harmonic (plus 2 extra):
+      qmin=min(-2,n_harm1)
+      qmax=max(n_harm2,2)
+      n= max(iabs(qmin),iabs(qmax))
 
 c      write(*,*)'DKtens_s n.n_harm1,n_harm2',n,n_harm1,n_harm2
 
-      do q = n_harm1,n_harm2
+      do q = qmin,qmax !YuP[11-2016] n_harm1,n_harm2
 
          cx = (1.d0 - nll*vflow/c - q *  Y) / nll / beta
 
@@ -1348,7 +1471,7 @@ c  Derivative of all the other terms
 
 c      do q = -n,n
       if (istop.eq.0) goto 30
-      do q = n_harm1,n_harm2       
+      do q = qmin,qmax !YuP[11-2016] n_harm1,n_harm2       
 
       Kxxp = Kxxp +  Xp* q**2 * Ibess(q+n+1) * A(q+n+1) / lambda 
      . +  X* q**2 * Ibp(q+n+1) * A(q+n+1) / lambda 
@@ -1459,7 +1582,9 @@ c-------complete tensor for damping calculation
       enddo
 
       return
-      end
+      end subroutine DKtens_s
+      
+      
 
       subroutine Ddhot(nbulk,mass_ar,x_ar,y_ar,t_av_ar,tpop_ar,vflow_ar
      .,nll_in,np_in,k_sum,dd,ddnp_h,ddnll_h,ddnp)
@@ -1499,7 +1624,7 @@ c      derivative from the dispersion function (for hot
 c      complete dielectric tensor ) with respect
 c      ddnp = dD/DN_perpendicular
 c-----------------------------------------------------------
-      Implicit none
+      implicit none
 c-----input
       integer nbulk
       double precision mass_ar(*)
@@ -1526,31 +1651,32 @@ c-----locals
       double complex ddp(8)
       integer js,j,i1,i2
 
-      call npnllmin(nll_in,np_in,nll,np)
+!YuP      call npnllmin(nll_in,np_in,nll,np) ! YuP[2020-08-24]] Having nll=0 is ok here
+      nll=nll_in !YuP[2020-08-24] Having nll=0 is ok here 
+      np=max(0.d0,np_in) !YuP[2020-08-24] Having np=0 is ok here
       nlls=nll*nll
       nps=np*np
 
-
-c-----Now, compute the derivative of the D(w,k) with respesct all 
+c-----Now, compute the derivatives of the D(w,k)  
 c     for Hermitian tensor
 
 c     compute k_herm the hermitian part of the dielectric tensor k_sum
 
       call herm(k_sum,k_herm)
 
-c     compute the derivatives from the disperstion function D
+c     compute the derivatives from the dispersion function D
 c     for the hermitian hot tensor k_herm
 c     with respect dielectric tensor components: ddeps_h
 c     with respect N_perpendicular ,N_parallel : ddnp_h,ddnll_h)
 
-      call dddeps(k_herm,nll,np,ddeps_h,ddnll_h,ddnp_h)
+      call dddeps(k_herm,nll,np,ddeps_h,ddnll_h,ddnp_h) !ok to have nll=0
      
-c     compute the derivatives from the disperstion function D
+c     compute the derivatives from the dispersion function D
 c     for the complete hot tensor k_sum
 c     with respect dielectric tensor components: ddeps
 c     with respect N_perpendicular ,N_parallel : ddnp,ddnll)
 
-      call dddeps(k_sum,nll,np,ddeps,ddnll,ddnp)
+      call dddeps(k_sum,nll,np,ddeps,ddnll,ddnp) !ok to have nll=0
 
       dp1=dcmplx(0.d0,0.d0) ! initialization
       dp2=dcmplx(0.d0,0.d0) ! initialization  
@@ -1574,14 +1700,14 @@ c        dK(i1,i2.jj=8)=dD/dN_perp for the complete tensor
      .   tpop_ar(js),vflow_ar(js),nll_in,np_in,dk)
 
          do j = 1,8
-c----------Now, compute the derivative of the D(w,k) with respesct
+c----------Now, compute the derivative of the D(w,k) with respect
 c          all 8 variables  
 c          for Hermitian and complete (j=8) tensor
-c          Sum_j{i1=1,3, i2=1,3}[dD/deps(i1,i2)*deps_js(i1,i2)/d(variavble_j)]
+c          Sum_j{i1=1,3, i2=1,3}[dD/deps(i1,i2)*deps_js(i1,i2)/d(variable_j)]
 c          variable_j=(j=1 n_perp),(j=2 n_par),(j=3 X_js),(j=4 Y_js),
 c          (j=5 T_av_js), (j=6 t_pop_js) ,(j=7 v_js), (j=8 n_perp)
 c          the first 7 derivatives (j=1,..,7) are calculated from Hermitian D,
-c          the last 8th derivative is calulated from the complete D
+c          the last 8th derivative is calculated from the complete D
 
            dp=dcmplx(0.d0,0.d0) ! initialization
                     
@@ -1601,24 +1727,22 @@ c          the last 8th derivative is calulated from the complete D
 
 c          summation by all js=1,...,nbulk species 
            if  (j.eq.1) dp1=dp1+dp 
-	   if  (j.eq.2) dp2=dp2+dp 
-	   if  (j.eq.8) dp8=dp8+dp 
+           if  (j.eq.2) dp2=dp2+dp 
+           if  (j.eq.8) dp8=dp8+dp 
 
          enddo ! j
         
       enddo  ! js
 
-       
-
       ddnp_h  = ddnp_h  + dp1    ! DD_hermitian/DN_perp
       ddnll_h = ddnll_h + dp2    ! DD_hermitian/DN_parallel
       ddnp    = ddnp    + dp8    ! DD_complete/DN_perp
                     
- 200  continue
+cyup 200  continue ! not used
 
 
       return
-      end
+      end subroutine Ddhot
 
 
 
@@ -1718,7 +1842,7 @@ c-----locals
      .- (- 2.d0*np) * Kyx * Kxy
 
       return
-      end
+      end subroutine dddeps
 
 
       double precision function ddwrap(log_nper)
@@ -1726,7 +1850,7 @@ c-----calculates Real(hot dispersion function)
 c     INPUT:
 c       log_nper=ln(Re(N_perpendicular))
 c       the input data from common /nperpcom/
-      Implicit none
+      implicit none
     
 c-----input
       double precision log_nper
@@ -1744,7 +1868,7 @@ c-----external: dhot_sum
       ddwrap = dreal(d) 
 
       return
-      end
+      end function ddwrap
 
 
       double complex function  
@@ -1773,13 +1897,13 @@ c      K_sum(3,3) -  the nine components of the dielectric tensor
 c                    evaluated at (mass,X,Y,Te,tpop,vflow,Nll,np)
 c      dhotsum    -  hot double complex dispersion function
 c-----------------------------------------------------------
-      Implicit none
+      implicit none
 c     input
       integer nbulk,iherm   
       double precision mass_ar(*)
       double precision x_ar(*),y_ar(*),t_av_ar(*),
      .tpop_ar(*),vflow_ar(*)
-      double precision np_in,nll_in
+      double precision np_in,nll_in, np_min
 c-----output
       double complex K_sum(3,3)
 c-----local
@@ -1790,6 +1914,7 @@ c-----local
       integer j,j1,j2
 c-----external DHOT_s,zeroK
 
+      np_min=1.d-7
 
 c-----initialization of the dielectric tensor K_sum(3,3)
       call zeroK(K_sum)
@@ -1821,25 +1946,30 @@ c-----initialization of the dielectric tensor K_sum(3,3)
       Kzy = K_sum(3,2)
 
 c-----hot dispersion function
-      call npnllmin (nll_in,np_in,nll,np)
+!YuP      call npnllmin(nll_in,np_in,nll,np) !in func.dhot_sum: no need to adjust here
+      nll=nll_in ! YuP 120430 ! Having nll=0 is ok here
+      np=max(0.d0,np_in)   ! YuP 120430
+      !np=max(np,np_min) !YuP[2020-08-31] Optionally: Set a lower limit for np
+      !                 ! (as done in subr.npnllmin)
+      
       nlls=nll**2
       nps=np**2
 
-      dhot_sum =(Kxx-nlls) * (Kyy-nlls-nps) * (Kzz-nps)
+      dhot_sum= (Kxx-nlls) * (Kyy-nlls-nps) * (Kzz-nps)
      .+  Kxy * Kyz * (Kzx+np*nll) 
      .+ (Kxz+np*nll) * Kyx * Kzy
      .- (Kzx+np*nll) * (Kyy-nlls-nps) * (Kxz+np*nll)
      .-  Kzy * Kyz * (Kxx-nlls)
      .- (Kzz - nps) * Kyx * Kxy
 
-c      write(*,*)'in dhot_sum nlls,nps',nlls,nps
-c      write(*,*)'Kxx,Kxy,Kxz',Kxx,Kxy,Kxz 
-c      write(*,*)'Kyx,Kyy,Kyz',Kyx,Kyy,Kyz
-c      write(*,*)'Kzx,Kzy,Kzz',Kzx,Kzy,Kzz 
-c      write(*,*)'dhot_sum=',dhot_sum
+      !write(*,*)'in dhot_sum nlls,nps',nlls,nps
+      !write(*,*)'Kxx,Kxy,Kxz',Kxx,Kxy,Kxz 
+      !write(*,*)'Kyx,Kyy,Kyz',Kyx,Kyy,Kyz
+      !write(*,*)'Kzx,Kzy,Kzz',Kzx,Kzy,Kzz 
+      !write(*,*)'dhot_sum=',dhot_sum
 
       return
-      end
+      end function dhot_sum
 
       subroutine dnd(z,r,phi,cnz,cnr,cm,
      .dnpdz,dnpdr,dnpdphi,dnpdcnz,dnpdcnr,dnpdcm,
@@ -1856,7 +1986,6 @@ c     b calculates magnetic field bz,br,bphi and derivatives from b^ by z,r,phi
 c     b put these data to common one.i
 c--------------------------------------------------------- 
       implicit none
-c      implicit double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
 c     input
@@ -1871,12 +2000,16 @@ c     locals
     
       nll=(cnz*bz+cnr*br+cm*bphi/r)/bmod
       cnp=dsqrt(cnz**2+cnr**2+(cm/r)**2-nll**2)
+      nll=(cnz*bz+cnr*br+cm*bphi/r)/bmod
  
 c-----derivatives from N_parallel    
       dnlldz=(cnz*dbzdz+cnr*dbrdz+cm*dbphdz/r)/bmod-nll/bmod*dbmdz     
       dnlldr=(cnz*dbzdr+cnr*dbrdr+cm*(dbphdr/r-bphi/r**2))/bmod-
      .       nll/bmod*dbmdr     
-      dnlldphi=(cnz*dbzdph+cnr*dbrdph+cm*dbpdph/r)/bmod-nll/bmod*dbmdph    
+      dnlldphi=(cnz*dbzdph+cnr*dbrdph+cm*dbpdph/r)/bmod-nll/bmod*dbmdph
+      !YuP: careful! There is {dbphdz,dbphdr,dbpdph}. There is no dbphdph !
+      !Tested: set dnlldphi to 0 (tor.symmetry) --> same results.
+      
       dnlldcnz=bz/bmod
       dnlldcnr=br/bmod
       dnlldcm=bphi/(r*bmod)
@@ -1890,15 +2023,9 @@ c-----derivatives from N_perpendicular
       dnpdcnr=(cnr-nll*dnlldcnr)/cnp
       dnpdcm=(cm/r**2-nll*dnlldcm)/cnp
       dnpdw=-cnp/frqncy   !dN_perpendicular/d_omega
-c      write(*,*)'forest.f in dnd bz,br,bphi',bz,br,bphi
-c      write(*,*)'forest.f in dnd cnz,cnr,cm',cnz,cnr,cm
-c      write(*,*)'forest.f in dnd dnlldcm,dnpdcm',dnlldcm,dnpdcm
-c      write(*,*)'forest.f in dnd cm,r,nll,dnlldcm', cm,r,nll,dnlldcm
-c      write(*,*)'forest.f in dnd cnp,cm/r**2,nll*dnlldcm',
-c     &                           cnp,cm/r**2,nll*dnlldcm
 c	write(*,*)'dnd dnlldcnz,dnpdcnz',dnlldcnz,dnpdcnz
       return
-      end
+      end subroutine dnd
 
 
 
@@ -1926,7 +2053,7 @@ c     locals
       enddo
 
       return
-      end
+      end subroutine herm
 
 
 
@@ -1953,7 +2080,7 @@ c     locals
       enddo
 
       return
-      end
+      end subroutine aherm
 
 
 
@@ -1972,7 +2099,7 @@ cSm030226
       include 'param.i'
 c-----input
       double precision u(6)  ! z,r,phi,Nz,Nr,M
-      double precision wf    ! wave friquency
+      double precision wf    ! wave frequency
       integer nbulk          ! the total number of the plasma components
 c-----output
       double precision dddcnz,dddcnr,dddcm,
@@ -2071,7 +2198,6 @@ c-----nll=(cnz*bz+cnr*br+cm*bphi/r)/bmod
 c     nperp=dsqrt(cnz**2+cnr**2+(cm/r)**2-nll**2)
 c     calculation nll=N_parallel and nperp=N_perp
 c     for given z,r,phi,cnz,cnr,cm,
-        
       call nllcnp_s(z,r,phi,cnz,cnr,cm,nll,nperp)
 
 ctest numer deriv from dhot
@@ -2272,13 +2398,13 @@ c      write(*,*)'dddw',dddwc
 c      write(*,*)'hotdervs end'
 
       return
-      end
+      end subroutine hotdervs
 
       double complex function hotnp(nbulk,ibw,cnper_0,
      .cnper2p,cnper2m,K,iraystop)
 c     calculates n_perp( and the hot dielectric tensor K)
 c     from the hot non-relativistic electron+ions
-c     dispresion function.
+c     dispersion function.
 c-------------------------------------------------------------------
 c     INPUTS:
 c     nbulk              the total number of plasma species
@@ -2292,7 +2418,7 @@ c     nllc=N_parallel
 c     xc(nbulka) = (fpe/f)**2
 c     yc(nbulka) = fce/f
 c     tc(nbulka) = averaged temperature in eV
-c     nll - parallel index of refraction n.
+c     nllc - parallel index of refraction n.
 c     tpopc(nbulka)=T_perp/T_parallel
 c     vflowc(nbulka)=flow velocity
 c     thus function calls dhot and uses bisection to find the hot root
@@ -2305,16 +2431,16 @@ c       K double complex dielectric tensor
 c       iraystop=0 the root have been found,
 c       iraystop=1 the root was not found
 c-------------------------------------------------------------
-      Implicit none
+      implicit none
 c-----input
       integer nbulk,ibw 
       double precision cnper_0,cnper2p,cnper2m
       include 'param.i'
       include 'nperpcom.i'
 c-----external 
-      double precision rtbis,ddwrap,ddwrap1
+      double  precision rtbis,ddwrap
       double complex dhot_sum
-      external rtbis,ddwrap!,ddwrap1
+      external rtbis,ddwrap
 c-----output
       integer iraystop
       double complex K(3,3)
@@ -2328,22 +2454,22 @@ c-----local
 cfor test
       double precision step,x_test,d_test
     
-      integer imode,jdelta_n,j_max,imoden,irootm,irootp
-c-----the number to spread the interval for the detemination of the 
+      integer imode,jdelta_n,j_max,jmax,imoden,irootm,irootp
+c-----the number to extend the interval for the determination of the 
 c     n_perpendicular root from the hot dispersion function
-c     The hot plasma (X or O mode) roots will be seeking at the interval
-c     [N_perpendicular_left,N_perpendicular_right]
-c     N_perp_left =N_perp_left_cold_plasma  - jdealta_n*delta_n
-c     N_perp_right=N_perp_right_cold_plasma + jdealta_n*delta_n
+c     The hot plasma (X or O mode) root will be searched at the interval
+c     [N_perpendicular_left, N_perpendicular_right]
+c     N_perp_left =N_perp_left_cold_plasma  - jdelta_n*delta_n
+c     N_perp_right=N_perp_right_cold_plasma + jdelta_n*delta_n
 c     delta_n=N_perp_right_cold_plasma-N_perp_left_cold_plasma
 c
 c     j_max is the number of steps in the N_perp direction
-c     in the interval delta_n,to make the table D(N_perp_j) 
+c     in the interval delta_n, to make the table D(N_perp_j) 
 c     for the hot plasma root calculations. 
       jdelta_n=10
       j_max=100        
 
-c      write(*,*)'in hotnp ibw=',ibw
+      write(*,*)'in hotnp nllc=',nllc
       i = (0.0d0,1.0d0)
       xacc=1.d-14  ! accuracy of the root calculations
       ntry=200
@@ -2352,7 +2478,7 @@ c      write(*,*)'in hotnp ibw=',ibw
       
 c-----calculations of O or X mode , using the cold plasma root
 c     cnper_0 as the initial approximation 
-      if (ibw.eq.0) then
+      if (ibw.eq.0) then !-------------------------------------ibw=0
          irootm=1
          if(cnper2m.lt.0.d0) then
            cnper2m=0.d0
@@ -2365,27 +2491,68 @@ c     cnper_0 as the initial approximation
            irootp=-1
          endif
 
+         !Initial range for the root search with bisections:
          n_perp_l=dmin1(dsqrt(dabs(cnper2m)),dsqrt(dabs(cnper2p)))
          n_perp_r=dmax1(dsqrt(dabs(cnper2m)),dsqrt(dabs(cnper2p)))
+         if(n_perp_l.le.0.d0 .and. n_perp_r.le.0.d0)then
+            !write(*,*)' hotnp-1: n_perp_l, n_perp_r=', n_perp_l,n_perp_r
+            ! YuP 120501
+            n_perp_l=abs(nllc) ! just a guess; to be apart from 0.
+            n_perp_r=1. ! just a wild guess
+            !write(*,*)' hotnp-2: n_perp_l, n_perp_r=', n_perp_l,n_perp_r
+         endif
 
 ctest 070730
 c         write(*,*)'in hotnp ibw=',ibw
-         write(*,*)'in hotnp cnper2m,cnpr2p',cnper2m,cnper2p
+!         write(*,*)'in hotnp cnper_m,cnper_p',
+!     +              dsqrt(dabs(cnper2m)),dsqrt(dabs(cnper2p))
          write(*,*)'in hotnp n_perp_l,n_perp_r',n_perp_l,n_perp_r
 
-         d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
-     .   vflowc,nllc,n_perp_l,1,K))
+         d_left= dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     &                 vflowc,nllc,n_perp_l,1,K))
          d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
-     .   vflowc,nllc,n_perp_r,1,K))
+     &                 vflowc,nllc,n_perp_r,1,K))
          write(*,*)'hotnp d_left,d_right',d_left,d_right
+         if(dabs(d_left).lt.1.d-7)then
+            nperp=n_perp_l
+            goto 30 !->root is found (got lucky)
+         endif
+         if(dabs(d_right).lt.1.d-7)then
+            nperp=n_perp_r
+            goto 30 !->root is found (got lucky)
+         endif
 c_end_test 070730
 
-          delta_n=dabs(n_perp_r - n_perp_l)
-c         if((cnper2m.gt.0.d0).and.(cnper2p.gt.0.d0)) then
-c            delta_n=dabs(n_perp_r - n_perp_l)
-c         else 
-c              delta_n=cnper_0
-c         endif
+         delta_n=dabs(n_perp_r - n_perp_l)
+         if (delta_n.lt.1.d-5) then ! two roots are almost same
+            !YuP120430 Try small interval around 0.5*(n_perp_l+n_perp_r)
+            jmax=1000
+            nperp= 0.5*(n_perp_l+n_perp_r)
+            x1=nperp*0.95
+            x2=nperp*1.05
+            h_nperp=(x2-x1)/(jmax-1)
+            d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     .                   vflowc,nllc,x1,1,K))
+            do j=2,jmax
+               x2=x1+h_nperp
+               d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     .                   vflowc,nllc,x2,1,K))
+               !write(*,*)'x  D(x)=',x2,d_right 
+               if(dabs(d_left).lt.1.d-7)then
+                  nperp=x1
+                  goto 30 !->root is found (got lucky)
+               endif
+               if(dabs(d_right).lt.1.d-7)then
+                  nperp=x2
+                  goto 30 !->root is found (got lucky)
+               endif
+               if (d_left*d_right.le.0.d0) then
+                  goto 10 !-> root is between x1 and x2; find exact root
+               endif
+               x1=x2 ! for the next step
+               d_left=d_right ! for the next step
+            enddo
+         endif
 
 c--------determination of the boundaries for the hot plasma dispersion
 c        for the n_perp solver
@@ -2394,12 +2561,35 @@ c        for the n_perp solver
          
          x=dmin1(n_perp_l,n_perp_r)
         
-         if (dabs(n_perp_l-cnper_0).lt.1.d-7) imode=1
+         if (dabs(n_perp_l-cnper_0).lt.1.d-7) then
 c--------imode=1, cold plasma mode coincides with the left
 c                 boundary of cold of plasma interval
-         if (dabs(n_perp_r-cnper_0).lt.1.d-7) imode=2
+            imode=1
+            d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     .                   vflowc,nllc,cnper_0,1,K))
+            write(*,*)'hotnp: n_perp_l=cnper_0=',cnper_0,
+     &                '  D(cnper_0)=',d_left 
+            if (dabs(d_left).lt.1.d-7) then
+               nperp=cnper_0
+               goto 30 !->root is found (got lucky)
+            endif
+         endif
+         
+         if (dabs(n_perp_r-cnper_0).lt.1.d-7) then
 c--------imode=2, cold plasma mode coincides with the right
 c                 boundary of cold of plasma interval
+            imode=2
+            d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     .                   vflowc,nllc,cnper_0,1,K))
+            write(*,*)'hotnp: n_perp_r=cnper_0=',cnper_0,
+     &                '  D(cnper_0)=',d_right 
+            if (dabs(d_right).lt.1.d-7) then
+               nperp=cnper_0
+               goto 30 !->root is found (got lucky)
+            endif
+         endif
+        
+        !pause
         
          if((irootm.eq.-1).or.(irootp.eq.-1)) then
 c          we have only one positive cold plasma root N_perp
@@ -2410,9 +2600,11 @@ c          we have only one positive cold plasma root N_perp
          write(*,*)'hotnp n_perp_l,cnper_0,n_perp_r',
      .   n_perp_l,cnper_0,n_perp_r
          
-         h_nperp=delta_n/dfloat(j_max)
+         h_nperp=delta_n/dfloat(j_max) 
+         !note: delta_n= abs(n_perp_r - n_perp_l), j_max=100, jdelta_n=10
          
-         nperp=x+(-jdelta_n*j_max)*h_nperp
+         nperp=x+(-jdelta_n*j_max)*h_nperp !can start with -10*delta_n
+         !note: x=dmin1(n_perp_l,n_perp_r)  Can be 0.
          write(*,*)'forest hotnp x,jdelta_n,j_max,nperp',
      +   x,jdelta_n,j_max,nperp
 c         write(*,*)'hotnp nbulkc,nllc',nbulkc,nllc
@@ -2431,49 +2623,46 @@ c         write(*,*)'hotnp wflowc',vflowc
 
          d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
      .      vflowc,nllc,nperp,1,K))
-
-         write(*,*)'hotnp d_left',d_left 
-
-         if (dabs(d_left).lt.1.d-7) goto 30
-
-c        h_nperp=1.d-3         
+c         write(*,*)'hotnp d_left',d_left 
+         if (dabs(d_left).lt.1.d-7) goto 30 !->root is found (got lucky)
   
          do j=-jdelta_n*j_max+1,(jdelta_n+1)*j_max
 
             nperp=x+j*h_nperp
 
-            write(*,*)'j',j
-            if (nperp.lt.0.d0) goto 20
+            if (nperp.lt.0.d0) then
+               !-YuP Added:  re-define d_left using nperp=0.
+               d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
+     .                      vflowc,nllc,0.d0,1,K)) 
+               goto 20 !-> next j
+            endif
  
             d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
-     .      vflowc,nllc,nperp,1,K))
-
-c            if (dabs(d_right).lt.1.d-7) goto 30
-
-            write(*,*)'j,nperp,d_right',j,nperp,d_right
+     .                    vflowc,nllc,nperp,1,K))
+            if (dabs(d_right).lt.1.d-7) goto 30 !->root is found (got lucky)
+            !write(*,*)'j,nperp,d_left,d_right', j,nperp,d_left,d_right
 
             if(d_left*d_right.lt.0.d0) then
 c-------------the hot dispersion function has the different signs 
-c             at the interval  nperp={x+(j-1)*h_nerp, x+j*h_nerp}
-
+c             at the interval  nperp={x+(j-1)*h_nperp, x+j*h_nperp}
               imoden=imoden+1 ! the number of the hot plasma root
-              write(*,*)'d_left*d_right.lt.0.d0 imoden=',imoden
+              !write(*,*)'d_left*d_right.lt.0.d0 imoden=',imoden
               d_left=d_right
               if (imoden.eq.imode) then
                 write(*,*)'hotnp imoden=imode'
                 x1=nperp-h_nperp
                 x2=nperp
-                goto 10
+                goto 10 !-> finished with j-scan
+                !Found such x1 and x2 that d_left*d_right<0
               endif
-              
             else
               d_left=d_right
             endif
             
  20      continue    
-         enddo
+         enddo ! j-scan
 
- 10      continue
+ 10      continue ! exit handle from j-loop, when 
           
          
          if (x1.lt.0.d0) x1=1.d-5
@@ -2482,10 +2671,10 @@ c             at the interval  nperp={x+(j-1)*h_nerp, x+j*h_nerp}
          x2=dlog(x2)
          
          nperp=dexp(rtbis(ddwrap,x1,x2,xacc)) ! O or X mode root
-         write(*,*)'hotnp after rtbis nperp=',nperp
-c         write(*,*)'in hotnp o or X modes nperp=',nperp   
+         write(*,*)'hotnp after rtbis; O or X modes nperp=',nperp   
+         !pause
 
- 30      continue
+ 30      continue  ! exit handle for "root is found"
 
          d=dhot_sum(nbulk,massc,xc,yc,tec,tpopc,
      .    vflowc,nllc,nperp,2,K)
@@ -2495,10 +2684,11 @@ c         write(*,*)'in hotnp o or X modes nperp=',nperp
      .    vflowc,nllc,nperp,1,K)
          write(*,*)'in hotnp O or X mode 1 hermitian d=',d   
 ccc         iraystop=0
-      endif ! ibw=0
+      endif ! ibw=0 -------------------------------------------ibw=0
+      
       
 c-----calculation of the BW
-      if(ibw.eq.1)then
+      if(ibw.eq.1)then !---------------------------------------ibw=1
 c       x1,x2 initialization
         cnpermax=dmax1(cnper2m,cnper2p)
         if (cnpermax.gt.0.d0) then 
@@ -2519,33 +2709,12 @@ c        x2 = dlog(1.d0)         !nperp
 c       expand the range of x2 until the first root is found
         iraystop=0
 
-ctest
-c        step=1.d-2
-c        do j=1,10000
-c          x_test=step*(j-1)
-c          d_test=ddwrap(dlog(x_test))
-c          write(*,*)'j,x_test,dlog(x_test),d_test',
-c     &               j,x_test,dlog(x_test),d_test
-c          
-c        enddo
-c        stop 'hotnp test'
-cendtest
-
-
-
         do j = 1, ntry
           if (j.eq.ntry) then
             iraystop=1
             write(*,*)'hotnperp could not find ebw root'
             return
           endif
-ctest            
-          p1=ddwrap(x1)
-          p2=ddwrap(x2)
-          write(*,*)'hotnp j,x2,x1',j,x2,x1
-          write(*,*)'dexp(x1),dexp(x2)',dexp(x1),dexp(x2)
-          write(*,*)'ddwrap(x1),ddwrap(x2)',p1,p2
-cendtest
           if (ddwrap(x2)*ddwrap(x1).lt.0) go to 12
           x1 = x2
           if (ddwrap(x2)*ddwrap(x1).ge.0) x2 = x2 +dlog(2.0D0)
@@ -2564,7 +2733,7 @@ cendtest
      .    vflowc,nllc,nperp,1,K)
         write(*,*)'in hotnp 1 hermitian d=',d
    
-      endif   !ibw=1 BW
+      endif   !ibw=1 BW ---------------------------------------ibw=1
        
 c-----------
       npi=0.d0
@@ -2572,7 +2741,10 @@ c-----------
 
 c      write(*,*)'in hotnp=',hotnp
       return
-      end
+      end function hotnp
+
+
+
 
       double complex function hotnperp(z,r,phi,nll,cnteta,cnphi,
      .K,iraystop)
@@ -2590,12 +2762,15 @@ c     cnteta  _ N component parallel to the poloidal direction
 c     cnphi    _ N component parallel to the toroidal direction
 c    
 c     OUTPUTS:
-c       function hotnperp=N_perpendiculae (double complex)
+c       function hotnperp=N_perpendicular (double complex)
 c       K double complex dielectric tensor
 c       iraystop=0 the root have been found,
 c       iraystop=1 the root was not found
 c-----------------------------------------------------    
-      implicit double precision (a-h,o-z) 
+      !implicit integer (i-n), real*8 (a-h,o-z) 
+      implicit none
+      real*8 cnr,cnz,cm,cnphi,cnteta,cnpar2,cntang2
+      real*8 cnper2p,cnper2m,cnper_0
       include 'param.i'
       include 'one.i'
       include 'ions.i'
@@ -2629,9 +2804,9 @@ c     from the cold electron+ions plasma dispersion function
       cnper2p=-1.d0
       cnper2m=-1.d0 
 
-c      write(*,*)'in hotnperp before npernpar'
+      !write(*,*)'in hotnperp before npernpar'
       call npernpar(z,r,phi,nll,cnper2p,cnper2m)     
-c      write(*,*)'in hotnperp after npernpar'
+      !write(*,*)'in hotnperp after npernpar'
 
 
       id=id_old      
@@ -2642,14 +2817,15 @@ c      write(*,*)'in hotnperp after npernpar'
       iraystop=0
       cnper_0=0.d0 ! YuP[08-2017] Initialize
 
-c-----choosing of the cold mode N_perp=cnper_0 accoding to ioxm parameter      
-      if(ibw.eq.0) then   
+c-----choosing of the cold mode N_perp=cnper_0 according to ioxm parameter      
+      if(ibw.eq.0) then !it is not the direct launch of Bernstein wave
         id_old=id
         id=1            ! to use the cold plasma dispersion
 
-        
+        !write(*,*)'hotnperp:before cninit12'
         call cninit12(z,r,phi,nll,cnteta,cnphi,
      .               cnz,cnr,cm,iraystop)
+        !write(*,*)'hotnperp:After cninit12',iraystop
 
         id=id_old  
 
@@ -2696,21 +2872,21 @@ c      write(*,*)'hotnperp after  loop j=1,nbulk'1
       
       write(*,*)'after hotnp hotnperp=',hotnperp,'iraystop=',iraystop
       return
-      end
+      end function hotnperp
 
 
 c        subroutine ibess0 
 c        purpose                                                     
-c            compute the modified bessel function i of order zero    
+c            compute the modified bessel function Io of order zero    
 c                                                                    
 c        usage                                                       
 c            call ibess0(x,ri0)                                          
 c                                                                    
 c        description of parameters                                   
-c            x    -given argument of the bessel function i of order 0
-c            ri0  -resultant value of the bessel function i of order 0
+c            x    -given argument of the bessel function I of order 0
+c            ri0  -resultant value of the bessel function I of order 0
 
-CBF   This function resurns exp(-x) * Io
+CBF   This function returns exp(-x) * Io
 
 c                                                                     
 c        remarks                                                      
@@ -2733,23 +2909,21 @@ c
       subroutine ibess0(x,ri0)
       implicit none
       double precision x,ri0,expxx,z,pa
-
-
       ri0=dabs(x)
       if(ri0-3.75d0)1,1,2
     1 z=x*x*7.111111d-2
-      expxx = dexp(-ri0)
+      expxx = dexp(-ri0) ! Here ri0 is not large (no underflow)
       ri0=((((( 4.5813d-3*z+3.60768d-2)*z+2.659732d-1)*z+1.206749d0)*z
-     1+3.089942d0)*z+3.515623d0)*z+1.d0
+     &   +3.089942d0)*z+3.515623d0)*z+1.d0
       ri0=ri0*expxx
       return
-    2 z=3.75d0/ri0
+    2 z=3.75d0/ri0 !Here ri0 can be very large, but we don't have exp(-x)
       pa=1.0d0/dsqrt(ri0)*((((((((3.92377d-3*z-1.647633d-2)*z
-     1+2.635537d-2)*z-2.057706d-2)*z+9.16281d-3)*z-1.57565d-3)*z
-     2+2.25319d-3)*z+1.328592d-2)*z+3.989423d-1)
+     & +2.635537d-2)*z-2.057706d-2)*z+9.16281d-3)*z-1.57565d-3)*z
+     & +2.25319d-3)*z+1.328592d-2)*z+3.989423d-1)
       ri0 = pa
       return
-      end
+      end subroutine ibess0
 c
 c     .................................................................
 c
@@ -2759,7 +2933,7 @@ c        purpose
 c           compute the modified bessel functions i for orders 1 to n  
 c
 c        usage
-c           call ibessn(x,n,zi,ri)
+c           call ibessn(x,n,zi,ri) !->  I_n(x)*exp(-x)
 c
 c        description of parameters
 c           x     -given argument of the bessel functions i    
@@ -2767,6 +2941,7 @@ c           n     -given maximum order of bessel functions i
 c           zi    -given value of bessel function i of order zero  
 c
 c           ri    -resultant vector of dimension n, containing the 
+!                  YuP:  I_n(x)*exp(-x)
 c
 c
 c        remarks
@@ -2795,7 +2970,6 @@ c
       double precision x,zi,ri,a0,a1,b0,fn,fi,a,b,b1,q0,q1,an
       integer*4 i,j,n,k
       dimension ri(*)
-
 
       if(n)10,10,1
     1 fn=dfloat(n+n)
@@ -2830,14 +3004,13 @@ c
       fi=fi*ri(i)
     9 ri(i)=fi
    10 return
-      end
+      end subroutine ibessn
 
 
       subroutine nllcnp_s(z,r,phi,cnz,cnr,cm,nll,cnp)
 c     for testing calcultes N_perp=cnp and N_parallel=nll
 c     use bz,br,bphi,bmod from common one.i
       implicit none
-c      implicit double precision (a-h, o-z)
       include 'param.i'
       include 'one.i'
 c     input
@@ -2849,17 +3022,17 @@ c-----externals
       bmod=b(z,r,phi)
       nll=(cnz*bz+cnr*br+cm*bphi/r)/bmod
       cnp=dsqrt(dabs(cnz**2+cnr**2+(cm/r)**2-nll**2))
-      
       return
-      end
+      end subroutine nllcnp_s
+c=====================================================================
  
       subroutine npnllmin(nll_in,np_in,nll_cor,np_cor)
-c     gives the minimal values for n_parral and N_perp near the zero value
+c     gives the minimal values for n_paral and n_perp near the zero value
       implicit none
 c     input      
       double precision nll_in,np_in !parallel and perpendicular N components 
 c     output
-      double precision nll_cor,np_cor !corrected value of N_parrallel and N_perp
+      double precision nll_cor,np_cor !corrected value of N_par and N_perp
 c     local parameters
       double precision nll_min,np_min
 
@@ -2870,27 +3043,33 @@ c      np_min=1.d-3    ! should be positive
 cSAP090725
 c      nll_min=1.d-11   ! should be positive
 
-c       write(*,*)'1 npnllmin np_min,nll_min',np_min,nll_min
-c       write(*,*)'1 npnllmin np_in,nll_in',np_in,nll_in
       np_cor=np_in
       nll_cor=nll_in
-      if (np_in.le.dabs(np_min)) np_cor = dabs(np_min)
-c      write(*,*)'2 npnllmin np_cor',np_cor
+      !--------------------------------------
+      if (np_in.le.dabs(np_min)) then
+        np_cor = dabs(np_min)
+        write(*,*)'npnllmin:Nperp: np_in, np_cor',np_in,np_cor
+        !pause
+      endif
+      !--------------------------------------
       if (dabs(nll_in).le.dabs(nll_min)) then
          if (nll_in.ge.0.d0) then
             nll_cor=dabs(nll_min)
          else 
             nll_cor=-dabs(nll_min)
          endif 
+         write(*,*)'npnllmin:Npar: nll_in, nll_cor',nll_in,nll_cor
+         !pause
       endif
-c       write(*,*)'3 npnllmin np_cor,nll_cor',np_cor,nll_cor
+      !--------------------------------------
       return
-      end
+      end subroutine npnllmin
+c=====================================================================
       
       subroutine put_mass(mass_ar,nbulk)
 c     puts mass_ar(nbulk)=dmass(nbulka) from commom/ioons.i/
       
-	implicit double precision (a-h,o-z)
+	implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
 	include 'ions.i'
 c-----input
@@ -2913,7 +3092,7 @@ cSm030226
       enddo
 	
       return
-      end    
+      end subroutine put_mass
 
 
 
@@ -2956,7 +3135,7 @@ c     local
       endif
 
       return
-      end
+      end subroutine xmode
 
 
       subroutine harmon_z(X,Y,nll,vflow,c,beta,lambda,nmax,
@@ -3027,7 +3206,7 @@ c          goto 10
            
 c        write(*,*)'nll,beta', nll,beta          
         ph1=(1.d0-nll*(vflow/c)-nll*beta/(2.d0*eps_z))/Y
-         ph2=(1.d0-nll*(vflow/c)+nll*beta/(2.d0*eps_z))/Y
+        ph2=(1.d0-nll*(vflow/c)+nll*beta/(2.d0*eps_z))/Y
 
 c-------the corrections to get the integer number I smaller
 c       than the maximal integer for g77
@@ -3049,7 +3228,7 @@ c        n=max(abs(n_harm1),abs(n_harm2))
       if(nmax.lt.3) then
          write(*,*)'in harmon_z the total number of the possible Bessel'
          write(*,*)' functions nmax <3. Increase it in the routine,'
-         write(*,*)' which calles harmon_z.'
+         write(*,*)' which calls harmon_z.'
          stop
       endif
      
@@ -3074,7 +3253,7 @@ c           write(*,*)'nharm 1.b n,n_harm2,n_harm1',n,n_harm2,n_harm1
           
          if((nmax-2).lt.n_harm1) then
 c----------nmax-2 < n_harm1
-c           write(*,*)'nharm 1c istop',istop
+           write(*,*)'nharm 1c istop',istop
            istop=0      
            goto 10
          endif
@@ -3173,6 +3352,8 @@ c----------| n_harm2 | =< nmax-2 < | n_harm1 |
 
          if((nmax-2).lt.abs(n_harm2)) then
 c----------nmax-2 < | n_harm2|
+c      write(*,*)'nmax-2<|n_harm2| n_harm1,2,nmax=',n_harm1,n_harm2,nmax
+c      write(*,*) nll*beta/(2.d0*eps_z), Y
            istop=0      
            goto 10
          endif
@@ -3201,7 +3382,7 @@ c        istop=1
 c      endif
    
       return
-      end
+      end subroutine harmon_z
 
 
       subroutine set_nperpcom(nll,nbulk,z,r,phi,dmas)
@@ -3221,7 +3402,7 @@ c-----local
       integer j
       double precision rho,psi
 
-      psi=fpsi(r,z)   
+      psi=fpsi(r,z)    ! or psif(z,r) ?
       rho=rhopsi(psi) !small radius
 
       nbulkc=nbulk
@@ -3245,7 +3426,7 @@ c-----local
        enddo
       
        return
-       end
+       end subroutine set_nperpcom
 !
 
        subroutine dhot_sum_ei(nbulk,mass_ar,x_ar,y_ar,t_av_ar,tpop_ar,
@@ -3273,7 +3454,7 @@ c      dhot_sum    -  hot double complex dispersion function
 c      dhot_sum_e
 c      dhot_sum_e
 c-----------------------------------------------------------
-      Implicit none
+      implicit none
 c     input
       integer nbulk,iherm   
       double precision mass_ar(*)
@@ -3358,7 +3539,9 @@ c-----initialization of the dielectric tensor K_sum(3,3)
       Kzy_i =Kzy+ Ka_i(3,2)
 
 c-----hot dispersion function
-      call npnllmin (nll_in,np_in,nll,np)
+!YuP      call npnllmin(nll_in,np_in,nll,np) ! YuP[2020-08-24] in dhot_sum_ei: Having nll=0 is ok here
+      nll=nll_in !YuP[2020-08-24] Having nll=0 is ok here 
+      np=max(0.d0,np_in) !YuP[2020-08-24] Having np=0 is ok here
       nlls=nll**2
       nps=np**2
 
@@ -3387,7 +3570,7 @@ c-----hot dispersion function
 c      write(*,*)'dhot_sum_e=',dhot_sum_e
 
       return
-      end
+      end subroutine dhot_sum_ei
 
 
       subroutine solv_nperp_hot(nbulk,mass_ar,x_ar,y_ar,t_av_ar,tpop_ar,
@@ -3411,7 +3594,7 @@ c     OUTPUT:
 c      nperp_real    real and imaginary parts of the refructve index
 c      nperp_imag    root of the dispersion relation
 c-----------------------------------------------------------
-      Implicit none
+      implicit none
 c     input
       integer nbulk,iter_max
       double precision mass_ar(*)
@@ -3558,12 +3741,12 @@ c         write(*,*)'deltn',deltn
       nperp_real=cnper_top
       nperp_imag=cnprim_top
       return
-      end
+      end subroutine solv_nperp_hot
 
 
       double complex function  
-     . dhot_sum_c(nbulk,mass_ar,x_ar,y_ar,t_av_ar,tpop_ar,
-     . vflow_ar,nll_in,np_in,cnprim,iherm,K_sum)
+     . dhot_sum_c(nbulk, mass_ar, x_ar, y_ar, t_av_ar, tpop_ar,
+     . vflow_ar, nll_in, np_in, cnprim, iherm, K_sum)
 c-----------------------------------------------------------
 c     calculates the hot dielectric tensor  K_sum(3,3)
 c     and the hot non-relativistic dispersion function dhotsum_c
@@ -3590,7 +3773,7 @@ c      K_sum(3,3) -  the nine components of the dielectric tensor
 c                    evaluated at (mass,X,Y,Te,tpop,vflow,Nll,np)
 c      dhotsum_c    -  hot double complex dispersion function
 c-----------------------------------------------------------
-      Implicit none
+      implicit none
 c     input
       integer nbulk,iherm   
       double precision mass_ar(*)
@@ -3640,8 +3823,11 @@ c-----initialization of the dielectric tensor K_sum(3,3)
 
 c-----hot dispersion function
       
-      call npnllmin (nll_in,np_in,nll,np_r)
+!YuP      call npnllmin(nll_in,np_in,nll,np_r) ! YuP[2020-08-24] in dhot_sum_c: Having nll=0 is ok here
+      !Note: np_r is not used.
+      nll=nll_in !YuP[2020-08-24] Having nll=0 is ok here 
       np=dcmplx(np_in,cnprim)
+      !np=dcmplx(max(0.d0,np_in),cnprim) !YuP[2020-08-24] Set lower limit on real part
       nlls=nll**2
       nps=np**2
 
@@ -3654,7 +3840,7 @@ c-----hot dispersion function
 
 
       return
-      end
+      end function dhot_sum_c
 
 
 
@@ -3683,7 +3869,8 @@ c                    evaluated at (mass,X,Y,Te,tpop,vflow,Nll,np)
 c      comp_d     -  hot double complex dispersion function
 c------------------------------------------
 c-----input
-      implicit double precision (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
 
       include 'param.i'
 cSm030514     
@@ -3715,7 +3902,7 @@ c-----external
      .tpop_ar_l,vflow_ar_l,nll_in_l,np_in,cnprim,iherm_l,K_sum_l)
        
       return
-      end 
+      end subroutine hot_disp
 
 
 
@@ -3726,7 +3913,8 @@ c-----external
 c-----solve hot plasma complex dispersion relation
 c     D(Re(N_perp),Im(N_perp))=0 using the minimizasion of the function
 c     J(Re(N_perp),Im(N_perp))=(ReD)**2+(ImD)**2 
-      implicit double precision (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
 
       include 'param.i'
          
@@ -3779,7 +3967,7 @@ c      call croot(cz0,comp_nperp)
       cnprim_new=dimag(comp_nperp)
        
       return
-      end
+      end subroutine solv_nperp_hot_grad
 
 
 
@@ -3808,7 +3996,7 @@ c               (for the given specie)
 c          evaluated at (mass,X,Y,Te,tpop,vflow,Nll,np)
 c-----------------------------------------------------------
 
-      Implicit none
+      implicit none
 c     input
       double precision mass
       double precision  X, Y,T_av,tpop,vflow
@@ -3819,13 +4007,8 @@ cSm060815
       integer n_new       
         
       integer nmax     ! max number of ECR harmonics in arrays
-c      parameter (n=20) !it will be calculated inside this routine 
-cSAP081214
-c      parameter (nmax=3000)
-      parameter (nmax=30)
+      parameter(nmax=300)
 
-c      parameter(nmax=3)     
-      
 
 c     output
       double complex K(3,3)
@@ -3877,7 +4060,7 @@ c      istop=0, it is impossible to calculate the susceptibilty tensor
 
   
       pi = 4*datan(1.d0)
-      c = 3.0d10                !speed of light
+      c= 2.99792458d10                !speed of light
       k4 = 4.19d7               !constant for elec therm vel
       i = ( 0.0d0,1.0d0)        !imaginary number
 
@@ -3885,10 +4068,10 @@ c-----tpop =  ratio of Te_perp / Te_parallel
 c-----vflow = flow velocity of electrons
       te=3.d0*T_av/(1.d0+2.d0*tpop) !longitudinal
 
-c       write(*,*)'dhot_s longitudinal te,mass',te,mass      
+c       write(*,*)'dhot_s_c longitudinal te,mass',te,mass      
 ctest
  27   format(2D25.17)
-c      write(*,*)'dhot_s tpop,vflow'
+c      write(*,*)'dhot_s_c tpop,vflow'
 c      write(*,27)tpop,vflow
            
       vte =k4*dsqrt(2.0d0*te/mass)   !vte = sqrt(2.0*kTe/me) longitudinal
@@ -3896,9 +4079,9 @@ c      write(*,27)tpop,vflow
      
 c      write(*,*)'dhot vte, beta'
 c      write(*,27)vte,beta
-c      write(*,*)'dhot_s befor npnllmin nll_in,np_in',
+c      write(*,*)'dhot_s_c befor npnllmin nll_in,np_in',
 c     .nll_in,np_in
-      call npnllmin(nll_in,np_in,nll,np)
+      call npnllmin(nll_in,np_in,nll,np) !in subroutine DHOT_s_c
 
       nps = np**2
 cSm020410
@@ -3911,10 +4094,10 @@ c-----lambda = 0.5 k_perp^2 * rho_e^2
 cSm020410
       dlambda = nps*beta**2*tpop/2.0d0/Y**2
       lambda =cnps*beta**2*tpop/2.0d0/Y**2
-c      write(*,*)'dhot_s cnps,beta,tpop,Y,lambda',cnps,beta,tpop,Y,lambda
+c      write(*,*)'dhot_s_c cnps,beta,tpop,Y,lambda',cnps,beta,tpop,Y,lambda
 
  26   format(d25.17) 
-c      write(*,*)'dhot_s nps,beta,tpop,Y,lambda',nps,beta,tpop,Y,lambda
+c      write(*,*)'dhot_s_c nps,beta,tpop,Y,lambda',nps,beta,tpop,Y,lambda
 
 
 c   Now, calculate the modified bessel functions 
@@ -3949,36 +4132,34 @@ c         xne(j)=dcmplx(0.d0,0.d0)
       enddo
 
 c-----calulations of the max and minimal numbers of the harmonics
-c      write(*,*)'in DHOT_s before harmon_z nmax',nmax     
+c      write(*,*)'in DHOT_s_c before harmon_z nmax',nmax     
 
 cSm030515
-c      call harmon_z(X,Y,nll,vflow,c,beta,lambda,nmax,
-c     .n_harm1,n_harm2,n,istop)
       call harmon_z(X,Y,nll,vflow,c,beta,dlambda,nmax, ! dlambda=Real(lambda) 
      .n_harm1,n_harm2,n,istop)
 
-c      write(*,*)'in DHOT_s 3843 after harmon_z mass,n_harm1,n_harm2,n
+c      write(*,*)'in DHOT_s_c 3843 after harmon_z mass,n_harm1,n_harm2,n
 c     &,isto1p', mass,n_harm1,n_harm2,n,istop
 
       if (istop.eq.0) then
-         write(*,*)'DHOT_s istop=0 it is impossible to calulate' 
+         write(*,*)'DHOT_s_c istop=0 it is impossible to calculate' 
          write(*,*)'the harmonics of susceptibily tensor n_harm0 nmax=',
      .   nmax
       endif      
        
       if (istop.eq.0) goto 10
-cSm030515     
-c      call ibess0(lambda,dri01)
-c      call ibessn(lambda,n+1,dri01,dxne)
       call ibess0(dlambda,dri01)        !dlambda=Re(lambda)
-      call ibessn(dlambda,n+1,dri01,dxne)
+      call ibessn(dlambda,n+1,dri01,dxne)  !-> I_n(x)*exp(-x)  in DHOT_s_c
+      !YuP[2020-01-23] The dri01 from the above two calls are not used anymore]
+      !Why switching to beslci1() below? Because of complex lambda?
 
       ize=1 !for the modified bessel functions
       call beslci1(dreal(lambda),dimag(lambda),n+2,ize,br,bi,ncalc)
       ri01=dcmplx(br(1),bi(1))*cdexp(-lambda) !I_0*exp(-lambda)
+      !YuP[2020-01-23] Potential underflow problem from exp(-lambda)
 
 c      write(*,*)'n,lambda',n,lambda
-
+      !YuP[2020-01-23] Better calculate exp(-lambda) once, outside of j-loop
       do j=1,n+1
         xne(j)=dcmplx(br(1+j),bi(1+j))*cdexp(-lambda) !I_j*exp(-lambda) j>0
 c        write(*,*)'j,br(1+j),bi(1+j),cdexp(-lambda)',
@@ -3993,22 +4174,15 @@ c      n=n_new
       do j=1,n
 
 cSm020410 
-c        write(*,*)'dhot_s j,xne(j)',j,xne(j)
+c        write(*,*)'dhot_s_c j,xne(j)',j,xne(j)
 
         if (cdabs(xne(j)).lt.1.d-14) then
      
-c         write(*,*)'dhot_s j',j
-cSm030515
-c          call harmon_z(X,Y,nll,vflow,c,beta,lambda,j+2,
-c     .    n_harm1,n_harm2,n,istop)
-cSm060816
-c          call harmon_z(X,Y,nll,vflow,c,beta,dlambda,j+2,
-c     .    n_harm1,n_harm2,n,istop)
             
           call harmon_z(X,Y,nll,vflow,c,beta,dlambda,j+2,
      .    n_harm1,n_harm2,n_new,istop)
 
-c          write(*,*)'dhot_s after harmon_z n,n_new',n_new
+c          write(*,*)'dhot_s_c after harmon_z n,n_new',n_new
 cSm060816
 c          goto 10
           goto 9
@@ -4020,21 +4194,21 @@ cSm060816
       n=n_new
       
  10   continue
-c      write(*,*)'dhot_s j, xne(j)',j,xne(j)
-c       write(*,*)'dhot_s n,n_harm1,n_harm_2',n,n_harm1,n_harm2
+c      write(*,*)'dhot_s_c j, xne(j)',j,xne(j)
+c       write(*,*)'dhot_s_c n,n_harm1,n_harm_2',n,n_harm1,n_harm2
 c      do q  = -n,n
-c      write(*,*)'dhot_s before goto 20 istop=',istop     
+c      write(*,*)'dhot_s_c before goto 20 istop=',istop     
       if (istop.eq.0) goto 20
 
       do q  = n_harm1,n_harm2 
 
          cx = (1.d0 - nll*vflow/c - q *  Y) / nll / beta
 
-c         write(*,*)'dhot_s cx q',q 
+c         write(*,*)'DHOT_s_c cx q',q 
 c         write(*,27)dreal(cx),dimag(cx)
            
          call CZETA0(nll,CX,CZ0,CZ1,IERR)
-c         write(*,*)'dhot_s q,IERR,cz0',q,IERR,cz0      
+c         write(*,*)'DHOT_s_c q,IERR,cz0',q,IERR,cz0      
 
 c---- Use the Stix notation of A(n) and B(n)
 c
@@ -4142,7 +4316,7 @@ c     Hermitian part
       K(3,2) =  Kzy
 
       return
-      end
+      end subroutine DHOT_s_c
 
       
 
@@ -4155,7 +4329,8 @@ cProlog
       implicit none
 c
 c explicit type declaration 7/12/01 (RAJ)
-      doubleprecision delta, yi, osqpi, tpi, w, conoi, x, y, e, f, c, d,
+      !doubleprecision to real*8 !YuP[2020-01-27] 
+      real*8 delta, yi, osqpi, tpi, w, conoi, x, y, e, f, c, d,
      & tpiod, g, yy, h, za, zr, zi, a, b, den, oden
       integer n, nm3, i, itest, no2, no2p1, npi, nmi
 c
@@ -4168,7 +4343,9 @@ c       numerical integration (absolute value of the complex argument, z,
 c       less than 5) or asymptotic expansion.
 c *********************
 c
-      doublecomplex z, fu, temp1, temp2, z2, tpiiod
+      !YuP[2020-01-27] doublecomplex z, fu, temp1, temp2, z2, tpiiod
+      complex*16 z, fu, temp1, temp2, z2, tpiiod !YuP[2020-01-27]
+      
 c
       dimension c(21), d(21), e(21), f(21), w(21)
 c
@@ -4295,7 +4472,7 @@ c
     5 call aexpan (z,g,h,yy,fu)
     6 return
 c
-      end
+      end subroutine zfun
 
 
       subroutine aexpan (z, g, h, yy, fu)
@@ -4309,10 +4486,12 @@ c asymptotic expansion.  if the imaginary part of the argument, yy,
 c is equal to zero real arithmetic is used
 c **********************
 c
-      doublecomplex z, fu, a, z2, oz2
+      !YuP[2020-01-27] doublecomplex z, fu, a, z2, oz2
+      complex*16 z, fu, a, z2, oz2 !YuP[2020-01-27]
 c
 c  explicit type declaration added 7/12/01  RAJ
-      doubleprecision yy, en, h, g, x2, ox2, f, b, c
+      !YuP[2020-01-27] doubleprecision yy, en, h, g, x2, ox2, f, b, c
+      real*8 yy, en, h, g, x2, ox2, f, b, c !YuP[2020-01-27] 
       integer n,i
       data n/8/
 c
@@ -4365,7 +4544,8 @@ c
       fu = dcmplx(f, c)
    30 return
 c
-      end
+      end subroutine aexpan
+      
 
       double precision function fomega_hot(cnz,cnr,cm,z,r,phi)
 c-----It calculates the dispersion function and dielectric tensor reps 
@@ -4373,7 +4553,15 @@ c     for non-relativistic hot plasma
 c     with full (Hermitian + anti-Hermitian) dielctric tensor using
 c     Berstein-Friedland formula.
 c     The hot plasma complex dielectric tensor reps(3,3) will be in eps.i
-      implicit double precision (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      integer i
+      real*8 r,z,phi,hf,hw,df,step,t_kev,fplus,hfrqnc
+      real*8 frqncpl,frqncmn,fminus,cnpar,cnper,cn2
+      real*8 hamiltmp,hamiltmq
+      real*8 cnr,cnrplus,cnz,cnzplus,cm,cmplus
+      real*8 cnparplus,cnplus2,cnperplus,cnrminus,cnzminus
+      real*8 cnparminus,cnminus2,cmminus,cnperminus
       include 'param.i'
       include 'one.i'
       include 'ions.i'	
@@ -4511,7 +4699,7 @@ c-----It will be in 'eps.i'
      &vflow_ar,cnpar,cnper,2,reps)
      
       return
-      end
+      end function fomega_hot
 
 
 
@@ -4593,7 +4781,7 @@ c                                                 e_z(i)=e_nperp_root(3,i)
 c-----------------------------------------------------------
 
 c-----external 
-      double precision rtbis,rtbis_test
+      double precision rtbis
       double complex dhot_sum,d_hot_nper
       external d_hot_nper
 c-----locals
@@ -4620,13 +4808,13 @@ c--------------------------------------
       n_hot_roots=0
       step=N_perp_root_max/dfloat(n_points-1)
  
-      write(*,*)'n_points,step',n_points,step
+      write(*,*)'hot_roots_solver: n_points,step',n_points,step
      
       cnper=0.d0
       dleft= dreal(dhot_sum(nbulk,dmas,x_ar,y_ar,t_ar,tpop_ar,
      .      vflow_ar,cnpar,cnper,1,K))
 
-      write(*,*)' nbulk,cnpar',nbulk,cnpar
+      write(*,*)'hot_roots_solver: nbulk,cnpar',nbulk,cnpar
       do i=1,nbulk
         write(*,*)'=i,dmas(i),x_ar(i),y_ar(i)',i,dmas(i),x_ar(i),y_ar(i)
         write(*,*)'t_ar(i),tpop_ar(i),vflow_ar(i)',
@@ -4654,13 +4842,7 @@ c        write(*,*)'forest.f i,cnper,dleft,dright',i,cnper,dleft,dright
            x1= cnper-step
            x2= cnper
 
-c           write(*,*)'n_hot_roots',n_hot_roots
-
            N_perp_root_ar(n_hot_roots)=rtbis(d_hot_nper,x1,x2,xacc)
-c          N_perp_root_ar(n_hot_roots)=rtbis_test(d_hot_nper,x1,x2,xacc)
-
-c           write(*,*)' N_perp_root_ar(n_hot_roots)',
-c     &                 N_perp_root_ar(n_hot_roots)
 
 c------------------------------------------------------------------
 c          electric field for hot plasma tensor
@@ -4695,7 +4877,7 @@ c           write(*,*)'epar',epar
       enddo
 
       return
-      end
+      end subroutine hot_roots_solver
 
       
       double precision function d_hot_nper(cnper)
@@ -4703,7 +4885,7 @@ c-----calculates Real(hot dispersion function)
 c     INPUT:
 c       cnper=Re(N_perpendicular))
 c       the input data from common /nperpcom.i/
-      Implicit none
+      implicit none
       include 'param.i'
       include 'one.i'
       include 'ions.i'
@@ -4722,7 +4904,7 @@ c-----external: dhot_sum
       d_hot_nper = dreal(d) 
 
       return
-      end
+      end function d_hot_nper
 
 
       subroutine calculate_hot_nperp_roots(z,r,phi,cnpar,
@@ -4860,7 +5042,7 @@ c------------------------------------------------------------------
       close(10)
 
       return
-      end
+      end subroutine calculate_hot_nperp_roots
 
 
       subroutine rho_ini_hot_nperp_roots(r_edge,z_edge,phi_edge,cnpar)     
@@ -4869,10 +5051,9 @@ c-----finds the small radius rho_ini > rho_min_find_hot_nperp_roots
 c     at the vector rho^ where
 c     hot plasma dispersdion function D_hot(npar) has three roots.
 c     The vector rho^ is starting at the edge point (r_edge,z_edge,phi_edge),
-c     and directed to the magnetic axis O(xma,yma,phi_edge)
+c     and directed to the magnetic axis O(rma,zma,phi_edge)
 c      
       implicit none
-c      implicit double precision (a-h,o-z)
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -5238,7 +5419,7 @@ c---------------------------------------------------------------------------
       close(10)
   
       return
-      end
+      end subroutine rho_ini_hot_nperp_roots
 
 
 
@@ -5255,7 +5436,7 @@ c      vflow_ar    cm/sec
 c      nll_in - parallel index of refraction n.
 c      np_in - perpendicular index of refraction n.
 
-      Implicit none
+      implicit none
       include 'param.i' 
 c-----input
       integer nbulk,iherm   
@@ -5311,20 +5492,25 @@ c-----set data to common /com_hot_nperp_muller/
       itmax=50
 
       roots(1)=dcmplx(cnper,0.0d0)
-      write(*,*)' hot_nperp_muller before call muller'
+      !write(*,*)' hot_nperp_muller before call muller'
       call muller (hot_disper_for_muller,
      & errabs,nsig,nknown,nguess,nnew,roots,
      & itmax,info,ier)
 
-      write(*,*)' hot_nperp_muller after call muller'
+      !write(*,*)' hot_nperp_muller after call muller'
 
       cnprim=abs(imag(roots(1)))
       cnper=abs(dble(roots(1)))
 
       return
-      end
+      end subroutine hot_nperp_muller
+      
+      
+      
+      
 
       complex*16  function hot_disper_for_muller(cnperp,dum)
+      !For iabsorp=4
       implicit none
       include 'param.i'
 
@@ -5341,7 +5527,7 @@ c-----data from common /com_hot_nperp_muller/
      &mass_ar_ll(nbulka),x_ar_ll(nbulka),y_ar_ll(nbulka),
      &t_av_ar_ll(nbulka),
      &tpop_ar_ll(nbulka),vflow_ar_ll(nbulka),
-     &cnpar_ll,cnperp_ll 
+     &cnpar_ll,cnperp_ll
       integer nbulk_ll
 c-----input
       complex*16 cnperp,dum(1:3,1:3)
@@ -5352,16 +5538,16 @@ c-----extrnals
 c-----locals
       integer i
       complex*16 reps_l(3,3)
-      write(*,*)'in hot_disper_for_muller'
-      write(*,*)'nbulk_l',nbulk_l
-      write(*,*)'mass_ar_l',mass_ar_l
-      write(*,*)'x_ar_l',x_ar_l
-      write(*,*)'y_ar_l',y_ar_l
-      write(*,*)'tpop_ar_l',tpop_ar_l
-      write(*,*)'t_av_ar_l',t_av_ar_l
-      write(*,*)'vflow_ar_l',vflow_ar_l
-      write(*,*)'cnpar_l',cnpar_l
-      write(*,*)'cnperp',cnperp
+      !write(*,*)'in hot_disper_for_muller'
+c      write(*,*)'nbulk_l',nbulk_l
+c      write(*,*)'mass_ar_l',mass_ar_l
+c      write(*,*)'x_ar_l',x_ar_l
+      !write(*,*)'y_ar_l',y_ar_l
+c      write(*,*)'tpop_ar_l',tpop_ar_l
+c      write(*,*)'t_av_ar_l',t_av_ar_l
+c      write(*,*)'vflow_ar_l',vflow_ar_l
+      !write(*,*)'cnpar_l',cnpar_l
+      !write(*,*)'cnperp',cnperp
 
       nbulk_ll=nbulk_l
       do i=1,nbulk_ll
@@ -5370,7 +5556,7 @@ c-----locals
          y_ar_ll(i)=y_ar_l(i)
          t_av_ar_ll(i)=t_av_ar_l(i)
          tpop_ar_ll(i)=tpop_ar_l(i)
-         vflow_ar_l(i)=vflow_ar_l(i)
+         vflow_ar_ll(i)=vflow_ar_l(i) !YuP[2020-01-21] small bug 
       enddo
       cnpar_ll=cnpar_l
 
@@ -5378,13 +5564,12 @@ c      hot_disper_for_muller=dhot_sum_c(nbulk_l,mass_ar_l,
 c     &x_ar_l,y_ar_l,t_av_ar_l,
 c     &tpop_ar_l,vflow_ar_l,cnpar_l,cnperp,2,reps_l)
       cnperp_ll=real(cnperp)
-      hot_disper_for_muller=dhot_sum_c(nbulk_ll,mass_ar_ll,
-     &x_ar_ll,y_ar_ll,t_av_ar_ll,
-cBH120421     &tpop_ar_ll,vflow_ar_ll,cnpar_ll,cnperp,0.d0,2,reps_l)
-     &tpop_ar_ll,vflow_ar_ll,cnpar_ll,cnperp_ll,0.d0,2,reps_l)
+      hot_disper_for_muller=dhot_sum_c(nbulk_ll, mass_ar_ll,
+     &x_ar_ll, y_ar_ll, t_av_ar_ll,
+     &tpop_ar_ll, vflow_ar_ll, cnpar_ll, cnperp_ll, 0.d0, 2, reps_l)
 
-      write(*,*)'hot_disper_for_muller',hot_disper_for_muller
+c      write(*,*)'hot_disper_for_muller',hot_disper_for_muller
     
 
       return
-      end
+      end function hot_disper_for_muller

@@ -1109,14 +1109,22 @@ c----------------------------------------------------------------------
       cnphi=cnpar*bphi/bmod
       bpol1=dsqrt(bz*bz+br*br)
       gradpsi=dsqrt(dpdzd*dpdzd+dpdrd*dpdrd)
-      bpol=(bz*dpdrd-br*dpdzd)/gradpsi
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        bpol=(bz*dpdrd-br*dpdzd)/gradpsi
+      else
+        bpol=0.d0
+      endif
 
       write(*,*)'in nphiteta bpol,bpol1',bpol,bpol1
       write(*,*)'in nphiteta bz,br,bphi,bmod',bz,br,bphi,bmod
       write(*,*)'in nphiteta dpdrd,r,bz1',dpdrd,r,-dpdrd/r
       write(*,*)'in nphiteta dpdzd,r,br1',dpdzd,r,dpdzd/r
       cntheta=cnpar*bpol/bmod
-      cnpar1=(cnphi*bphi+cntheta*(bz*dpdrd-br*dpdzd)/gradpsi)/bmod
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        cnpar1=(cnphi*bphi+cntheta*(bz*dpdrd-br*dpdzd)/gradpsi)/bmod
+      else
+        cnpar1=cnphi*bphi/bmod
+      endif
       write(*,*)'in nphiteta cnpar,cnpar1',cnpar,cnpar1
 c--------------------------------------------------------------------
       write(*,*)'nphiteta cnpar1',cnpar1,'cntheta',cntheta,'cnphi',cnphi
@@ -1125,9 +1133,13 @@ c--------------------------------------------------------------------
       sn=dsin(phi)
 cSAP090513
 c     cnteta=cnpar*(-cs*dpdzd*(br*cs-bphi*sn)
-      cnpar_theta=cnpar*(-cs*dpdzd*(br*cs-bphi*sn)
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        cnpar_theta=cnpar*(-cs*dpdzd*(br*cs-bphi*sn)
      1              -sn*dpdzd*(br*sn+bphi*cs)
      1              +dpdrd*bz)/(bmod*gradpsi)
+      else
+        cnpar_theta=0.d0
+      endif
 cSAP090513
 c     cnphi=cnpar*(-sn*(br*cs-bphi*sn)+cs*(br*sn+bphi*cs))/bmod
       cnpar_phi=cnpar*(-sn*(br*cs-bphi*sn)+cs*(br*sn+bphi*cs))/bmod
@@ -1154,7 +1166,7 @@ c     else
 c        it will set i_rho_ini_LHWF_found=0
 
       implicit none
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
 cSAP091027
@@ -1201,8 +1213,8 @@ cSAP091027
      &n_nperp,     !=1000 the number of nperp points at the plot D(N_perp) 
      &iraystop_loc
 
-      write(*,*)'grill_lh.f rho_ini_LHFW i_n_poloidal,n_theta_pol',
-     &i_n_poloidal,n_theta_pol
+!      write(*,*)'grill_lh.f rho_ini_LHFW i_n_poloidal,n_theta_pol',
+!     &i_n_poloidal,n_theta_pol
 
       hstep=rho_step_find_LHFW_cutoff 
 
@@ -1216,8 +1228,8 @@ c     rho_loc =1.d0-rho_step_find_LHFW_cutoff  !initialization
 
 cSm061107
       psi=psi_rho(rho_loc)
-      write(*,*)'grill_lh in rho_ini_LHFW rho_loc= ',rho_loc
-      write(*,*)'grill_lh in rho_ini_LHFW psi= ',psi
+      !write(*,*)'grill_lh in rho_ini_LHFW rho_loc= ',rho_loc
+      !write(*,*)'grill_lh in rho_ini_LHFW psi= ',psi
 
 cSAP0921027
       if (rho_loc.lt.1.d0) then
@@ -1234,7 +1246,7 @@ c--------calculate coordinates (r_b,z_b) at the LCFS(psi=psilim,theta)
 
       endif
 
-      write(*,*)'grill_lh psi,theta,z,r',psi,theta,z,r
+      !write(*,*)'grill_lh psi,theta,z,r',psi,theta,z,r
    
 ctest cutoff3 frequency     
 c      bmod=b(z,r,phi)
@@ -1255,8 +1267,8 @@ c       call cninit12(z,r,phi,cnpar,cnteta,cnphi,cnz,cnr,cm,iraystop
         call cninit12(z,r,phi,cnpar,cnteta,cnphi,cnz,cnr,cm,
      &               iraystop_loc)
       else    
-        write(*,*)'grill_lh in rho_ini_LHFW n_theta_pol,n_toroidal',
-     & n_theta_pol,n_toroidal
+!        write(*,*)'grill_lh in rho_ini_LHFW n_theta_pol,n_toroidal',
+!     & n_theta_pol,n_toroidal
 
 cSm050826
         if(i_n_poloidal.eq.2) then
@@ -1267,9 +1279,9 @@ c     &     n_theta_pol,n_toroidal
 
         endif  !i_n_poloidal.eq.2
 
-        write(*,*)'ion rho_ini_LHFW before cninit',
-     &  'cnparz,r,phi,cnpar,n_theta_pol,n_toroidal',
-     &  cnparz,r,phi,cnpar,n_theta_pol,n_toroidal
+!        write(*,*)'ion rho_ini_LHFW before cninit',
+!     &  'cnparz,r,phi,cnpar,n_theta_pol,n_toroidal',
+!     &  cnparz,r,phi,cnpar,n_theta_pol,n_toroidal
  
 cSAP091027      
         call cninit(z,r,phi,cnpar,n_theta_pol,n_toroidal,
@@ -1282,9 +1294,9 @@ cSm070804 cnteta=(cnz*bz+cnr*br)/bmod
         cnteta=-(cnz*bz+cnr*br)/dsqrt(bz**2+br**2)        
         cnphi=(cm/r)
 
-        write(*,*)'in rho_ini_LHFW after cninit cnteta,cnphi,
-     & iraystop_loc',
-     &  cnteta,cnphi,iraystop_loc
+!        write(*,*)'in rho_ini_LHFW after cninit cnteta,cnphi,
+!     & iraystop_loc',
+!     &  cnteta,cnphi,iraystop_loc
 
       endif ! i_n_poloidal.eq.1
 
@@ -1308,20 +1320,20 @@ c        if (iraystop.eq.0) then
                          ! (0,2*pi) at the wave normal surface plot
 
       endif
-      write(*,*)'grill_lh.f in  rho_ini_LHFW after '
-      write(*,*)'plot_disp_cold_grill and wave_normal_surface'
+      !write(*,*)'grill_lh.f in  rho_ini_LHFW after '
+      !write(*,*)'plot_disp_cold_grill and wave_normal_surface'
 c---------------------------------------------------------------
 cSAP091027
 c      if(iraystop.eq.1) then
       if(iraystop_loc.eq.1) then
 c-------the given wave does not exist in this point
-        write(*,*)'in rho_ini_LHFW rho_loc,hstep',rho_loc,hstep
+        !write(*,*)'in rho_ini_LHFW rho_loc,hstep',rho_loc,hstep
 
 cSm061107
         rho_loc=rho_loc-hstep
-        write(*,*)'in rho_ini_LHFW new rho_loc',rho_loc
+        !write(*,*)'in rho_ini_LHFW new rho_loc',rho_loc
         if (rho_loc.lt.0d0) then 
-           write(*,*)'rho_ini_LFW did not find the rho point'
+           !write(*,*)'rho_ini_LFW did not find the rho point'
 cSAP081028
            i_rho_ini_LHFW_found=0
            return
@@ -1333,13 +1345,17 @@ c           stop
         cntheta_ini=cnteta
         cnphi_ini=cnphi
         cnper=dsqrt(cnz**2+cnr**2+(cm/r)**2-cnpar**2)
-        write(*,*)'grill_lh.f rho_ini_LHFW cnper',cnper
+        !write(*,*)'grill_lh.f rho_ini_LHFW cnper',cnper
         if (i_n_poloidal.eq.2) then 
 c---------check the condition
           gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
-          b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic fiel
+          if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+            b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+          else
+            b_teta=0.d0
+          endif
           p=cnper**2-((n_theta_pol-cnpar*b_teta/bmod)*(bmod/bphi))**2
-          write(*,*)'p ',p
+          !write(*,*)'p ',p
           if (p.lt.0.d0) then
 cSm061107
             rho_loc=rho_loc-hstep
@@ -1349,8 +1365,8 @@ cSm061107
 
 cSAP081028
         i_rho_ini_LHFW_found=1        
-        write(*,*)'in sub rho_ini_LHFW i_rho_ini_LHFW_found=',
-     &            i_rho_ini_LHFW_found
+!        write(*,*)'in sub rho_ini_LHFW i_rho_ini_LHFW_found=',
+!     &            i_rho_ini_LHFW_found
 
 cSm061107
         rho_ini=rho_loc
@@ -1360,7 +1376,7 @@ cSm061107
         cntheta_ini=cnteta
         cnphi_ini=cnphi
         cnper=dsqrt(cnz**2+cnr**2+(cm/r)**2-cnpar**2)
-        write(*,*)'in rho_ini_LHFW rho_ini,cnper',rho_ini,cnper
+        !write(*,*)'in rho_ini_LHFW rho_ini,cnper',rho_ini,cnper
 
       endif !iraystop.eq.1
 
@@ -1700,7 +1716,11 @@ c-----locals
       bmod=b(z,r,phi) ! put the magnetic filed componets into one.i
 
       gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
-      b_theta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        b_theta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+      else
+        b_theta=0.d0
+      endif
 
 c-----the parallel refractive index components
       cnpar_phi = cnpar*bphi/bmod  

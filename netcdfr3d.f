@@ -3010,37 +3010,30 @@ c      write(*,*)'after nraysid=ncdid(ncid,nrays,) nraysid ',nraysid
 c     For ray data:
 c-----define variables 
 
-c-----starting coordinare.
-c      write(*,*)'before ncvde(z_starting) ncid,nraysid',ncid,nraysid
+c-----starting coordinates.
       vid=ncvdef2(ncid,'z_starting',NCDOUBLE,1,nraysid,istatus)
       call ncaptc2(ncid,vid,'long_name',NCCHAR,10,
      +           'z_starting',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,1,
      +           'm',istatus)
 
-c      write(*,*)'before ncvde(r_starting) ncid,nraysid',ncid,nraysid
       vid=ncvdef2(ncid,'r_starting',NCDOUBLE,1,nraysid,istatus)
       call ncaptc2(ncid,vid,'long_name',NCCHAR,10,
      +           'r_starting',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,1,
      +           'm',istatus)
 
-c      write(*,*)'before ncvdef2(phi_starting) ncid,nraysid',ncid,nraysid
       vid=ncvdef2(ncid,'phi_starting',NCDOUBLE,1,nraysid,istatus)
       call ncaptc2(ncid,vid,'long_name',NCCHAR,12,
      +           'phi_starting',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,7,
-cSAP080704
-c     +           'radians',istatus)
      +           'degrees',istatus)
 
-c      write(*,*)'before ncvdef2(alphast) ncid,nraysid ',ncid,nraysid
       vid=ncvdef2(ncid,'alphast',NCDOUBLE,1,nraysid,istatus)
       call ncaptc2(ncid,vid,'long_name',NCCHAR,52,
-     &'toroidal angle measured from R-vector through source',istatus)     
+     &'toroidal angle measured from R-vector through source',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,6,'degree',istatus)
 
-c      write(*,*)'before ncvdef2(betast) ncid,nraysid ',ncid,nraysid
       vid=ncvdef2(ncid,'betast',NCDOUBLE,1,nraysid,istatus)
       call ncaptc2(ncid,vid,'long_name',NCCHAR,73,
      &'poloidal angle measured from z=constant plane,'//
@@ -3359,15 +3352,15 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'freq00',NCDOUBLE,0,0,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,83,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,84,
      +            'The ratio of the minimal emission frequencies to '//
      +'the central electron gyro-frequency',istatus)
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'freq01',NCDOUBLE,0,0,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,85,
-     +            'The ratio of the maximal emission frequencies to'// 
-     +' the central electron gyro-frequency',istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,84,
+     +            'The ratio of the maximal emission frequencies to '// 
+     +'the central electron gyro-frequency',istatus)
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'wallr',NCDOUBLE,0,0,istatus)
@@ -3401,7 +3394,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
       
       vid=ncvdef2(ncid,'nrayelt_emis_nc',NCLONG,1,nfreqdim,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,66,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,65,
      +'the number of points along the central ray with ' //
      +'additional points',
      +           istatus)
@@ -3475,7 +3468,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'wj_emis_nc',NCDOUBLE,2,ray_dims,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,72,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,70,
      +'emission coefficient along the central ray '//
      +' with the additional points'
      +          ,istatus)
@@ -3485,7 +3478,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'wnray_nc',NCDOUBLE,2,ray_dims,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,72,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,70,
      +'ray refractive index along the central ray '//
      +' with the additional points'
      +          ,istatus)
@@ -3495,8 +3488,8 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'win_sn_nc',NCDOUBLE,2,ray_dims,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,104,
-     +'emission I_n at the detector side of nth bin at s=s_n along '//
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,102,
+     +'emission I_n at the detector side of nth bin at s=s_n along'//
      +' the central ray with the additional points'
      +          ,istatus)
       call check_err(istatus)
@@ -3505,7 +3498,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
       call check_err(istatus)
 
       vid=ncvdef2(ncid,'win_0_nc',NCDOUBLE,2,ray_dims,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,104,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,102,
      +'emission I_n_0 at the plasma edge of nth bin at s=s_n along'//
      +' the central ray with the additional points'
      +          ,istatus)
@@ -3516,7 +3509,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
 
       vid=ncvdef2(ncid,'w_specific_intensity_nc',NCDOUBLE,2,ray_dims,
      +istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,98,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,96,
      +'specific intensity of the emission I_n_0/delta(s) '//
      +'from the central ray with the additional points'
      +          ,istatus)
@@ -3646,7 +3639,7 @@ c-----the emission input data set in the input files: genray.dat or genray.in
 
 
       vid=ncvdef2(ncid,'wtaun_em_nc',NCDOUBLE,2,ray_dims,istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,85,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,84,
      +'tau_n =integral{0,s_n}(al_emis(s)ds)'//  
      +'along the central ray with the additional points'
      +          ,istatus)
@@ -4748,7 +4741,7 @@ c      write(*,*)'before ncvdef2(ncid,w_specific_intensity_x_nc'
       vid=ncvdef2(ncid,'w_specific_intensity_x_nc',NCDOUBLE,3,ray_dims,
      &           istatus)
       call check_err(istatus)
-      call ncaptc2(ncid,vid,'long_name',NCCHAR,109,
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,107,
      +' spectrum of the emission specific intensity I_n_0/del(s) '//
      +' from the central ray with the additional points ' ,istatus)     
       call ncaptc2(ncid,vid,'units',NCCHAR,15,

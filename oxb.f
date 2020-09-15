@@ -7,7 +7,7 @@ c     determine the possible antenna position
 c     z_ant(theta), r_ant(theta) [m]
 c     theta is a poloidal angle [rad]
   
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'three.i'
@@ -23,10 +23,10 @@ c------------------------------------------
       save first
 
 c-----input
-      real*8 theta    ! major radius [m]
+      real*8 theta   ! pol.angle [rad] 
     
 c-----output
-      real*8 z_ant,r_ant
+      real*8 z_ant,r_ant ! Z and major radius [m] of antenna surface
 
 c-----local
       real*8 p,p1,p2,det, det_a,det_b,a_sq,b_sq,
@@ -39,7 +39,7 @@ c-----externals
       external psilim_psif_zp_rp
  
       pi=4.d0*datan(1.d0)
-      write(*,*)'antenna_surface theta[degree]',theta*180.d0/pi
+      !too much printout: write(*,*)'antenna_surface theta[degree]',theta*180.d0/pi
       
       if((i_ant.lt.1).or.(i_ant.gt.2)) then
         write(*,*)'oxb.f in function z_antenna(r)'
@@ -264,9 +264,15 @@ c-----local
 
 c-----refractive index along grad_psi at plasma side
       gradpsi_mod=dsqrt(dpsi_dr**2+dpsi_dz**2)
-      n_gradpsi_pl_mod=(n_r*dpsi_dr+n_z*dpsi_dz)/gradpsi_mod
-      n_gradpsi_pl_r=n_gradpsi_pl_mod*dpsi_dr/gradpsi_mod
-      n_gradpsi_pl_z=n_gradpsi_pl_mod*dpsi_dz/gradpsi_mod
+      if(gradpsi_mod.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        n_gradpsi_pl_mod=(n_r*dpsi_dr+n_z*dpsi_dz)/gradpsi_mod
+        n_gradpsi_pl_r=n_gradpsi_pl_mod*dpsi_dr/gradpsi_mod
+        n_gradpsi_pl_z=n_gradpsi_pl_mod*dpsi_dz/gradpsi_mod
+      else
+        n_gradpsi_pl_mod=0.d0
+        n_gradpsi_pl_r=0.d0
+        n_gradpsi_pl_z=0.d0
+      endif
 
 c-----refractive index along the magnetic surface 
 c     at plasma side and at vacuum side
@@ -290,8 +296,13 @@ c      write(*,*)'edg vac_refr_index_rphiz'
 c      write(*,*)'n_gradpsi_vac_mod**2+n_psi_mod_s',
 c     &n_gradpsi_vac_mod**2+n_psi_mod_s
 
-      n_gradpsi_vac_r=n_gradpsi_vac_mod*dpsi_dr/gradpsi_mod
-      n_gradpsi_vac_z=n_gradpsi_vac_mod*dpsi_dz/gradpsi_mod
+      if(gradpsi_mod.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        n_gradpsi_vac_r=n_gradpsi_vac_mod*dpsi_dr/gradpsi_mod
+        n_gradpsi_vac_z=n_gradpsi_vac_mod*dpsi_dz/gradpsi_mod
+      else
+        n_gradpsi_vac_r=0.d0
+        n_gradpsi_vac_z=0.d0
+      endif
 
 c-----vacuum refractive index
       n_vac_r= n_psi_r + n_gradpsi_vac_r
@@ -356,7 +367,7 @@ c     r_st,phi_st,z_st
 c     and the central ray direction
 c     alpha_st,beta_st
 c
-c     As the intersection of the vacume ray (strigth line)
+c     As the intersection of the vacuum ray (straight line)
 c     starting in the point (r_0,phi_0,z_0) in the direction    
 c     determined by vacuum refractive index
 c
@@ -365,7 +376,7 @@ c
 c-----input
       real*8 r_0,phi_0,z_0, !space location of the O-mode 
                             !at the plasma boundary [m]
-     &n0_r,n0_phi,n0_z,     !o-mode refractive index at the plasma boundary
+     &n0_r,n0_phi,n0_z,     !O-mode refractive index at the plasma boundary
                             ! in plasma side
      &b_r0,b_phi0,b_z0,     !the magnetic field in  M_0(r_0,phi_0,z_0)
      &dpsi_dz,dpsi_dr       !gradiend of the poloidal flux        
@@ -394,7 +405,7 @@ c      real*8 rtbis,f_o_antenna
 c-----locals
       real*8 n_vac_x,n_vac_y,n_vac_z,
      &x_st,y_st,pi,gamma,delta,trans,
-     &x_0,y_0
+     &x_0,y_0, delta2
       double precision
      &pacc,p_antenna,p1,p2
 
@@ -405,7 +416,7 @@ c-----for test
       write(*,*)'in antenna_vertex'
 
 c------------------------------------
-      i_ant=1 ! equal distance from antenna until plasma
+      i_ant=1 !Antenna shape: repeating the shape of plasma edge surface
 c------------------------------------
 c      i_ant=2       ! ellipse curve for EC cone vertex positions
 c      i_cone=1      ! the number od EC cone =1,...,nconea
@@ -413,7 +424,7 @@ c      i_cone=1      ! the number od EC cone =1,...,nconea
       delta_z=0.2d0 ! vertical shift over (zmax,rzmax) point
 c--------------------------------------
 
-      write(*,*)'r_0,phi_0,z_0,n0_r,n0_phi,n0_z',
+      write(*,*)'  antenna_vertex: r_0,phi_0,z_0,n0_r,n0_phi,n0_z',
      &r_0,phi_0,z_0,n0_r,n0_phi,n0_z
 c      write(*,*)'b_r0,b_phi0,b_z0,dpsi_dz,dpsi_dr',
 c     &b_r0,b_phi0,b_z0,dpsi_dz,dpsi_dr
@@ -426,10 +437,10 @@ c-----------------------------------------------------------------
       call edg_vac_refr_index_xyz(n0_r,n0_phi,n0_z,phi_0,
      &dpsi_dz,dpsi_dr,  
      &n_vac_x,n_vac_y,n_vac_z)
-      write(*,*)'after edg_vac_refr_index_xyz'
+      write(*,*)'  after edg_vac_refr_index_xyz'
 c      write(*,*)'n0_r,n0_phi,n0_z,phi_0',n0_r,n0_phi,n0_z,phi_0
 c      write(*,*)'dpsi_dz,dpsi_dr',dpsi_dz,dpsi_dr
-      write(*,*)'n_vac_x,n_vac_y,n_vac_z',n_vac_x,n_vac_y,n_vac_z
+      write(*,*)'  n_vac_x,n_vac_y,n_vac_z',n_vac_x,n_vac_y,n_vac_z
 c      write(*,*)'total vac n',dsqrt(n_vac_x**2+n_vac_y**2+n_vac_z**2)
 
 c---------------------------------------------------------------------
@@ -454,7 +465,6 @@ c----------------------------------------------------------------
       y_0=r_0*dsin(phi_0) 
      
       pacc=1.d-10
-       
       p1=0.d0
       p2=10.d0 !to check how to find the left boundary
 c      write(*,*)'p1,p2',p1,p2
@@ -468,17 +478,34 @@ c      z_p=z_0+n_vac_z*p2
 c      r_p=dsqrt((x_0+p2*n_vac_x)**2+(y_0+p2*n_vac_y)**2)
 c      write(*,*)'p2,z_p,r_p',p2,z_p,r_p
 
-      write(*,*)'antenna_vertex before x_bin_min p1,p2,pacc',
-     &p1,p2,pacc
+!      write(*,*)'  antenna_vertex: before x_bin_min: p1,p2,pacc',
+!     &p1,p2,pacc
 
       p_antenna=x_bin_min(f_antenna_min,p1,p2,pacc)
-
-c      write(*,*)'after x_bin_min p_antenna',p_antenna
+      !Using the binary method finds the point x_min=x_bin_min
+      !which gives the min value for f(x)
+      !at interval (p1,p2). 
+      !pacc is the accuracy of x_min determination.
+      !  where  f_antenna_min=(r_ray(p)-r_ant)**2+(z_ray(p)-z_ant)**2
+      !  and 'p' is parametric coord along ray
+      ! The ray equations:
+      ! r_ray(p)= xma + rho_ray(p)*cos(theta_ray(p))
+      ! z_ray(p)= yma + rho_ray(p)*sin(theta_ray(p))
+      ! where rho_ray(p)= sqrt[(r_ray(p)-xma)**2+(z_ray(p)-yma)**2]
+      write(*,*)'  after x_bin_min p_antenna',p_antenna
+      write(*,*)'  r_0,phi_0=',r_0,phi_0
+      write(*,*)'  n_vac_x,n_vac_y=',n_vac_x,n_vac_y
       
       x_st=r_0*dcos(phi_0)+p_antenna*n_vac_x
       y_st=r_0*dsin(phi_0)+p_antenna*n_vac_y 
       z_st=z_0+p_antenna*n_vac_z
       r_st=dsqrt(x_st**2+y_st**2)
+      
+      if(r_st.lt.r_0)then 
+        !YuP[2020-07-29] added check of r_st<r_0(should not happen)
+        write(*,*)'  r_0, r_st =',r_0,r_st
+        STOP '  antenna_vertex: r_st<r_0. This should not happen.'
+      endif
 
       phi_st=dacos(x_st/r_st)
       if (y_st.lt.0.d0) phi_st=-phi_st
@@ -507,9 +534,22 @@ c--------poloidal angle beta_st calculation
       beta_st=-beta_st
 
 
-c-------toroidal angle calculation alph-a_st
-      delta=dsqrt(r_st**2+r_0**2-2.d0*r_st*r_0*dcos(phi_st-phi_0))
-      gamma=dacos((r_st**2+delta**2-r_0**2)/(2.d0*r_st*delta))
+c-------toroidal angle calculation alpha_st
+      !Consider a triangle in (X,Y) plane  with sides rst, r0 and delta.
+      ! The angle between sides rst and r0 is (phi_st-phi_0).
+      ! The angle between sides rst and delta is gamma.
+      !Special case: phi_st = phi_0. Then, gamma=0; Then alpha_st=pi. OK
+      !Special case: phi_st = phi_0, and also r_0= r_st.
+      ! Then delta=0.  Set to gamma=0; Then alpha_st=pi
+      delta2= r_st**2 + r_0**2 -2.d0*r_st*r_0*dcos(phi_st-phi_0)
+      if(delta2.gt.0.d0)then !YuP[2020-07-29] Added if condition
+        delta= dsqrt(delta2)
+        gamma= dacos((r_st**2+delta2-r_0**2)/(2.d0*r_st*delta))
+      else ! delta=0
+        write(*,*)' antenna_vertex: delta, r_0, r_st',delta, r_0, r_st
+        write(*,*)' antenna_vertex: phi_0, phi_st[rad]', phi_0, phi_st
+        gamma=0.d0 !YuP[2020-07-29] added
+      endif
 
       if (phi_st.ge.phi_0) then
         alpha_st=pi+gamma
@@ -518,17 +558,18 @@ c-------toroidal angle calculation alph-a_st
       endif 
 
 c-----transformation from radians to degrees
-      write(*,*)'alpha_st,phi_st',alpha_st,phi_st
-      write(*,*)'alpha_st+phi_st',alpha_st+phi_st
+      !write(*,*)'alpha_st,phi_st',alpha_st,phi_st
+      !write(*,*)'alpha_st+phi_st',alpha_st+phi_st
       trans=180.d0/pi
       beta_st=beta_st*trans
       alpha_st=alpha_st*trans
       phi_st=phi_st*trans
-      write(*,*)'alpha_st,phi_st degree',alpha_st,phi_st
-      write(*,*)'alpha_st+phi_st degree',alpha_st+phi_st
+      write(*,*)'alpha_st, phi_st [degree]',alpha_st,phi_st
+      !write(*,*)'alpha_st+phi_st [degree]',alpha_st+phi_st
       return
-      end
-
+      end subroutine antenna_vertex
+!======================================================================
+!======================================================================
 
       subroutine set_common_ox(r_0_l,phi_0_l,z_0_l,
      &n_vac_x_l,n_vac_y_l,n_vac_z_l)
@@ -538,10 +579,8 @@ c-----input
       real*8 r_0_l,phi_0_l,z_0_l,
      &n_vac_x_l,n_vac_y_l,n_vac_z_l
 
-      real*8 r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
-      common /ox/r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
+      real*8 r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
+      common /ox/r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
 
       r_0=r_0_l
       phi_0=phi_0_l
@@ -566,10 +605,8 @@ c      real*8 p !the parameter along the ray from the plasma edg
                !to antenna
       double precision p
 
-      real*8 r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
-      common /ox/r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
+      real*8 r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
+      common /ox/r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
 c-----external
       real*8  z_antenna
 c-----local
@@ -598,7 +635,7 @@ c      f_o_antenna=z_0+p*n_vac_z-z_antenna(r_ray)
      &xma,yma, !temporally
      &eps_xe,  ! The parameter which sets the vicinitity
                ! of the O-mode cutoff surface
-               ! If xe < (1-eps_xe) then this subroutine will 
+               ! If xe < (1-eps_xe) then this subroutine 
                ! creates the ray jump in small radius direction
                ! and finds X mode.
 c-------the point is near the OX mode conversion area
@@ -609,7 +646,7 @@ c     area where X_e=1 (V_perp=0)
       implicit none               
 
 c-----input
-      real*8 r_in,z_in,phi_in,nr_in,nz_in,m_in !the cordinates before
+      real*8 r_in,z_in,phi_in,nr_in,nz_in,m_in !the coordinates before
                                                !O mode cutoff
       real*8 eps_xe
 
@@ -626,6 +663,8 @@ c-----locals
      &cnpar,
      &cnpar_x,cnper_x,rho_x,m_in_loc,
      &transm_ox_loc !for test
+     
+      real*8 bmod1,z_in1 ! for test
 
       integer iraystop
 
@@ -638,51 +677,71 @@ c-----externals
       xe_0=1.d0
 
       bmod=b(z_in,r_in,phi_in)
-      xe_in=x(r_in,z_in,phi_in,1)
+      !xe_in=x(r_in,z_in,phi_in,1) !YuP: only for printout
 
-      write(*,*)'before find_maximal_OX transmission'
-      write(*,*)'r_in,z_in,phi_in',r_in,z_in,phi_in
+      !write(*,*)'before find_maximal_OX transmission'
+      !write(*,*)'r_in,z_in,phi_in',r_in,z_in,phi_in
 c      write(*,*)'oxb r_in,z_i,bmod',r_in,z_in,bmod
 c      write(*,*)'oxb xe_0,xe_in',xe_0,xe_in 
 c      write(*,*)'before find_maximal_OX_transmission'
-       write(*,*)'ox_conversion 0 ph_in',phi_in
+       !write(*,*)'ox_conversion 0 ph_in',phi_in
 
+      !write(*,*)'oxb-0:', z_in,r_in,phi_in
+      !z_in1=z_in
       call find_maximal_OX_transmission(eps_xe,xe_0,
      & r_in,z_in,phi_in,nr_in,nz_in,m_in,
      & i_ox_conversion)
+       !YuP[2020-08-20]: Note that r_in,z_in,phi_in,nr_in,nz_in,m_in 
+       !are input and output.
+       !They can be modified after the call of subroutine!
+       !Need to call b() again.
+      !if(z_in.ne.z_in1)then
+      !write(*,*)'oxb-1:', z_in,r_in,phi_in
+      !endif
       
-      write(*,*)'after find_maximal_OX_transmission
-     & i_ox_conversion',i_ox_conversion
-      write(*,*)'r_in,z_in,phi_in',r_in,z_in,phi_in
-      write(*,*)'ox_conversion 1 ph_in',phi_in
-ctest
-c      write(*,*)'r_in,z_in,phi_in,nr_in,nz_in,m_in',
-c     &r_in,z_in,phi_in,nr_in,nz_in,m_in
-      call  transmit_coef_ox(z_in,r_in,phi_in,nz_in,nr_in,m_in,
-     &                           transm_ox_loc)
-      write(*,*)'transm_ox_loc',transm_ox_loc
-      write(*,*)'ox_conversion 2 ph_in',phi_in
-cendtest
+!      write(*,*)'after find_maximal_OX_transmission
+!     & i_ox_conversion',i_ox_conversion
+!      write(*,*)'r_in,z_in,phi_in',r_in,z_in,phi_in
+!      write(*,*)'ox_conversion 1 ph_in',phi_in
+      
+!---test
+      bmod=b(z_in,r_in,phi_in) !YuP[2020-08-20] Added, instead of call below.
+!yup      call  transmit_coef_ox(z_in,r_in,phi_in,nz_in,nr_in,m_in,
+!yup     &                           transm_ox_loc)
+      !YuP[2020-08-17] This call transmit_coef_ox() seems unnecessary, 
+      ! but it affects results:
+      ! small changes in ray trajectories, 
+      ! and also rays' stopping trigger is changed,
+      ! so that some rays become longer, some - shorter.
+      !After some trials, found that replacing this call
+      ! by calling b(z_in,r_in,phi_in) gives exactly
+      ! same results as calling the whole transmit_coef_ox().
+      ! Note that bmod=b(z_in,r_in,phi_in) is called few lines above,
+      ! before calling find_maximal_OX_transmission().
+      ! The reason why it should be called again:
+      ! Because {r_in,z_in,phi_in,nr_in,nz_in,m_in}
+      ! can be modified by subr.find_maximal_OX_transmission()  !
+!---endtest
 
       if(i_ox_conversion.eq.1) then
 c-------the point is near the OX mode conversion area
         nphi_in=m_in/r_in
 
 c-------trasnform the vector coordinates Nr_in,Nphi_in to Nx_in,Ny_in
-        write(*,*)'oxb.f before transform_N_rphiz_to_xyz nr_in,nphi_in'
-     & ,nr_in,nphi_in
+!        write(*,*)'oxb.f before transform_N_rphiz_to_xyz nr_in,nphi_in'
+!     & ,nr_in,nphi_in
         call transform_N_rphiz_to_xyz(nr_in,nphi_in,phi_in,nx_in,ny_in)
-        write(*,*)'ox_conversion 3 ph_in',phi_in
+        !write(*,*)'ox_conversion 3 ph_in',phi_in
 c----------------------------------------------------------------
 c       ninit_ec creates the tangent to magnetic surface
 c       components  of the refractive index cnteta,cnphi                 
 c       in the initial point (z_in,r_in,phi_in) for ECR wave
 c-----------------------------------------------------------------
-        write(*,*)'ox_conversion 4 ph_in',phi_in
+        !write(*,*)'ox_conversion 4 ph_in',phi_in
         call ninit_ec(z_in,r_in,phi_in,nx_in,ny_in,nz_in,ntheta,nphi)
-        write(*,*)'ox_conversion 5 ph_in',phi_in
-	write(*,*)'oxb.f in ox_conversion after ninit_ec ntheta,nphi',
-     &  ntheta,nphi
+        !write(*,*)'ox_conversion 5 ph_in',phi_in
+!	write(*,*)'oxb.f in ox_conversion after ninit_ec ntheta,nphi',
+!     &  ntheta,nphi
 
         costheta=(r_in-xma)/dsqrt((z_in-yma)**2+(r_in-xma)**2)
         sintheta=(z_in-yma)/dsqrt((z_in-yma)**2+(r_in-xma)**2)
@@ -692,7 +751,7 @@ c        else
 c            theta=2*pi-dacos(costheta)
 c        endif
 
-        write(*,*)'in ox_conversion sintheta,costheta',sintheta,costheta
+        !write(*,*)'in ox_conversion sintheta,costheta',sintheta,costheta
 
         if (costheta.gt.1.d0)  costheta= 1.d0
         if (costheta.lt.-1.d0) costheta=-1.d0
@@ -720,12 +779,12 @@ c     The vector rho^ starting at the magnetic axis O(xma,yma).
 c     The poloidal angle of this vector is theta (radians).
 c-----------------------------------------------------------
 
-       write(*,*)'oxb. in  ox_conversion before call find_rho_x'
-       write(*,*)'ox_converion before find_rho z_in,r_in,m_in',
-     & z_in,r_in,m_in
+!       write(*,*)'oxb. in  ox_conversion before call find_rho_x'
+!       write(*,*)'ox_converion before find_rho z_in,r_in,m_in',
+!     & z_in,r_in,m_in
  
       m_in_loc= m_in
-      write(*,*)'before find_rho_x theta,phi_in',theta,phi_in 
+      !write(*,*)'before find_rho_x theta,phi_in',theta,phi_in 
       call find_rho_x(theta,phi_in,
      &  z_in,r_in,ntheta,nphi,m_in_loc,
      &  rho_x,z_x,r_x,nz_x,nr_x,m_x,cnpar_x,cnper_x)
@@ -735,7 +794,7 @@ c       write(*,*)'ox_conversion before after find_rho_x rho_x',rho_x
        bmod=b(z_x,r_x,phi_in)
 c       write(*,*)'xe',x(r_x,z_x,phi_in,1)
       endif
-      write(*,*)'ox_conversion end phi_in',phi_in
+      !write(*,*)'ox_conversion end phi_in',phi_in
       phi_x=phi_in
       return
       end
@@ -793,19 +852,19 @@ c      data was_not_o_cutoff /.true./
       pi=4.d0*datan(1.d0)
        
       rho_loc=rho !initialization
-      write(*,*)'in find_rho_x rho_loc initial',rho_loc
-      write(*,*)'in find_rho_x phi',phi
+      !write(*,*)'in find_rho_x rho_loc initial',rho_loc
+      !write(*,*)'in find_rho_x phi',phi
       was_not_o_cutoff= .true.
       id_loc=id
       ioxm_loc=ioxm 
  10   continue
-      write(*,*)'oxb.f in  find_rho_x rho_loc',rho_loc
+      !write(*,*)'oxb.f in  find_rho_x rho_loc',rho_loc
       psi=psi_rho(rho_loc)
            
       call zr_psith(psi,theta,z,r)
 
-      write(*,*)'oxb.f in  find_rho_x after zr_psith'     
-      write(*,*)'psi,theta,z,r',psi,theta,z,r
+      !write(*,*)'oxb.f in  find_rho_x after zr_psith'     
+      !write(*,*)'psi,theta,z,r',psi,theta,z,r
 
 c---------------------------------------------------------------
 c     calculations of the parallel (to the magnetic field)
@@ -816,8 +875,12 @@ c--------------------------------------------------------------
       bmod=b(z,r,phi)
       ppp=(dpdzd*dpdzd+dpdrd*dpdrd)
       gradpsi=dsqrt(dpdzd*dpdzd+dpdrd*dpdrd)
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
       cnpar=(cnphi_ini*bphi+cntheta_ini*(bz*dpdrd-br*dpdzd)/gradpsi)/
      &bmod
+      else
+         cnpar= cnphi_ini*bphi/bmod
+      endif
 
       id=2
       
@@ -871,7 +934,7 @@ cendtest
            cnrho2=cn2-cntheta_ini**2-cnphi_ini**2
 	   cnrho=dsqrt(cnrho2)
            cnperp=cnrho
-           write(*,*)'cn2',cn2
+           !write(*,*)'cn2',cn2
            call cnzcnr(z,r,phi,cntheta_ini,cnphi_ini,cnrho,cnz,cnr,cm)
 
 c           write(*,*)'after cnzcnr cnz,cnr,cm,cm_ini',cnz,cnr,cm,cm_ini 
@@ -889,7 +952,7 @@ c           write(*,*)'cnper_loc ',cnper_loc
 cendtest
 
            iraystop=0 
-           write(*,*)'oxb.f find_rho_x bef goto30 id_loc,id',id_loc,id
+           !write(*,*)'oxb.f find_rho_x bef goto30 id_loc,id',id_loc,id
            goto 30
         endif
       endif
@@ -944,7 +1007,7 @@ c---------ioxm=1 O-mode exists in this point
            psi=psi_rho(rho_loc)      
            call zr_psith(psi,theta,z,r)     
            bmod=b(z,r,phi)
-           goto20
+           goto 20
         endif
   
          go to 10 
@@ -981,7 +1044,7 @@ c          write(*,*)'id=',id
         endif
       endif
 
-      write(*,*)'phi',phi
+      !write(*,*)'phi',phi
       return
       end
 
@@ -1010,7 +1073,7 @@ c            arru0(1)=rconv
 c 
 c     output data are in 'grill.i'
 c-------------------------------------
-c     that gives the optimal N_paralle at X_e=1 surface 
+c     that gives the optimal N_parallel at X_e=1 surface 
      
       implicit double precision (a-h,o-z)
 
@@ -1024,11 +1087,13 @@ c-----input
       include 'three.i'
       include 'five.i'
       include 'cone.i'
-      include 'grill.i'
+      include 'grill.i' !stores rhopsi0(), etc.
       include 'rkutta.i'
       include 'six.i'
       include 'scatnper.i'
       include 'write.i'
+      include 'oxb.i' ! YuP[2020-07-29] needed now for i_ox=1 run
+      !oxb.i now stores the value of rhoconv, to be available in sub.bound
 
       istart=3
       
@@ -1068,17 +1133,23 @@ c      theta=thgrill(1)
 
       theta=theta_pol
       thgrill(1)=theta
-
+      !YuP[2020-07-23] added :
+      rmn=1.d-5 ! Specify limits for searching O-X conversion point
+      rmx=min(xeqmax,abs(xeqmin)) 
+      ! Specify limits for searching O-X conversion point
+      !(not used, for now)
      
       write(*,*)'ox_central_ray_direction before owconvr theta='
      &,theta
 
-      call owconvr (theta,x0,rhoconv,zconv,rconv)
+      call owconvr(theta,x0,rhoconv,zconv,rconv)
+      !OUTPUT: rhoconv value (according to def. of indexrho), and
+      !coords (zconv,rconv) where Xe=Xe0=1.0
 
       write(*,*)'ox_central_ray_direction rhoconv,zconv,rconv',
      &           rhoconv,zconv,rconv
 
-      rhopsi0(1)=rhoconv
+      rhopsi0(1)=rhoconv ! rhopsi0() is in namelist, but here it is set (i_ox=1 run)
       phiconv=0.d0
       bmod=b(zconv,rconv,phiconv)
       xconv=x(zconv,rconv,0.d0,1)
@@ -1095,7 +1166,8 @@ cSm050529
 c      write(*,*)'ox_central_ray_direction old value of rhopsi0(1)',
 c     &rhopsi0(1) 
 
-      rhopsi0(1)=rhoconv
+      rhopsi0(1)=rhoconv ! rhopsi0() is in namelist, but here it is set (i_ox=1 run)
+      !YuP: Why do we need to set it again? It was done few lines above.
 
       write(*,*)'ox_central_ray_direction new rhopsi0(1)',rhopsi0(1) 
       write(*,*)'ox_central_ray_direction anmin(1),anmax(1)',
@@ -1108,7 +1180,7 @@ c     &rhopsi0(1)
      &anmin(1),anmax(1)
 
 c---------------------------------------------------------------
-      write(*,*)' ox_central_ray_direction before grilk_lh
+      write(*,*)' ox_central_ray_direction before grill_lh
      1ngrilla,ngrill',
      1ngrilla,ngrill
 
@@ -1138,10 +1210,11 @@ c for ecr internal case
 c--end ecs internal case
 
       return
-      end
-      
+      end subroutine ox_conversion_grill_in_poloidal_point
+!=======================================================================
+!=======================================================================      
 
-      real*8 function transmission_ox(n_par,n_pol,Y,L_n,freqncy)
+      real*8 function transmission_ox(n_par,n_pol,Ye,L_n,freqncy)
 c-----calculate the transmission function for OX mode conversion
 c     using Preinhaelter and Kopecky formula (1973)
          
@@ -1150,9 +1223,11 @@ c     using Preinhaelter and Kopecky formula (1973)
 c-----input
       real*8 n_par,   !parallel to magnetic field refractive index
      &n_pol,          !poloidal refactive index 
-     &Y,              !omega_ce/omega
+     &Ye,              !omega_ce/omega
      &L_n,            !electron density scale length [cm]
      &freqncy         !wave frequency [GHZ]
+      !YuP[2020-08-17] Renamed Y into Ye, to avoid potential conflict
+      ! with function y().
 c-----local
       real*8 pi,n_par_optimal,omega,clight,Y_abs
       real*8 transmission_ox_p,transmission_ox_m
@@ -1162,9 +1237,9 @@ c-----local
 
       clight=2.9979d10 !cm/sec
       
-      Y_abs=dabs(Y)
+      Y_abs=dabs(Ye)
       n_par_optimal=dsqrt(Y_abs/(Y_abs+1))   
-c      write(*,*)'oxb.f in transmission_ox L_n,Y,freqncy',L_n,Y,freqncy
+c      write(*,*)'oxb.f in transmission_ox L_n,Ye,freqncy',L_n,Ye,freqncy
 c      write(*,*)'oxb.f in transmission_ox n_par_optimal,n_par,n_pol',
 c     & n_par_optimal,n_par,n_pol
       transmission_ox_p=dexp(-pi*omega*L_n/clight*dsqrt(0.5d0*Y_abs)*
@@ -1175,22 +1250,23 @@ c     & n_par_optimal,n_par,n_pol
 
 cSm050529
 c      transmission_ox=transmission_ox_p+transmission_ox_m
-      write(*,*)'oxb.f in transmission_ox L_n,n_par_optimal,n_par',
+      write(*,*)'func.transmission_ox: L_n,n_par_optimal,n_par',
      & L_n,n_par_optimal,n_par
 
       transmission_ox=dmax1(transmission_ox_p,transmission_ox_m)
       
-      write(*,*)'transmission_ox_p,transmission_ox_m,transmission_ox',
-     &transmission_ox_p,transmission_ox_m,transmission_ox
+      write(*,*)
+     & 'func.transmission_ox: transmission_ox_p,_m, transmission_ox',
+     &transmission_ox_p,transmission_ox_m, transmission_ox
 
       return
-      end
+      end function transmission_ox
 
 
       subroutine transmit_coef_ox(z,r,phi,cnz,cnr,cm,transm_ox)
 c     calculate transmission coefficient for OX mode conversion 
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i' 
       include 'one.i'
@@ -1202,7 +1278,7 @@ c-----output
       real*8 transm_ox ! transmission coefficient of OX mode conversion
 
 c-----locals
-      real*8 y_e,L_n,grad_x,cnpar,cnpol,b_pol,freqncy
+      real*8 y_e,L_n,grad_x,cnpar,cnpol,b_pol,freqncy, b_grad_psi, x_e
    
 c-----externals
       real*8 b,y,x,dxdr,dxdz,dxdphi,transmission_ox 
@@ -1211,8 +1287,8 @@ c      write(*,*)'transmit_coef_ox z,r,phi,cnz,cnr,cm',
 c     &z,r,phi,cnz,cnr,cm
 
       bmod=b(z,r,phi)
-c      write(*,*)'transmit_coef_ox bz,br,bphi,bmod',bz,br,bphi,bmod
       y_e=y(z,r,phi,1)
+      x_e=x(z,r,phi,1)
       
 c-----L_n=X/grad_X
      
@@ -1222,8 +1298,13 @@ c-----L_n=X/grad_X
 c      write(*,*)'oxb.f dxdr(z,r,phi,1)',dxdr(z,r,phi,1)
 c      write(*,*)'oxb.f dxdz(z,r,phi,1)',dxdz(z,r,phi,1)      
 c      write(*,*)'oxb.f dxdphi(z,r,phi,1)',dxdphi(z,r,phi,1)
-
-      L_n=x(z,r,phi,1)/grad_x*100.d0        !cm
+      if(grad_x.gt.0.d0)then !YuP[2020-08-04] Added check of grad_x>0
+        L_n=x_e/grad_x*100.d0        !cm
+      else
+        L_n= 100.d0 ![cm] any large number - 
+        !  it will yield small efficiency
+        !transmission_ox_p=dexp(-pi*omega*L_n/clight*...)
+      endif
 c      write(*,*)'oxb.f z,r,phi,grad_x',z,r,phi,grad_x
 c      write(*,*)'oxb.f x(z,r,phi,1)',x(z,r,phi,1)
 c      write(*,*)'oxb.f L_n',L_n
@@ -1236,12 +1317,12 @@ c     &cnz,bz,cnr,br,cm,bphi,r,bmod
 
       freqncy=frqncy                         ! GHZ
   
-      b_pol=dsqrt(bz**2+br**2)
-      cnpol=(cnz*bz+cnr*br)/b_pol     !poloidal refractive index
+      !b_pol=dsqrt(bz**2+br**2)
+      !cnpol=(cnz*bz+cnr*br)/b_pol     !poloidal refractive index
 
 c-----Instead of N_poloidal we will use the refractive index
 c     N^*[b*gradPsi]/|[b*gradPsi]|
-c     [b*gradPsi] is a vector production
+c     [b*gradPsi] is a vector product
 c
 c     b^=e^r*br+e^phi*bphi+e^z*bz
 c     gradPsi^=e^r*dpdrd+e^phi*0+e^z*dpdzd
@@ -1252,14 +1333,18 @@ c                 | dpdrd  0       dpdzd|
 c     =e^r*bphi*dpdzd - e^phi(br*dpdzd-bz*dpdrd) - e^z*bphi*dpdrd
 c
 c     N_[b*gradPsi]=N^*[b*gradPsi]/|[b*gradPsi]|
-
+      b_grad_psi= 
+     & dsqrt((bphi*dpdzd)**2+(br*dpdzd-bz*dpdrd)**2+(bphi*dpdrd)**2)
+      if(b_grad_psi.eq.0.d0)then
+        stop 'transmit_coef_ox: b_grad_psi=0'
+      endif
       cnpol=(cnr*bphi*dpdzd-(cm/r)*(br*dpdzd-bz*dpdrd)-cnz*bphi*dpdrd)/
-     &dsqrt((bphi*dpdzd)**2+(br*dpdzd-bz*dpdrd)**2+(bphi*dpdrd)**2)
+     & b_grad_psi
 
       transm_ox=transmission_ox(cnpar,cnpol,y_e,L_n,freqncy)
-      write(*,*)'oxb.f in transmit_coef_ox transm_ox=',transm_ox
+!      write(*,*)'oxb.f in transmit_coef_ox transm_ox=',transm_ox
       return
-      end
+      end subroutine transmit_coef_ox
       
 
       subroutine OX_power_transmission(is,i_ox,i_ox_conversion,
@@ -1332,7 +1417,7 @@ c      data first /.true./
 c-----write the coordinates of EC central ray
 c     with the optimal direction for OX mode conversion
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1434,7 +1519,7 @@ c      endif
 c-----write the coordinates of EC central ray
 c     with the optimal direction for OX mode conversion
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1492,13 +1577,13 @@ c-----calculate the OX optimal direction of the EC cone central ray
 c-----input integer ndim ! the number of ODE equations     
 
  
-      write(*,*)'in gr_OX_optimal_direction ncone',ncone
+      !write(*,*)'in gr_OX_optimal_direction ncone',ncone
 
       do icone=1,ncone
 
          icone_loc=icone ! for cone.i file
          
-         do i_n_optimal=1,2! the loop for positive and negative N_parallel_optimal
+         do i_n_optimal=1,2 !loop for positive and negative N_parallel_optimal
 
            i_ox_poloidal=0 ! the counter of the poloidal rays for OX
                            ! optimal direction calculations
@@ -1507,9 +1592,10 @@ c-----input integer ndim ! the number of ODE equations
                     ! of the optimal direction in the given EC cone vertex
                     ! for OX mode conversion
 
-           if(i_ox.eq.1) then
+           if(i_ox.eq.1) then !YuP: but it is only called for i_ox=1
              i_ox_poloidal=i_ox_poloidal+1    
-             write(*,*)'genray.f oxb  i_ox_poloidal ',i_ox_poloidal
+             write(*,*)'gr_OX_optimal_direction: i_ox_poloidal=',
+     &        i_ox_poloidal
 
              if(i_ox_poloidal.eq.1) then
                theta_pol_0=theta_bot(icone) !theta_bot is given 
@@ -1539,11 +1625,13 @@ c            set the n_parallel grill spectrum
 c            anmin(1)=cnparopt-0.01d0 
 c            anmax(1)=cnparopt+0.01d0 
 c--------------------------------------------------------
-             write(*,*)'genray.f oxbv'
+             !write(*,*)'genray.f oxbv'
              write(*,*)'before ox_conversion_grill_in_poloidal_point'
              write(*,*)'theta_pol ',theta_pol
              call ox_conversion_grill_in_poloidal_point(theta_pol,
      &       i_n_optimal)
+             !Among other variables computed: rhopsi0(1), saved in grill.i
+             !which is the rho value at Xe=1.0 surface
            endif !i_ox.eq.1
 c-----------------------------------------------------------------1end
 
@@ -1559,7 +1647,7 @@ c-----------------------------------------------------------------1end
 	      write(*,*)'icone=',icone,'iray=',iray,'iraystop=1
      &                bad initial conditions'
               nrayelt=0
-	      goto 20
+	      goto 20 !-> next i_n_optimal=1,2
 	   endif 
   
 	   prmt(7)=prmt(1)+prmt(6)
@@ -1583,19 +1671,31 @@ c            hamiltonian conservation with
 c            accuracy epscor=prmt(4)
 c--------------------------------------------------------------
              if(irkmeth.eq.0) then
-c              4_th order Runge-Kutta method with constant time step
+              ! 4_th order Runge-Kutta method with constant time step
                call drkgs(prmt,u,deru,ndim,ihlf,rside1,outpt,aux)
              endif
              if(irkmeth.eq.1) then
-c              5-th order Runge-Kutta method with variable time step,
+              ! 5-th order Runge-Kutta method with variable time step,
                call drkgs1(prmt,u,deru,ndim,ihlf,rside1,outpt,aux)
              endif
              if(irkmeth.eq.2) then
-c              4th order Runge-Kutta with variable time step,
-c              time step can be reduce or enlarge
+              ! 4th order Runge-Kutta with variable time step,
+              ! time step can be reduce or enlarge
                write(*,*)'prmt',prmt
                call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
      &                     i_output)
+             endif
+             if(irkmeth.eq.3) then ! YuP[2020-08-25] added
+              ! 4th order Runge-Kutta with variable time step,
+              !          automatically selected. Need to set (example)
+              ! dL_step=1.d-3 ! [m]  max allowed change in r.
+              ! dN_step=1.d-2 ! max allowed change in refraction index.
+              ! The code will set the time step h=dt_code for integration
+              ! in such a way that the change in configuration space
+              ! is not larger than dL_step, and also
+              ! the change in refr. index |N| is not larger than dN_step
+               call drkgs_auto(prmt, u, deru, ndim, ihlf,
+     &                     rside1, outpt, aux, dL_step,dN_step)
              endif
            endif ! isolv.eq.1
 c-------------------------------------------------------------------end2
@@ -1612,7 +1712,7 @@ c------------------------------------------------------------------------
            endif ! isov.eq.2
 
 c---------------------------------------------------------------------beg5
-           if(i_ox.eq.1) then
+           if(i_ox.eq.1) then !YuP: but it is only called for i_ox=1
 c------------set the boundaries for the calculations of
 c            OX optimal direction in EC cone vertex           
 
@@ -1633,9 +1733,9 @@ cSm050525
                 endif
                
                 write(*,*)'***************************************'
-                write(*,*)'rst(icone),zst(icone)',rst(icone),zst(icone)
-                write(*,*)'xma,yma',xma,yma
-                write(*,*)'rho_st',rho_st
+                write(*,*)'rst,zst(icone)[m]',rst(icone),zst(icone)
+                write(*,*)'xma,yma[m]',xma,yma
+                write(*,*)'rho_st[m]',rho_st
                 write(*,*)'rst(icone)-xma,cos_theta_st',
      &                    rst(icone)-xma,cos_theta_st
                 write(*,*)'zst(icone)-yma,sin_theta_st',
@@ -1656,31 +1756,29 @@ cSm050525
                 
                 theta_st_left=theta_st_ox
                 f_left=theta_st_left-theta_st
-                write(*,*)'theta_st_left[degree],theta_st[degree]',
-     &          theta_st_left*180.d0/pi,theta_st*180.d0/pi
-                write(*,*)'f_left[degree],rho_st',
-     &                     f_left*180.d0/pi,rho_st
+!                write(*,*)'theta_st_left[degree],theta_st[degree]',
+!     &          theta_st_left*180.d0/pi,theta_st*180.d0/pi
+                write(*,*)'f_left[rad],rho_st[m],rho_st_ox[m]',
+     &                     f_left, rho_st, rho_st_ox
 
                 r_st_left=r_st_ox
                 theta_pol_left=theta_pol_0
 c               f_left=r_st_left-rst(icone)
              
+                !YuP[2020-07-29] Need to correct units: both rho_st and eps_antenna are in meters
                 if(dabs(f_left*rho_st*1.d+2).le.eps_antenna) then
                    theta_ox=theta_pol_0
-c                  write(*,*)'r_st_left,rst(icone),eps_antenna,theta_ox'
-c     &                      ,r_st_left,rst(icone),eps_antenna,theta_ox
-                 write(*,*)'theta_st_left,theta_st,eps_antenna,theta_ox'
+                   write(*,*)'theta_st_left,theta_st,theta_ox'
      &             ,theta_st_left*180.d0/pi,theta_st*180.d0/pi,
-     &             eps_antenna,theta_ox*180.d0/pi
-
+     &              theta_ox*180.d0/pi
 c                  call write_optimal_O_cone_central_ray
-                call write_optimal_O_cone_central_ray_multivertex(icone,
-     &             i_n_optimal)
-                   goto20
-c                  stop 'genray,f'
+                   call write_optimal_O_cone_central_ray_multivertex(
+     &             icone,i_n_optimal)
+                   goto 20 !-> next i_n_optimal=1,2
                 else
-                   goto40
+                   goto 40 !-> same i_n_optimal, increment i_ox_poloidal
                 endif
+                
              endif !i_ox_poloidal.eq.1 
 c---------------------------------------------------------------------end3                 
 
@@ -1701,33 +1799,36 @@ cSm050525
 
                 theta_st_right=theta_st_ox
                 f_right=theta_st_right-theta_st
-                write(*,*)'theta_st_right[degree],theta_st[degree]',
-     &                     theta_st_right*180.d0/pi,theta_st*180.d0/pi
-                write(*,*)'f_right[degree],rho_st',
-     &          f_right*180.d0/pi,rho_st
+!                write(*,*)'theta_st_right[degree],theta_st[degree]',
+!     &                     theta_st_right*180.d0/pi,theta_st*180.d0/pi
+                write(*,*)'f_right[rad],rho_st[m],rho_st_ox[m]',
+     &                     f_right, rho_st, rho_st_ox
                 r_st_right=r_st_ox
                 theta_pol_right=theta_pol_0
 c               f_right=r_st_right-rst(icone)
 
+                !YuP[2020-07-29] Need to corrected units: both rho_st and eps_antenna are in meters
                 if(dabs(f_right*rho_st*1.d+2).le.eps_antenna) then
                   theta_ox=theta_pol_0
-                  write(*,*)'r_st_right,rst(icone),eps_antenna,theta_ox'
-     &                      ,r_st_right,rst(icone),eps_antenna,theta_ox
-                write(*,*)'theta_st_right,theta_st,eps_antenna,theta_ox'
-     &                    ,theta_st_right,theta_st,eps_antenna,theta_ox 
-               call write_optimal_O_cone_central_ray_multivertex(icone,
-     &            i_n_optimal)
-                  goto20
-                  stop 'genray,f'
+                  write(*,*)'r_st_right,rst(icone),theta_ox'
+     &                      ,r_st_right,rst(icone),theta_ox
+                  write(*,*)'theta_st_right,theta_st,theta_ox'
+     &                    ,theta_st_right,theta_st,theta_ox 
+                  call write_optimal_O_cone_central_ray_multivertex(
+     &            icone,i_n_optimal)
+                  goto 20 !-> next i_n_optimal=1,2
                 else
                   if(f_right*f_left.lt.0.d0) then
-                    goto40
+                    goto 40 !-> same i_n_optimal, increment i_ox_poloidal
                   else
-                    write(*,*)'i_ox_poloidal=2'
-                    write(*,*)'f_right*f_left < 0.d0 no roots'
-                    write(*,*)'Please change theta_bop or theta_top'
-                    goto20
-c                   stop 'genray oxb.f'
+                    write(*,*)' -- For i_n_optimal=',i_n_optimal
+                    write(*,*)' -- f_right*f_left < 0.d0 no roots.'
+                    write(*,*)' -- (test during i_ox_poloidal=2)'
+                    write(*,*)' -- If it is i_n_optimal=1, the code' 
+                    write(*,*)' -- will try i_n_optimal=2 ; '
+                    write(*,*)' -- if it fails, too, then '
+                    write(*,*)' -- Try to adjust theta_bot or theta_top'
+                    goto 20 !-> next i_n_optimal=1,2
                   endif
                 endif
 
@@ -1778,31 +1879,38 @@ c               write(*,*)'sin_theta_st,sin_theta',sin_theta_st,sin_theta
 c               write(*,*)'theta_st_ox',theta_st_ox
 c               f_center=r_st_ox-rst(icone)
                 f_center=theta_st_ox-theta_st
-                write(*,*)'f_center,rho_st',f_center,rho_st
+                write(*,*)'f_center[rad],rho_st[m],rho_st_ox[m]',
+     &                     f_center, rho_st, rho_st_ox
 
+                !YuP[2020-07-29] Need to corrected units: both rho_st and eps_antenna are in meters
                 if(dabs(f_center*rho_st*1.d+2).lt.eps_antenna) then
                   theta_ox=theta_pol_0
                   write(*,*)'The solution is found'
-                  write(*,*)'r_st_ox,rst(icone),eps_antenna,theta_ox'
-     &                      ,r_st_ox,rst(icone),eps_antenna,theta_ox
-                  write(*,*)'theta_st_ox,theta_st,eps_antenna,theta_ox'
-     &                      ,theta_st_ox,theta_st,eps_antenna,theta_ox
-               call write_optimal_O_cone_central_ray_multivertex(icone,
-     &            i_n_optimal)
-                  goto20
+                  write(*,*)'r_st_ox[m],rst(icone)[m],eps_antenna[m]'
+     &                      ,r_st_ox,rst(icone),eps_antenna
+                  write(*,*)'theta_st_ox,theta_st,theta_ox'
+     &                      ,theta_st_ox,theta_st,theta_ox
+                  call write_optimal_O_cone_central_ray_multivertex(
+     &            icone,i_n_optimal)
+                  goto 20 !-> next i_n_optimal=1,2
                 endif
 
                 if(i_ox_poloidal.gt.i_ox_poloidal_max) then
                   theta_ox=theta_pol_0
-                  write(*,*)'genray.f'
-                  write(*,*)'i_ox_poloidal.gt.i_ox_poloidal_max'
-                  write(*,*)'r_st_ox,rst(icone),eps_antenna,theta_ox',
-     &                       r_st_ox,rst(icone),eps_antenna,theta_ox
-                  write(*,*)'theta_st_ox,theta_st,eps_antenna,theta_ox',
-     &                       theta_st_ox,theta_st,eps_antenna,theta_ox
-                call write_optimal_O_cone_central_ray_multivertex(icone,
-     &            i_n_optimal)
-                  goto20
+                  write(*,*)'--- i_ox_poloidal > i_ox_poloidal_max ---'
+                  write(*,*)'--- For i_n_optimal =', i_n_optimal
+                  write(*,*)'--- The solution is NOT found ------------'
+                  write(*,*)'--- If it is i_n_optimal=2, it means that' 
+                  write(*,*)'--- the solution was not found for '
+                  write(*,*)'--- i_n_optimal=1 either.'
+                  write(*,*)'--- Try to adjust theta_bot or theta_top'
+                  write(*,*)'r_st_ox[m],rst(icone)[m],theta_ox[rad]',
+     &                       r_st_ox,rst(icone),theta_ox
+                  write(*,*)'theta_st_ox,theta_st,theta_ox',
+     &                       theta_st_ox,theta_st,theta_ox
+                  call write_optimal_O_cone_central_ray_multivertex(
+     &            icone,i_n_optimal)
+                  goto 20 !-> next i_n_optimal=1,2
                 endif
 
                 if(f_left*f_center.lt.0.d0)then
@@ -1811,7 +1919,7 @@ c               f_center=r_st_ox-rst(icone)
                   write(*,*)'f_left*f_center.lt.0.d0'
                   write(*,*)'theta_pol_left,theta_pol_right',
      &                       theta_pol_left,theta_pol_right
-                  goto 40
+                  goto 40 !-> same i_n_optimal, increment i_ox_poloidal
                 else
                   !f_right*f_center.lt.0.d0
                   theta_pol_left=theta_pol
@@ -1819,7 +1927,7 @@ c               f_center=r_st_ox-rst(icone)
                   write(*,*)'f_right*f_center.lt.0.d0'
                   write(*,*)'theta_pol_left,theta_pol_right',
      &                       theta_pol_left,theta_pol_right
-                  goto 40
+                  goto 40 !-> redo same i_n_optimal
                 endif
 
              endif  !i_ox_poloidal.eq.2
@@ -1831,8 +1939,9 @@ c               f_center=r_st_ox-rst(icone)
       
       stop 'oxb'                    
       return
-      end
-
+      end subroutine gr_OX_optimal_direction
+!=======================================================================
+!=======================================================================
 
       real*8 function psilim_psif_zp_rp(p)
 c---------------------------------------------------------------
@@ -1847,7 +1956,7 @@ c
 c     i_cone is the number of the EC cone
 c           It is in antenna.i common block
 c---------------------------------------------------------------       
-c      implicit real*8 (a-h,o-z)
+      !implicit real*8 (a-h,o-z)
       implicit none
 c-----input 
       real*8 p ! the parameter which determines the point
@@ -2026,8 +2135,8 @@ c     &theta,r_ant,z_ant
 
       real*8 function x_bin_min(f,x1,x2,xacc)
 c---------------------------------------------------------------
-c     Using the binary metod founds the point x_min=x_bin_min
-c     which gives the minimal value for f(x)
+c     Using the binary method finds the point x_min=x_bin_min
+c     which gives the min value for f(x)
 c     at (x1,x2). 
 c     xacc is the accuracy of x_min determination
 c------------------------------------------------------------- 
@@ -2044,7 +2153,7 @@ c-----locals
       i=0
       i_max=30
 
-      write(*,*)'in x_bin_min'
+      write(*,*)'  antenna_vertex--> in func.x_bin_min()'
 
       delta=1.d-1*xacc
 
@@ -2093,7 +2202,7 @@ c      write(*,*)'f(x_bin_min)=',f(x_bin_min)
     
       real*8 function f_antenna_min(p)
 c----------------------------------------------------------------
-c     Calulate the function:
+c     Calculate the function:
 c     f_antenna_min(theta)=(r_ray(p)-r_ant(theta(p)))**2+
 c                         +(z_ray(p)-z_ant(theta(p)))**2)
 c
@@ -2101,14 +2210,14 @@ c     Here
 c     r_ant(theta),z_ant(theta) are the coordinates of the antenna
 c     surface
 c
-c     r_ray(p),z_ray(p) are the coordinates at the vacume ray
+c     r_ray(p),z_ray(p) are the coordinates at the vacuum ray
 c     - straight line starting at the plasma edge z_0,r_0, with the
 c     direction n_0_r,n_0_z
 c     
 c     The ray equations:
 c     r_ray(p)=xma+rho_ray(p)cos(theta_ray(p))
 c     z_ray(p)=yma+rho_ray(p)sin(theta_ray(p))
-c     rho_ray(p)sqrt[(r_ray(p)-xma)**2+(z_ray(p)-yma)**2]
+c     rho_ray(p)=sqrt[(r_ray(p)-xma)**2+(z_ray(p)-yma)**2]
 c
 c     Special cases.
 c     1) n_0_r=0
@@ -2116,16 +2225,14 @@ c        In this case the ray equation is: r_ray=r_0
 c     2) n_0_z=0
 c        In this case the ray equation is: z_ray=z_0
 
-c      implicit real*8 (a-h,o-z)
+      !implicit real*8 (a-h,o-z)
       implicit none
 
 c-----input
       real*8 p !parameter along the ray
 
-      real*8  r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
-      common /ox/r_0,phi_0,z_0,
-     &n_vac_x,n_vac_y,n_vac_z
+      real*8  r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
+      common /ox/r_0,phi_0,z_0, n_vac_x,n_vac_y,n_vac_z
       include 'three.i' !xma,yma
 
 c-----locals
@@ -2312,10 +2419,6 @@ c-----local
 
       save  u_old
 
-      write(*,*)'  find_maximal_OX_transmission'
-      write(*,*)'eps_xe,r_in,z_in',eps_xe,r_in,z_in
-
-
       u(1)=z_in
       u(2)=r_in
       u(3)=phi_in
@@ -2327,10 +2430,12 @@ c-----local
       xe=x(u(1),u(2),u(3),1)
       i_ox_conversion=0
 
-      write(*,*)'xe,x0-eps_xe', xe,x0-eps_xe
-      write(*,*)'was_in_ox_vicinity',was_in_ox_vicinity
+         !write(*,*)'in  find_maximal_OX_transmission'
+         !write(*,*)'eps_xe,r_in,z_in',eps_xe,r_in,z_in
+      !write(*,*)'xe,x0-eps_xe', xe,x0-eps_xe
+      !write(*,*)'was_in_ox_vicinity',was_in_ox_vicinity
       if((xe.gt.(x0-eps_xe)).and.(xe.le.x0)) then
-         write(*,*)'before transmit_coef_ox'
+!         write(*,*)'before transmit_coef_ox'
          was_in_ox_vicinity=.true.
 
          call  transmit_coef_ox(u(1),u(2),u(3),u(4),u(5),u(6),
@@ -2357,7 +2462,7 @@ c-----local
          transm_ox_old=transm_ox 
       else
          if((xe.gt.x0).and.was_in_ox_vicinity) then
-           write(*,*)'xe.gt.x0).and.was_in_ox_vicinity'
+           write(*,*)'(xe.gt.x0).and.was_in_ox_vicinity=T'
            transm_ox=transm_ox_old 
            i_ox_conversion=1
             z_in=u_old(1)
@@ -2374,7 +2479,7 @@ c-----local
  10   continue
 cyup      write(*,*)'after 10 i_ox_conversion',i_ox_conversion
       return
-      end     
+      end subroutine find_maximal_OX_transmission
 
 
       subroutine set_oxb
@@ -2387,4 +2492,4 @@ c-----initialise oxb.i at each new ray
       transm_ox_old=0.d0
       i_call_prep3d_in_output_at_i_ox_conversion_eq_1=0
       return
-      end
+      end subroutine set_oxb

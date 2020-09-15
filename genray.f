@@ -116,7 +116,7 @@ CMPIINSERTPOSITION PROGRAMSTART
 
       PROGRAM GENRAY
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i' ! specifies code parameters 
@@ -1331,33 +1331,46 @@ c              with correction which gives
 c              hamiltonian conservation with
 c              accuracy epscor=prmt(4)
 c--------------------------------------------------------------
-      if(irkmeth.eq.0) then
-c                4_th order Runge-Kutta method with constant time step
+        if(irkmeth.eq.0) then
+         ! 4_th order Runge-Kutta method with constant time step
          call drkgs(prmt,u,deru,ndim,ihlf,rside1,outpt,aux)
-      endif
+        endif
               
-      if(irkmeth.eq.1) then
-c                 5-th order Runge-Kutta method with variable time step,
+        if(irkmeth.eq.1) then
+         ! 5-th order Runge-Kutta method with variable time step,
          call drkgs1(prmt,u,deru,ndim,ihlf,rside1,outpt,aux)
-      endif
-      if(irkmeth.eq.2) then
-c                 4th order Runge-Kutta with variable time step,
-c                          time step can be reduce or enlarge                
-CWRITE       write(*,*)'genray.f before  drkgs2 ioxm.ndim',
-CWRITE      +ioxm,ndim
-         if(myrank.eq.0)then
+        endif
+      
+        if(irkmeth.eq.2) then ! default option
+            !     4th order Runge-Kutta with variable time step,
+            !              time step can be reduce or enlarge                
+           if(myrank.eq.0)then
             call cpu_time(time_drkgs2_1)
-         endif
-         !-------------------------------------------------
-         call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
-     +   i_output)
-         !-------------------------------------------------
-         if(myrank.eq.0)then
+           endif
+           !-------------------------------------------------
+           call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
+     +     i_output)
+           !-------------------------------------------------
+           if(myrank.eq.0)then
             call cpu_time(time_drkgs2_2)
             WRITE(*,*)'iray, time_drkgs2:', 
      +       iray,time_drkgs2_2-time_drkgs2_1
-         endif
-      endif ! irkmeth=2
+           endif
+        endif ! irkmeth=2
+      
+        if(irkmeth.eq.3) then ! YuP[2020-08-25] added
+           ! 4th order Runge-Kutta with variable time step,
+           !          automatically selected. Need to set (example)
+           ! dL_step=1.d-3 ! [m]  max allowed change in r.
+           ! dN_step=1.d-2 ! max allowed change in refraction index.
+           ! The code will set the time step h=dt_code for integration
+           ! in such a way that the change in configuration space
+           ! is not larger than dL_step, and also
+           ! the change in refr. index |N| is not larger than dN_step
+           call drkgs_auto(prmt, u, deru, ndim, ihlf,
+     &                     rside1, outpt, aux, dL_step,dN_step)
+        endif
+      
       endif ! isolv.eq.1
           
       if (isolv.eq.2) then
@@ -2155,7 +2168,7 @@ c     for subroutine p_c_prof
 c------------------------------------------
 CSAP090630
       implicit none
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2683,8 +2696,8 @@ c          i=1,nthetac+1(number of points in the poloidal angle)
       epsy=1d-3 ! accuracy 
 c------------------------------------------------------
 c     
-c     2)we will create the limiter points using the close flux
-c      surface psi(r,z)=psilim*psifactr, here
+c     2)we will create the limiter points using the closed flux
+c      surface psi(r,z)=psimag+(psilim-psimag)*psifactr, here
 c      psifactr is a parameter (it must be .le.1) to avoide the
 c      problems with the nonmonotonic psi function near the separatrix.
 c      psifactr is given in genray.in file (It is in common/one/)

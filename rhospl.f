@@ -49,7 +49,7 @@ c  output data to common 'rho.i'        			      *
 c**********************************************************************
 
       subroutine rhospl
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -551,7 +551,7 @@ c     this function calculates normalized radial coordinate
 c     from poloidal flux 'psi'=< psilim
 c     if indexrho=1 rho=sqrt(area inside the flux surface)
 c     if indexrho=2 rho=sqrt(toroidal flux)
-c     if indexrho=3 rho=sqrt(value iside the flux surface)
+c     if indexrho=3 rho=sqrt(volume inside the flux surface)
 c     if indexrho=4 rho=sqrt((psi-psimag)/psilim-psimag))
 c     if indexrho=5 rho=((psi-psimag)/psilim-psimag))
 c     if indexrho=6 rho=(r_max(psi)-rmin(psi))/
@@ -682,7 +682,7 @@ c	       rhopsi=ias1r(trhor,npsi,npsi4,crhrpsi,idx,psi)
 
        double precision
      1 function rhos(rhox)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -711,7 +711,7 @@ c          write(*,*)'rhos',rhos
 	double precision
      1 function rhov(rhox)
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
 
@@ -742,7 +742,7 @@ c-----local
       double precision
      1 function rho_lrho(rhox)
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -768,7 +768,7 @@ cSm050304
       double precision
      1 function rho_rrho(rhox)
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
 
@@ -804,7 +804,7 @@ c     rho_length_poloidal from poloidal flux 'psi'
 c---------------------------------------------------------------------
 c     input parameter: poloidal flux 'psi'
 c---------------------------------------------------------------------
-c       implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -842,7 +842,7 @@ cSm010212
        double precision
      1 function rho2psi(psi)
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -890,7 +890,7 @@ c     this function calculates the derivatives from normalized radial
 c     coordinate by the poloidal flux 'psi'
 c     if indexrho=1 rho=sqrt(area inside the flux surface)
 c     if indexrho=2 rho=sqrt(toroidal flux)
-c     if indexrho=3 rho=sqrt(value iside the flux surface)
+c     if indexrho=3 rho=sqrt(volume inside the flux surface)
 c     if indexrho=4 rho=sqrt((psi-psimag)/psilim-psimag))
 c     if indexrho=5 rho=((psi-psimag)/psilim-psimag))
 c     if indexrho=6 rho=(r_max(psi)-rmin(psi))/
@@ -898,7 +898,7 @@ c                       (r_max(psi_lim)-rmin(psi_lim))
 c---------------------------------------------------------------------
 c     input parameter: poloidal flux 'psi'
 c---------------------------------------------------------------------
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1010,7 +1010,7 @@ c     this function calculates the second derivatives from normalized
 c     radial coordinate by the poloidal flux 'psi'
 c     if indexrho=1 rho=sqrt(area inside the flux surface)
 c     if indexrho=2 rho=sqrt(toroidal flux)
-c     if indexrho=3 rho=sqrt(value iside the flux surface)
+c     if indexrho=3 rho=sqrt(volume inside the flux surface)
 c     if indexrho=4 rho=sqrt((psi-psimag)/(psilim-psimag))
 c     if indexrho=5 rho=(psi-psimag)/(psilim-psimag)
 c     if indexrho=6 rho=(r_max(psi)-rmin(psi))/
@@ -1018,7 +1018,7 @@ c                       (r_max(psi_lim)-rmin(psi_lim))
 c---------------------------------------------------------------------
 c     input parameter: poloidal flux 'psi'
 c---------------------------------------------------------------------
-c      IMPLICIT double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
        implicit none
 
 
@@ -1141,7 +1141,7 @@ c     this function calculates the derivatives from normalized radial
 c     coordinate rho**2 by the poloidal flux 'psi'
 c     if indexrho=1 rho=sqrt(area inside the flux surface)
 c     if indexrho=2 rho=sqrt(toroidal flux)
-c     if indexrho=3 rho=sqrt(value iside the flux surface)
+c     if indexrho=3 rho=sqrt(volume inside the flux surface)
 c     if indexrho=4 rho=sqrt((psi-psimag)/(psilim-psimag))
 c     if indexrho=5 rho=(psi-psimag)/(psilim-psimag)
 c     if indexrho=6 rho=(r_max(psi)-rmin(psi))/
@@ -1149,7 +1149,7 @@ c                       (r_max(psi_lim)-rmin(psi_lim)
 c---------------------------------------------------------------------
 c     input parameter: poloidal flux 'psi'
 c---------------------------------------------------------------------
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1198,7 +1198,7 @@ c     on  normalized radial coordinate 'rho'
 c------------------------------------------------------------------
 c     if indexrho=1 rho=sqrt(area inside the flux surface)
 c     if indexrho=2 rho=sqrt(toroidal flux)
-c     if indexrho=3 rho=sqrt(value iside the flux surface)
+c     if indexrho=3 rho=sqrt(volume inside the flux surface)
 c     if indexrho=4 rho=sqrt((psi-psimag)/(psilim-psimag))
 c     if indexrho=5 rho=(psi-psimag)/(psilim-psimag)
 c     if indexrho=6 rho=(r_max(psi)-rmin(psi))/
@@ -1206,7 +1206,7 @@ c                       (r_max(psi_lim)-rmin(psi_lim)
 c---------------------------------------------------------------------
 c     input parameter: rho -radius
 c---------------------------------------------------------------------
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1250,7 +1250,7 @@ c         the point is outside the plasma
 c-----calculates safety factor q=d(toroidal flux)/d(poloidal flux)
 c     tesla*m**2/[psi]
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
       include 'param.i'
@@ -1288,7 +1288,7 @@ c-----local
 c-----calculates the derivative d_volume/d_psi
 c     m**3/[psi]
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
      
 
@@ -1313,7 +1313,7 @@ c-----local
 
       indexrho_original=indexrho
 
-      indexrho=3   !volume
+      indexrho=3   !sqrt(volume inside the flux surface)
       dvol_dpsi=drho2psi(psi)*voltot !m**3/[psi?]
       indexrho=indexrho_original
 
@@ -1330,7 +1330,7 @@ c     It should be used after first call of subroutine rhospl
 c     that calculates the cubic spline coefficients for small radius
 c--------------------------------------------------------------------
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
 
 
@@ -1435,7 +1435,7 @@ c     It should be used after first call of subroutine rhospl
 c     that calculates the cubic spline coefficients for small radius
 c--------------------------------------------------------------------
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'gr.i'

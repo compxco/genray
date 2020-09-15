@@ -9,6 +9,211 @@ c
 c
 c***********************************************************************
 
+
+[218] version="genray_v10.14_200831"
+[218] The file genray_help has been added to the distribution,
+[218] and will subsequently be maintained as the primary documentation
+[218] of namelist variable definitions to be used in genray.in and
+[218] and genray.dat namelist input files. [BH200914]
+
+[218] New namelist variable:  istep_in_lcfs
+   For istart=1 (EC cone) starting method, choose
+   how the EC ray is launched with respect to the LCFS:
+   istep_in_lcfs=1 means Step inside LCFS (slightly).
+   This is the default option, for reverse consistency with original coding.
+   istep_in_lcfs=0 means Start ray-tracing directly from {rst,zst} even
+   if it is far outside  of the LCFS. That is, no stepping inside LCFS.
+   This is more physical, because there is
+   some plasma outside of LCFS (exponential drop-off of density),
+   and this option is required in cases when O-X conversion
+   happens just outside of LCFS.   !YuP[2020-09-03]
+
+[217] More adjustments in subroutines in forest.f,
+   related to nperp-->0 limit, which is allowed now.
+   Need to use asymptotic expansion in expressions like In(x)/x
+   when x-->0 (where In(x) is the mod-ed Bessel function).
+   YuP[2020-09-02]
+
+[216] Imposed a limit for Vgroup/c components.
+   It gives a better stability for integration.
+   Note: although each component of Vgroup/c is limited now,
+   the magnitude of |Vgroup/c| can still be larger than 1.0
+   (an unphysical condition which can occur with EBW ray tracing).
+   YuP[2020-08-30]
+
+[215] Revised subroutine solvnperp for better convergence
+   and a more clear logic flow; added many comments.
+   Also, now the value of accurcy0 is set to a fixed value,
+   independent from prmt4. See comments in that subroutine
+   around accurcy0=1.d-4 line.  YuP[2020-08-26]
+
+
+[214] Added new option for ray integration: irkmeth=3.
+   It is faster and more stable than irkmeth=2.
+   See read_write_genray_input.f for description.
+   YuP[2020-08-26]
+
+[213] Merged improvements from GENRAY-C version into this version.
+   Mostly in subroutines in forest.f. Now n_par=0 is allowed
+   in many subroutines related to hot plasma.
+   YuP[2020-08-24]
+   
+[212] Modified subroutine efield1, similarly to that in GENRAY-C.
+   The changes are related to issue of choosing a proper
+   row (one of three) in matrix 
+   ((-D_tensor)).(E_vector)=0, [see Eqn(1.6) in Genray manual].
+   Usually a row with largest element is selected [see Eq.(8.3-8.6)],
+   but there can be cases when there are two rows with nearly same 
+   elements (by magnitude). See comments in subroutine efield1.
+   YuP[2020-08-21]
+   
+    
+[211] Added checks of grad(psi)=0 (may happen outside of LCFS).
+  YuP[2020-08-20]
+  
+
+[210] Corrected error in procedure for raypatt='diskdisk'.
+   The rays were guided from bin centers of the launching disk
+   to bin boundaries of the focusing disk.
+   Now they are guided from bin centers to bin centers. 
+   !YuP[2020-08-07]
+
+[209] Corrected bug in subr.disk_beam_rays_initial_launching_data.
+   there was a typo in 1st argument. !YuP[2020-08-06]
+
+[208] In subr. effcurb(), added check of prho>0 in 
+      if(prho.gt.0.d0)then   
+        ctheta=(r-xma)/prho
+        stheta=(z-yma)/prho
+      else
+        ctheta=1.d0
+        stheta=0.d0
+      endif
+   !YuP[2020-08-04]
+
+[207] In subr. effcurb() and eff_Lin_Liu(),
+   adjusted the definition of lh.
+   It was lh=int(sqrt(1d0-cnpar**2)/abs(ye))+1
+   When cnpar>1, it results in 
+   large negative values for lh, which gives INF 
+   in other subroutines.  
+   Adjusted to sqrt(max(0.d0, 1d0-cnpar**2)), i.e.
+    lh= int( sqrt(max(0.d0,1d0-cnpar**2))/abs(ye) ) +1
+   !YuP[2020-08-04] 
+
+[206] In subr.subroutine transmit_coef_ox:
+   Added check of grad_x>0. In some cases (outside of LCFS)
+   it can become 0, resulting in L_n=x(z,r,phi,1)/grad_x = INF.
+   If it happens, set L_n to a large value, 
+   L_n= 100.d0 ![cm] any large number - 
+   !  it will yield small efficiency in 
+   !  transmission_ox_p=dexp(-pi*omega*L_n/clight*...)
+   !YuP[2020-08-04] 
+
+[205] In subr. npernpar:
+   adjustment for a very small neg.discriminant.
+   !YuP[2020-08-04] 
+
+
+[204] In subr. owconvr, adjusted 
+      rhoright=1.d0 !YuP[2020-07-29] This may fail: If edge density is high
+                    !Xe=1 layer could be just outside of rho=1.0
+   to
+      rhoright=1.5d0 !YuP[2020-07-29] Give extra room to find Xe=1.
+
+[203] Noticed a problem in units, in subr.gr_OX_optimal_direction, in
+   " if(dabs(f_left*rho_st*1.d+2).le.eps_antenna) then ...".
+   (There are three lines like this.)
+   Both rho_st and eps_antenna are in meters,
+   so why are we using 1.d2 factor? Looks like units-issue.
+   Not corrected yet - it may cause a slightly different result
+   for old tests (like test4).  Not really critical.
+   !YuP[2020-07-29] 
+
+[202] Small "safety" modification in subr.antenna_vertex,
+   in definition of 
+   gamma= dacos((r_st**2+delta2-r_0**2)/(2.d0*r_st*delta)),
+   to avoid case of delta=0.
+   !YuP[2020-07-29]
+   
+[201] Significant change for the i_ox=1 option 
+   (a search of optimal launching angle).
+   Changes are mostly done in subr. bound, boundc.
+   First, for i_ox=1, skip sections related to no_reflection=1 flag.
+   It was giving a false reflection/stopping of ray during i_ox=1
+   procedure. Now the procedure does not depend on no_reflection. 
+   Second, during search, check rho at ray element: 
+   is it larger than rho_plasm_vac ?
+   rho_plasm_vac is rho at plasma-vacuum border;
+   normally, it would be at rho=1.0, but if edge density is high,
+   Xe=1 conversion layer could be just outside of rho=1.0
+   Then, we define rho_plasm_vac as 
+        if(rhoconv.lt. 1.d0)then
+          rho_plasm_vac=1.d0
+        else ! rhoconv=1.d0 or larger
+          rho_plasm_vac= rhoconv+0.1d0
+        endif
+   (or could be slightly different, see sub.bound)
+   where rhoconv is rho at Xe=1.0 conversion layer,
+   calculated in sub.ox_conversion_grill_in_poloidal_point.
+   !YuP[2020-07-29]
+
+[200] Small modification in subr.cone_ec. 
+   Compare average tor. aiming angle (alpha_avg) 
+   over rays on the cone with tor. aiming angle alphaj(1) 
+   of central ray. If they are opposite, redefine tor. aiming 
+   angle of the central ray:  alphaj(1)= alphaj(1) -2.d0*pi
+   It is not important for computations,
+   but it is good to do this for saving data --> plots.
+   !YuP[2020-07-24] 
+
+[199] Made modifications in subr.dinit_1ray. Skip using subr.plasmray 
+   and edgecor, which move the ray starting pooint onto LCFS.
+   Just start the ray in ~vacuum or wherever it is set in namelist.
+   (Could be made into namelist, as an option?) 
+   This modification is important for modern tokamaks with high
+   edge density, when the O-X conversion may happen outside of LCFS,
+   so we should not start rays at exactly the LCFS position.
+   A related modification is made 
+   in subr.ox_conversion_grill_in_poloidal_point;
+   set wide limits for searching O-X conversion point:
+   rmn=1.d-5 
+   rmx=min(xeqmax,abs(xeqmin)) !basically, equilibrium grid limits.
+   !YuP[2020-07-23]
+
+[198] Added more checks in subr. bound and boundc, edgcor. 
+   Check if the ray is out of (R,Z)-equilibrium grid. YuP[2020-07-23]
+
+c[197] Corrected call of ccast. Second argument should be (0.d0,0.d0), 
+c[197] it was 'zero'. Because of that, some of complex arrays were not 
+c[197] properly initialzed, and appeared as very small values
+c[197] or QNAN in genray.nc file. 
+c[197] This has no effect on physical results of calculations,
+c[197] only on values of arrays in *.nc file that suppose to be 0.  
+c[197] YuP[2020-03-10]
+
+c[196] Added message+stopping if no eqdsk file was found.
+
+c[196] In param.i, tried to increase nlimit to 501 (was 101) - max number
+c[196] of points for LCFS arrays. Also nves - to 201 (was 62).
+c[196] However, changing nlimit modified the results (e.g., in test7),
+c[196] just a little,
+c[196] probably because of accuracy for tracing surfaces in subr.gr2new,
+c[196] which uses nteta=nlimit-1.
+c[196] Need to keep it in mind when performing auto-tests 
+c[196] (verification against data in genray.nc). Changed nlimit back to 101.
+
+c[196] Adjusted logic in sub.equilib for reading 
+c[196] (rlimit(i),zlimit(i),i=1,nnlim) and (rves(i),zves(i),i=1,nnves)
+c[196] arrays.
+
+c[196] Adjusted logic in subr.calc_r_z_psi_theta_binary  for calculation
+c[196] of flux surfaces. If too many iterations, the subr. will stop the run
+c[196] (instead of going into INF loop, before this adjustment) 
+c[196] with a message 'Probably errors in eqdsk.  STOPPING'.
+c[196] See YuP[2020-03-09]
+
+========================================================================
 c[195] version="genray_v10.13_200117"
 c[195] Converted some of "implicit integer ..." to "implicit none" with 
 c[195] explicit declaration of variables. Still many to go...
@@ -722,10 +927,10 @@ c[87] Add facility to input plasma profiles at nonuniform small radius meshs.
 c[87] These profiles and radial meshes are set by line form rather than 
 c[87] column [SAP 070427].
 
-c[86] Include files *.i were devided by two parts (files): 
+c[86] Include files *.i were devided by two groups of files: 
 c[86]     *_nml.i and *_no_nml.i
-c[86] *_nml.i part contains declarations and common block /*_nml/ 
-c[86] for input namelist's data, which were previously used in 
+c[86] *_nml.i gropu contains declarations and common block *_nml 
+c[86] for input namelist\'s data, which were previously used in 
 c[86] common block *.i.   This rearrangement of namelist is for the
 c[86] SciDAC SWIM IPS (Integrated Plasma Simulator).
 c[86] [SAP 070427]
@@ -1105,8 +1310,8 @@ c[13] netcdf output of dielectric tensor elements [SAP,040804].
 c[12] Added power density and calculated current density (from
 c[12] TorGA_curba) to netcdf output file.
 c[12] Obtained agreement between GENRAY and TORAY on ECCD, using 
-c[12] Lin-Liu memo "Driven Current Density and Toroidal Current
-c[12] in TORAY-GA [SAP,040729].
+c[12] Lin-Liu memo \"Driven Current Density and Toroidal Current
+c[12] in TORAY-GA [SAP,040729]\".
 
 c[11] Added TORAY system for Gaussian EC ray pattern, to facilitate
 c[11] direct comparisons.  [BH, 040412].
@@ -1123,7 +1328,7 @@ c[9] directions for input (nonthermal) distributions
 c[9]  ==> genray_cvs_v2-3_040116. [SAP,040116]
 
 c[8] Smirnov brings GENRAY up to date with changes made in 
-c[8] San Diego, Jan'03. See ./code/readme030123.
+c[8] San Diego, Jan\'03. See ./code/readme030123.
 c[8] Changes included: 
 c[8] The new b.f uses new splines: coeff1, coeff2, terp1 and terp2p
 c[8] to calculate f(psi) [now, feqd]  and psi(r,z).  [SAP, 030124]
@@ -1165,5 +1370,5 @@ c[1] [bobh, 020814]
 
 c[0] GENRAY is described in Genray_manual_CompX-2001-1-V1.pdf, by 
 c[0] Smirnov and Harvey. Additional functionality for electron cyclotron
-c[0] emission has been added in Jan-Feb'02 by Smirnov and Harvey, not
-c[0] described in the manual.  [This is status as of July'02].
+c[0] emission has been added in Jan-Feb\'02 by Smirnov and Harvey, not
+c[0] described in the manual.  [This is status as of July\'02].

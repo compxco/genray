@@ -9,15 +9,15 @@ c*****************************************************
 
       subroutine GR3
 
-      implicit double precision (a-h,o-z)
+      implicit none !integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'five.i'
       include 'three.i'
       include 'one.i'
 c      double precision RMIN,RMAX,RA,PI
-      double precision RA
+      real*8 RA
 
-      double precision PHI
+      real*8 PHI
       INTEGER I
       include 'gr.i'
 

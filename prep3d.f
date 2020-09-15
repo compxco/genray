@@ -1269,7 +1269,7 @@ c        write(*,*)'r,z,phi,rho',r,z,phi,rho
 cSm060314 
 c        ye=dabs(y_ar(1)) !positive ye for positive harmonics
         
-c         write(*,*)'prep3d.f  iabsorp.eq.7 before anth_rlt'
+         !write(*,*)'prep3d iabsorp==7 before anth_rlt'
 
          call anth_rlt(x_ar(1),y_ar(1),t_av_ar(1)*1.d-3,cnparp,cnperp,
      +   n_relt_harm1,n_relt_harm2,n_relt_intgr,
@@ -1277,8 +1277,7 @@ c         write(*,*)'prep3d.f  iabsorp.eq.7 before anth_rlt'
      +   i_fkin,r,z,phi,
      +  aK)
  
-       
-c        write(*,*)'prep3d iabsorp=7 after anth_rlt aK',aK
+         !write(*,*)'prep3d iabsorp==7 after anth_rlt aK',aK
 
 c------ complex dispersion function calculated from the sum of
 c       of the cold electron plasma dielectric tensor eps_h
@@ -1904,10 +1903,12 @@ c      endif
       vgr(3)=r*deru(3)
       
       vgrmods=vgr(1)**2+vgr(2)**2+vgr(3)**2
-      if(vgrmods.gt.1.d0) then
+      if(vgrmods.gt.1.01d0)then !YuP[2020-08-17] Changed gt.1 to gt.1.01
+         !otherwise too much of printout; 
+         ! vgroup=1.00005 (slightly larger than 1) might happen in near-vacuum
          write(*,*)
          write(*,*) '*************************************************'
-         write(*,*)'WARNING vgroup>1,   abs(vgroup) = ',dsqrt(vgrmods)  
+         write(*,*)'prep3d:WARNING vgroup>1, abs(vgroup)=',sqrt(vgrmods)
          write(*,*) '*************************************************'
          write(*,*)
       endif
@@ -2978,7 +2979,7 @@ c-----------------------------------------------------------------
      1                   efficient)
 c     input parameters: z,r -coordinates of the ray point(cm)
 
-c                       yma,zma -coordinares of magnetic axis(cm)
+c                       yma,zma -coordinates of magnetic axis(cm)
 c                       r0x character length (m)
 c                       z_eff-effective charge
 c                       temp-temperature (keV)
@@ -3051,7 +3052,7 @@ c--------------------------------------------------------------------
 c      tol=2.e-3
       tol=1.d-2
 c--------------------------------------------------------------------
-c     model Absolute value of model selectes collisional model: 1 for
+c     model Absolute value of model selects collisional model: 1 for
 c     full bounce av, 2 for square well(numerical solution), 3 for
 c     analytic solution to square well.negative model does parallel
 c     heating (lower hybrid, fast wave)
@@ -3066,7 +3067,7 @@ c       - gives p_par^2. For ECRH, |lh|	is harmonic number (lh=1
 c       for fundamental);+ for E_- contribution, - for E_parallel;
 c        + with lh-->lh+2 for E_+ component of electric field E.
 c       For now ,there is noprovision for the p_par^2 option with lh=0,
-c       as the compiler doesn't know the differaence between +0 and -0.
+c       as the compiler doesn't know the difference between +0 and -0.
 c       If there is any interest, sent a message to use 313 and
 c       revision including this option will be created.
 c--------------------------------------------------------------------
@@ -3085,7 +3086,13 @@ cBH151018 Fig. 3.3 of http://www.compxco.com/cql3d_manual_150122.pdf .
       if (jwave.ne.0) then
          lh=jwave
       else ! jwave=0 (or -1 or 2?)
-         lh=int(sqrt(1d0-cnpar**2)/abs(ye))+1
+         !YuP lh=int(sqrt(1d0-cnpar**2)/abs(ye))+1
+         !write(*,*)' effcurb: lh,ye,cnpar=',lh,ye,cnpar
+         !YuP[2020-08-04] BUG: when cnpar>1, it results in 
+         ! large negative values for lh, which gives INF 
+         ! in other subroutines.  
+         ! Adjusted to sqrt(max(0.d0, 1d0-cnpar**2))
+         lh= int( sqrt(max(0.d0,1d0-cnpar**2))/abs(ye) ) +1
       endif
 c     lh=2
 c     lh=0
@@ -3104,14 +3111,20 @@ c       energy given elomom and enpar. Note if calling programm fixes
 c       minimum resonant energy and calculates enpar, then theta has no
 c       significance to the physics; rjpd depends only on
 c       B_min*Y/B(theta) ,not on theta or Y alone. But it is useful to
-c       be able to speciffy theta and Y separately in order to keep
+c       be able to specify theta and Y separately in order to keep
 c       track of what higher harmonic are doing.
 c--------------------------------------------------------------------
-      prho=dsqrt((z-yma)**2+(r-xma)**2)
-      ctheta=(r-xma)/prho
-      stheta=(z-yma)/prho
+      prho=dsqrt((z-yma)**2+(r-xma)**2) !YuP: it can get to 0.d0
+      !write(*,*)' effcurb: prho=',prho
+      if(prho.gt.0.d0)then  !YuP[2020-08-04] Added check of prho>0
+        ctheta=(r-xma)/prho
+        stheta=(z-yma)/prho
+      else
+        ctheta=1.d0
+        stheta=0.d0
+      endif
       pi=4.d0*datan(1.d0)
-c      write(*,*)' effcurba ctheta_geom,stheta',ctheta,stheta
+c      write(*,*)' effcurb ctheta_geom,stheta',ctheta,stheta
       if(stheta.ge.0.0d0) then
          theta=dacos(ctheta)
       else
@@ -3213,15 +3226,16 @@ c-----using  TorGAcurba with real*8 arguments
       zeff_d=z_eff
       tol_d=tol
 cSAP080617
-cyup      write(*,*)'before TorGA_curba '
+      !write(*,*)'effcurb: before TorGA_curba lh=',lh
 
-      call TorGA_curba (rjpd_d,rjpd0_d,ratjpd_d,denom_d,aspct_d,enpar_d, 
-     &tc_d, thtc_d, theta_d, elomom_d, lh, zeff_d, model, tol_d, n0, ig)
+      call TorGA_curba(rjpd_d,rjpd0_d,ratjpd_d,denom_d,aspct_d,enpar_d,
+     & tc_d, thtc_d, theta_d, elomom_d, lh, zeff_d, model, tol_d, n0,ig)
       rjpd=rjpd_d
       rjpd0=rjpd0_d
       ratjpd=ratjpd_d
-cyup      write(*,*)'after TorGA_curba rjpd,rjpd0,ratjpd,denom_d,lh',
-cyup     &rjpd,rjpd0,ratjpd,denom_d,lh
+      
+!      write(*,*)'effcurb: aft TorGA_curba rjpd,rjpd0,ratjpd,denom_d,lh',
+!     & rjpd,rjpd0,ratjpd,denom_d,lh
 
 c----------------------------------------------------------
 c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))
@@ -3254,7 +3268,7 @@ cSm050923
       efficient=-efficient 
 
       return
-      end
+      end subroutine effcurb
 
       double precision function zfac_f(z,r,phi,temp_kev)
 c-----It calculates the coefficient
@@ -3315,7 +3329,7 @@ c----------------------------------------------------------------
 c     this subroutine calculates absorted power profiles
 c     calculates RF current  profiles	 (from deposited power)
 c-----------------------------------------------------------------
-c      IMPLICIT double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -3514,6 +3528,7 @@ c--------------------------------------------------------------------
            cnparr=(cnpar)
            yer=(ye)
 
+           !write(*,*)'in p_c_prof befor eff_Lin_Liu efffic_r',effic_r
            call eff_Lin_Liu(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,
      &                 jwave,
      &                 cnparr,
@@ -3521,7 +3536,7 @@ c--------------------------------------------------------------------
      &                 cefldx,cefldy,cefldz,
      &                 effic_r)
 
-cyup           write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
+           !write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
 
            eff(is)=(effic_r)
          endif    ! ieffic.eq.4
@@ -3935,20 +3950,20 @@ c     .   ymar,xmar,r0x,jwave',
 c     .   z_r,r_r,ymar,xmar,r0x,jwave
 c         write(*,*)'z_effr,tempr,denr,cnparr,yer',
 c     .   z_effr,tempr,denr,cnparr,yer
-c         write(*,*)'in p_c_prof before effcurb'
+        !write(*,*)'p_c_prof before effcurb'
 
         call effcurb(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,jwave,
      +  cnparr,yer,effic_r)
 
-cyup        write(*,*)'in p_c_prof after effcurb is,effic_r',is,effic_r
+        !write(*,*)'p_c_prof after effcurb is,effic_r',is,effic_r
 
-           call eff_Lin_Liu(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,
+        call eff_Lin_Liu(z_r,r_r,ymar,xmar,r0x,z_effr,tempr,denr,
      &                 jwave,
      &                 cnparr,
      &                 cnper,ioxm,ye,
      &                 cefldx,cefldy,cefldz,
      &                 effic_r)
-cyup        write(*,*)'in p_c_prof after eff_Lin_Liu efffic_r',effic_r
+        !write(*,*)'p_c_prof after eff_Lin_Liu effic_r',effic_r
    
         eff(is)=effic_r
       endif !4
@@ -4382,7 +4397,7 @@ c       write(*,*)'ir,cur_den_parallel(ir)',ir,cur_den_parallel(ir)
 c       enddo
      
 c99    return
-      END
+      END SUBROUTINE p_c_prof
 
 
 c-----------------------------------------------------------------------
@@ -4482,7 +4497,7 @@ c     profiles on rho. Arrays: powden(NR) (erg/(cm**3*c)
 c                           and currden(NR).
 c-----------------------------------------------------------------------
       SUBROUTINE dnonetwo
-!      IMPLICIT double precision (a-h,o-z)
+      !IMPLICIT double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'onetwo.i'
@@ -6154,7 +6169,12 @@ cBH151018 Fig. 3.3 of http://www.compxco.com/cql3d_manual_150122.pdf .
       if (jwave.ne.0) then
          lh=jwave
       else
-         lh=int(sqrt(1d0-cnpar**2)/abs(ye))+1
+         !YuP lh=int(sqrt(1d0-cnpar**2)/abs(ye))+1
+         !YuP[2020-08-04] BUG: when cnpar>1, it results in 
+         ! large negative values for lh, which gives INF 
+         ! in other subroutines.  
+         ! Adjusted to sqrt(max(0.d0, 1d0-cnpar**2))
+         lh= int( sqrt(max(0.d0,1d0-cnpar**2))/abs(ye) ) +1
       endif
 c     lh=2
 c     lh=0
@@ -6276,6 +6296,7 @@ c-----using  TorGAcurba with real*8 arguments
       zeff_d=z_eff
       tol_d=tol
 
+      !write(*,*)'prep3d/LinLiu befor TorGA_curgap' 
       call TorGA_curgap(rjpd_d,rjpd0_d,ratjpd_d,denom_d,
      &aspct_d,enpar_d,
      &cnper, ioxm,cefldx,cefldy,cefldz,
@@ -6284,8 +6305,8 @@ c-----using  TorGAcurba with real*8 arguments
       rjpd=rjpd_d
       rjpd0=rjpd0_d
       ratjpd=ratjpd_d
-      write(*,*)'prep3d after TorGA_curgap' 
-      write(*,*)'rjpd,rjpd0,ratjpd,lh',rjpd,rjpd0,ratjpd,lh
+      !write(*,*)'prep3d/LinLiu after TorGA_curgap' 
+      !write(*,*)'rjpd,rjpd0,ratjpd,lh',rjpd,rjpd0,ratjpd,lh
 
 c----------------------------------------------------------
 c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))

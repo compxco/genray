@@ -6,9 +6,11 @@ c        *   outinit subroutine.                            *
 c        *                                                  *
 c        ****************************************************
       subroutine outinit(u)
-      implicit double precision (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      real*8 z1,r1,phi1,cnz1,cnr1,cm1, u
       include 'param.i'
-      include'write.i'
+      include 'write.i'
       dimension u(*)
 
       z1=u(1)

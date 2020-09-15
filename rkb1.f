@@ -165,7 +165,7 @@ c--------------------------------------------------------------------
       t=t+h
 c-----------------------------------------------------------
       write(*,*)'before outp'
-      call outp(t,u,deru,ihlf,ndim,prmt,i0,iraystop)
+      call outp(t,u,deru,ihlf,ndim,prmt,i0,iraystop) !Here outp==outptb1
       write(*,*)'after outp'
       if (iraystop.eq.1) goto 100
       if (prmt(5).gt.0) goto 100

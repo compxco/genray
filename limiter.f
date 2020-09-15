@@ -25,7 +25,7 @@ c     &dsin(theta_pol),dcos(theta_pol),z,r',
 c     &dsin(theta_pol),dcos(theta_pol),z,r
 
       return
-      end
+      end subroutine rz_lim_on_rho_geom_theta
 
       subroutine RHS_limiter_line(theta_pol,u,deru)
 c-----------------------------------------------------------
@@ -72,10 +72,10 @@ c      write(*,*)'dpsidr,dpsidz,deru(1)', dpsidr,dpsidz,deru(1)
 
       return
       return
-      end
+      end subroutine RHS_limiter_line
  
       subroutine calc_limiter_field_line(psilim,nlimit,
-     &z_mag,r_mag,rlimit,zlimit,theta_pol_limit,rho_geom_limit)
+     &z_mag,r_mag,rlimit,zlimit,theta_pol_limit,rho_geom_limit) !Not called
 
 c-----------------------------------------------------
 c     calculate limiter field line at LCFS at the poloidal flux 
@@ -257,7 +257,7 @@ c        write(*,*)'after drkgs0 i, rho_lim',i, rho_lim
       enddo
 
       return
-      end
+      end subroutine calc_limiter_field_line !Not called
 
 
 
@@ -352,7 +352,7 @@ c--------------------------------------------------------------------
       enddo
 
       return
-      end
+      end subroutine drkgs0_limiter
 
  
       subroutine theta_pol_at_angles(theta_right_top,
@@ -396,7 +396,7 @@ c-----at right bootom corner
       theta_right_bottom=2.d0*pi - dacos((rr(nxeqd)-xma)/rho_geom) 
 
       return
-      end
+      end subroutine theta_pol_at_angles
 
       real*8  function max_rho_geom(theta_pol)
 c-----calculate maximal geometrical radius at the eqsdk rectangle 
@@ -489,10 +489,10 @@ c         z=zz(nxeqd)-yma
 c      write(*,*)'in max_rho_geo max_rho_geom',max_rho_geom
 
       return
-      end
+      end function max_rho_geom
 
       subroutine calc_limiter_binary (psilim,nlimit,
-     &z_mag,r_mag,rlimit,zlimit,theta_pol_limit,rho_geom_limit)
+     &z_mag,r_mag,rlimit,zlimit,theta_pol_limit,rho_geom_limit) !Not used
 
 c-----------------------------------------------------
 c     calculate limiter field line at LCFS at the poloidal flux 
@@ -791,7 +791,7 @@ c           poloidal flux has maximal value betweeen rho_c_m and rho_c_p
       enddo
 
       return
-      end
+      end subroutine calc_limiter_binary !Not used
 
       subroutine calc_r_z_psi_theta_binary(psi,
      &z_mag,r_mag,r,z,theta_pol)
@@ -818,7 +818,7 @@ c-----external
       real*8 fpsi,max_rho_geom
       
 c-----local
-      integer i
+      integer i, it_count
 
       real*8 
      &step_r,r_l,r_r,r_c,psi1,psi2,
@@ -857,14 +857,24 @@ c      write(*,*)'rho_max_theta, step_rho',rho_max_theta, step_rho
 
       rho_m=0.d0
       rho_c=rho_m+step_rho 
-       
- 15   continue
+      
+      it_count=0 !YuP[2020-03-09] to count iterations 
+      
+ 15   continue ! loop
+ 
+      it_count=it_count+1 !YuP[2020-03-09] to count iterations 
+      if(it_count.gt.10000)then
+       write(*,*)'calc_r_z_psi_theta_binary it_count=',it_count
+       WRITE(*,*)'gr2new-->calc_r_z_psi_theta_binary: Too many it_count'
+       WRITE(*,*)'Probably errors in eqdsk.  STOPPING'
+       STOP 
+      endif  !YuP[2020-03-09] stop if it_count is too big
  
 c      write(*,*)'before rz_lim_on_rho_geom_theta rho_m,rho_c', 
 c     & rho_m,rho_c
-
       call rz_lim_on_rho_geom_theta(rho_m,
      &        theta_pol,r_mag,z_mag,z,r)
+
       del_psi_m=fpsi(r,z)-psi
 
 c      write(*,*)'rho_m,z,r,del_psi_m',rho_m,z,r,del_psi_m    
@@ -925,7 +935,6 @@ c         write(*,*)'calc_r_z_psi_theta_binary 2'
          tl=rho_c
          tr=rho_p            
          do while ((tr-tl).gt.epspsi)
-
             t=tl+(tr-tl)*0.5d0
             call rz_lim_on_rho_geom_theta(t,
      &         theta_pol,r_mag,z_mag,z,r)
@@ -942,7 +951,7 @@ c         write(*,*)'calc_r_z_psi_theta_binary 2'
             end if
          end do
 
-c         write(*,*)'bin:theta_pol',theta_pol
+         !write(*,*)'bin:theta_pol',theta_pol
 c         write(*,*)'r,z', r,z
 c         write(*,*)'fpsi(r,z)-psi',
 c     &              fpsi(r,z)-psi
@@ -1038,7 +1047,7 @@ c      write(*,*)'psi-fpsi(r,z',psi-fpsi(r,z)
      
 
       return
-      end
+      end subroutine calc_r_z_psi_theta_binary
 
 
 
@@ -1266,7 +1275,7 @@ c        poloidal flux has maximal value betweeen rho_c_m and rho_c_p
      
 
       return
-      end
+      end subroutine calc_r_z_psi_theta_binary_test
 
 
 

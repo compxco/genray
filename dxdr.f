@@ -23,7 +23,7 @@ c           functions psif, drhopsi, ddnsdrho
 c----------------------------------------------------------------------
 !YuP[2020-01] This function is not used. Commenting out.
 !      double precision FUNCTION dxdr_old(z,r,phi,i)
-!      IMPLICIT double precision (a-h,o-z)
+!      !IMPLICIT double precision (a-h,o-z)
 !      include 'param.i'
 !      include 'one.i'
 !      include 'three.i'
@@ -94,7 +94,7 @@ c          functions psif, drhopsi, ddnsdrho
 c          d_density_r_z_i_d_r !density derivative from RZ spline
 c----------------------------------------------------------------------
       double precision FUNCTION dxdr(z,r,phi,i)
-c      IMPLICIT double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'

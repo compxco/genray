@@ -69,14 +69,11 @@ Put in to git version control on CompX2.
 version="genray_v10.11_180410"  
 Otherwise, little changed from "genray_v10.11_170725".
 
-June 10, 2019
-=============
-Got connection to git@github.com:compxco/genray.git working,
-using ssh method for connection to github.com.
+
 
 200117
 ======
-Updating locate git/genray/ and 
+Updating locate local git/genray/ and also
 github.com/compxco/genray with this version.
 version="genray_v10.13_200117"
 Changes from earlier versions are listed in a_change.i.
@@ -84,4 +81,18 @@ Make files and instructions for compiling genray and pgplot
 are included.  GENRAY has also been compiled with the
 gnu environment at cori.nersc.gov, and results compared
 closely with results obtained in the intel compiler environment.
+
+
+
+200913
+======
+Genray version="genray_v10.14_200831"
+Several new features are added, as documented in a_change.i.
+Also, introduced the file genray_help to document the namelist variables
+used in the code.  Previously, this has been done with various
+"template" files, genray.dat_template_* and genray.in_template_* 
+applicable for  mixed unit input specs and MKSA input specs, respectively.
+These have been combined into the one file, genray_help, which will
+subsequently be maintained as the namelist variable explanations file.
+Updating github.com/compxco/genray. 
 

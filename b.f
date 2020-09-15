@@ -18,21 +18,28 @@ c      								   !
 c      z, r, phi - point which the components of magnetic field	   !
 c                  are calculated in.				   !
 c------------------------------------------------------------------
-      double precision
-     1function b(z,r,phi)
-      implicit double precision (a-h,o-z)
+      double precision function b(z,r,phi)
+      implicit none !double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
       include 'three.i'
       include 'five.i'
       include 'six.i'
-      real*8
-     1 ias1r,ias2r_Sm
+      real*8 z,r,phi !INPUT
+      real*8 ias1r,ias2r_Sm ! external
 cSm070324
-      real*8
-     & thetapol, l_zr, l_z_b_r_b
+      real*8 thetapol, l_zr, l_z_b_r_b !local
+      real*8 epsbnd , x_l,y_l,theta_l, z_b,r_b !local
+      integer idx,ipx,ipx4,nx4,ny4
+      real*8 res,rrr,zm,zp,zzrm,zzrp,ffr,ffd,dffr,dres,zer,pp,pb,ppb
+      real*8 dpsidr,dpsidz,rhopsi,spol
+      real*8 dpdzr,dpdrr,dpdzz
+      real*8 bph1,dbph1dph,dbph1dz,dbph1dr,
+     +     bz1,dbz1dph,dbz1dz,dbz1dr,
+     +     br1,dbr1dph,dbr1dz,dbr1dr
 
-
+      
+      integer ifirstc
       data ifirstc/1/
       save ifirstc
 c--------------------------------------------------------------
@@ -64,7 +71,7 @@ c      write(*,*)'in b.f psilim,theta_l',psilim,theta_l
 
       call zr_psith(psilim,theta_l,z_b,r_b)
  
-c     write(*,*)'in b.f after zr_psith(psilim,theta_l,z_b,r_b)'
+      !write(*,*)'in b.f after zr_psith(psilim,theta_l,z_b,r_b)'
 c      write(*,*)'in b.f z_b,r_b',z_b,r_b
       
 c      write(*,*)'b.f r_b,z_b,fpsi(r_b,z_b),psilim',
@@ -73,7 +80,7 @@ c     &r_b,z_b,fpsi(r_b,z_b),psilim
       l_zr=dsqrt(x_l**2+y_l**2)
       l_z_b_r_b=dsqrt((r_b-xma)**2+(z_b-yma)**2)
 
-c      write(*,*)'b.f l_zr,l_z_b_r_b',l_zr,l_z_b_r_b
+      !write(*,*)'b.f l_zr,l_z_b_r_b',l_zr,l_z_b_r_b
 
       if (l_zr.ge.l_z_b_r_b) then
          rho = l_zr / l_z_b_r_b         
@@ -253,6 +260,10 @@ c              dpdzz=ias2r(tx,nx,ty,ny,cxy,ncx,ncy,0,2,r,z)
               dpdzr=ias2r_Sm(tx,nx,ty,ny,cxy,ncx,ncy,1,1,r,z,nx4a)
               dpdrr=ias2r_Sm(tx,nx,ty,ny,cxy,ncx,ncy,2,0,r,z,nx4a)
               dpdzz=ias2r_Sm(tx,nx,ty,ny,cxy,ncx,ncy,0,2,r,z,nx4a)
+                            !(tx,nx,ty,ny,cxy,ncx,ncy,idx,idy,xx,yy,nx4a)
+                            !In func: tx(*),   ty(*),   cxy(nx4a,*)
+                         ! in five.i: tx(nx4a),ty(ny4a),cxy(nx4a,ny4a)
+                         !               nx4a=nxeqda+4, ny4a=nyeqda+4
 		dpdzrd=dpdzr
 		dpdrrd=dpdrr
 		dpdzzd=dpdzz
@@ -272,43 +283,45 @@ c------------------------------------------------------------------
       dbphdr=-pp*bphi+pp*dres*dpdrd
 c--------------------------------------------------------------------
 c      deltripl=0.00d0
+      if(deltripl.gt.0.d0)then ! YuP[2020-08-19] Added: skip these two subr.
+                               ! when not needed (saves cpu time)
+        if (i_ripple.eq.1)then
+          !-------- the ripple model approximating the DIII-D field
+           call briplmd4(z,r,phi,
+     +     bph1,dbph1dph,dbph1dz,dbph1dr,
+     +     bz1,dbz1dph,dbz1dz,dbz1dr,
+     +     br1,dbr1dph,dbr1dz,dbr1dr)
+        endif
 
-      if (i_ripple.eq.1)then
-c--------the ripple model approximating the DIII-D field
-         call briplmd4(z,r,phi,
-     +   bph1,dbph1dph,dbph1dz,dbph1dr,
-     +   bz1,dbz1dph,dbz1dz,dbz1dr,
-     +   br1,dbr1dph,dbr1dz,dbr1dr)
-      endif
-
-      if (i_ripple.eq.2)then
-c--------the ripple model using modified Bessel function I_0
-c        see the GENRAY description
-         call briplmd5(z,r,phi,
-     +   bph1,dbph1dph,dbph1dz,dbph1dr,
-     +   bz1,dbz1dph,dbz1dz,dbz1dr,
-     +   br1,dbr1dph,dbr1dz,dbr1dr)
-      endif
+        if (i_ripple.eq.2)then
+           !--------the ripple model using modified Bessel function I_0
+           !        see the GENRAY description
+           call briplmd5(z,r,phi,
+     +     bph1,dbph1dph,dbph1dz,dbph1dr,
+     +     bz1,dbz1dph,dbz1dz,dbz1dr,
+     +     br1,dbr1dph,dbr1dz,dbr1dr)
+        endif
  
-      bz=bz+bz1
-      br=br+br1
-      bphi=bphi+bph1
+        bz=bz+bz1
+        br=br+br1
+        bphi=bphi+bph1
 
-      dbzdz=dbzdz+dbz1dz
-      dbzdr=dbzdr+dbz1dr
-      dbzdph=dbzdph+dbz1dph
+        dbzdz=dbzdz+dbz1dz
+        dbzdr=dbzdr+dbz1dr
+        dbzdph=dbzdph+dbz1dph
 
-      dbrdz=dbrdz+dbr1dz
-      dbrdr=dbrdr+dbr1dr
-      dbrdph=dbrdph+dbr1dph
+        dbrdz=dbrdz+dbr1dz
+        dbrdr=dbrdr+dbr1dr
+        dbrdph=dbrdph+dbr1dph
 
-      dbpdph=dbpdph+dbph1dph
-      dbphdz=dbphdz+dbph1dz
-      dbphdr=dbphdr+dbph1dr
+        dbpdph=dbpdph+dbph1dph
+        dbphdz=dbphdz+dbph1dz
+        dbphdr=dbphdr+dbph1dr
+      endif !(deltripl.gt.0.d0)then ! YuP[2020-08-19]
+      
 c-----------------------------------------------------------------
 c     calculation of the model stellarator W7 magnetic field
 c     bmagloc=2.3d0 !Tl
-
 c      call bstelw7(z,r,bmagloc,
 c     1bphi,dbpdph,dbphdz,dbphdr,
 c     2bz,dbzdph,dbzdz,dbzdr,
@@ -330,7 +343,7 @@ c        write(*,*)'in b: z,r,phi,bz,br,bphi,rho,b',
 c     &                   z,r,phi,bz,br,bphi,rho,b
       
       return
-      end
+      end function b
 
 
 c*************************briplmod*********************************
@@ -953,9 +966,9 @@ c      z, r, phi - point which the components of magnetic field	   !
 c                  are calculated in.				   !
 c------------------------------------------------------------------
       real*8
-     &function b1(z,r,phi)
+     &function b1test(z,r,phi) !YuP[2020-08-20] renamed, to avoid conflict with arrays
       implicit none 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
       include 'three.i'
@@ -1353,18 +1366,15 @@ c------------------------------------------------------------------
 	dbmdz=ppb*(bz*dbzdz+br*dbrdz+bphi*dbphdz)
 	dbmdr=ppb*(bz*dbzdr+br*dbrdr+bphi*dbphdr)
 	dbmdph=ppb*(bz*dbzdph+br*dbrdph+bphi*dbpdph)
-
 c---------------------------------------------------------------------
-cSm030515
-c        b=pb
-        b1=pb
+      b1test=pb !YuP[2020-08-20] renamed, to avoid conflict with arrays
       return
-      end
+      end function b1test
 
       subroutine test_b_field
 c-----compare the calculation of the magneic field 
 c     obtained by the different spilnes
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -1388,7 +1398,7 @@ c      implicit double precision (a-h,o-z)
      4            dbphdz3,dbphdr3,dbpdph3,
      5            dqdrho3,dbmdz3,dbmdr3,dbmdph3
 c-----externals
-      real*8 b,b1
+      real*8 b,b1test
 
             bz3=0.d0
             br3=0.d0
@@ -1441,7 +1451,7 @@ c-----externals
             dbmdr1=dbmdr
             dbmdph1=dbmdph
 
-            bmod2=b1(z,r,0.d0)
+            bmod2=b1test(z,r,0.d0) !YuP[2020-08-20] renamed, to avoid conflict with arrays
             bz2=bz
             br2=br
             bphi2=bphi

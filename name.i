@@ -12,9 +12,8 @@ c      all input namelists
      &i_rho_find_hot_nperp_roots,
      &rho_step_find_hot_nperp_roots,rho_min_find_hot_nperp_roots, 
      &shift_rho_geom,
-cSAP090304
-c     &no_reflection,sigmedgn,sigmedgt 
-     &no_reflection
+     &no_reflection,
+     & istep_in_lcfs !YuP[2020-09-03] added
 
       namelist /scatnper/ iscat,scatd,rhoscat,
 cSAP120511
@@ -32,7 +31,8 @@ c----------------------
      * prmt1,prmt2,prmt3,prmt4,prmt6,prmt9,icorrect,iout3d,
      * maxsteps_rk,i_output,
      & i_uh_switch,uh_switch,prmt6_uh_switch,
-     &toll_hamilt,
+     &toll_hamilt,  
+     + dL_step, dN_step, der_r, der_n, der_f,
      &i_power_switch_resonance, 
      &prmt6_power_switch_resonance,
      &n_power_switch_resonance,

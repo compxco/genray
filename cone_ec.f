@@ -4,6 +4,7 @@ c        * this subroutine calculates initial data          *
 c        * for ecr power distributon in cones		    *
 c        ****************************************************
 c
+!        Called for each icone (inside icone=1,ncone loop)
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 c      	input parameters					    !
 c	alpha1 - the angular width of the power distribution(radian)!
@@ -17,9 +18,13 @@ c       powtot-total power at antenna(in MW)			    !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 c      	output parameters					    !
 c       nray=na1*na2+1 number of rays				    !
+!       Aiming angles for each ray:
 c       alphaj(nray)-array: toroidal angles(radian) of j_ray	    !
+!          (toroidal angle measured from R-vector through source)
+!
 c       betaj(nray)-array: angles(radian) between the  horizontal   !
-c                          plane and j_ray               	    !
+c                          plane and j_ray    
+!
 c       powj(nray)-array:power flowing in the ray channel at    !
 c               antenna normalized Sum_{i=1,nray}powj(i)=powtot !
 c               (erg/sec)				            !
@@ -34,7 +39,7 @@ c        dimension betaj(1),alphaj(1),powj(1)
         pi=datan(1.0d0)*4.0d0
 	tet=pi/180.0d0
 	tetanr=tetan
-	phinr=phin
+	phinr=phin ! toroidal angle of the central ray (radian)from e_r
 	phistr=phist
 
 	alpha2r=alpha2
@@ -50,7 +55,7 @@ c--------------------------------------------------------------------
 c       number of the rays
 	nray=na1*na2+1
 	write(*,*)'in cone_ec na1,na2',na1,na2
-	write(*,*)'number of the rays in EC cone: nray=',nray
+	write(*,*)'number of the rays in EC cone: nray=na1*na2+1=',nray
 c-----------------------------------------------------------------
 c       central refractive index vector at antenna
 	n_r=stetan*cphin
@@ -88,6 +93,7 @@ c	  write(*,*)'na1.ne.0 powj(1)',powj(1)
 c-----------------------------------------------------------------
 c       cone rays around the central ray
 c----------------------------------------------------------------
+      alpha_avg=0.d0 !YuP[2020-07-24]: To evaluate average toroidal aiming angle
 	do 10 i=2,na1+1
 c          cone angles
            alpha1i=da1*(i-1)
@@ -149,14 +155,34 @@ c----------------------------------------------------------
 cTJenkins	  powj(iray)=dexp(-2.0d0*(alpha1i/alpha1r))*
 	  powj(iray)=dexp(-2.0d0*(alpha1i/alpha1r)**2)*
      1    (dcos(alpha1i-0.5d0*da1)-dcos(alpha1i+0.5d0*da1))*da2
- 20        continue
- 10     continue
+     
+           alpha_avg=alpha_avg+alphaj(iray) !YuP[2020-07-24]aver tor aiming angle
+
+ 20        continue ! j=1,na2
+ 10     continue ! i=2,na1+1
+ 
+        alpha_avg=alpha_avg/float(nray) !YuP[2020-07-24] average tor aiming angle
+ 
+        !YuP[2020-07-24] Compare average tor. aiming angle (alpha_avg)
+        !over rays on the cone with tor. aiming angle alphaj(1) of central ray.
+        if( (alpha_avg.lt.0.d0).and.(alphaj(1).gt.0.d0) )then
+          ! If they are opposite, redefine tor. aiming 
+          ! angle of the central ray :
+          alphaj(1)= alphaj(1) -2.d0*pi
+          ! It is not important for computations,
+          ! but it is good to do this for saving data --> plots.
+        endif
+        if( (alpha_avg.gt.0.d0).and.(alphaj(1).lt.0.d0) )then
+          alphaj(1)= alphaj(1) +2.d0*pi
+        endif
+ 
 c--------------------------------------------------------------
 c       normalization of the angle distribution	 of the power
 c--------------------------------------------------------------
- 30	  continue
-          psum=powj(1)
-	do iray=2,nray
+ 30	  continue ! handle to skip the above, in case of central ray only.
+ 
+        psum=powj(1)
+        do iray=2,nray
            psum=psum+powj(iray)
         enddo
 c-----------------------------------------------------------
@@ -165,14 +191,15 @@ c  The transformation of total antenna power from MW to erg/sec
 c-----------------------------------------------------------------
 cSm050902        powtot=powtot*1.0d+13
 c----------------------------------------------------------------
-	p=powtot*1.0d+13/psum
-        do iray=1,nray
-	   powj(iray)=powj(iray)*p
-	   write(*,*)'cone_ec iray powj(iray)',iray,powj(iray)
-	enddo
-
+      p=powtot*1.0d+13/psum
+      do iray=1,nray
+         powj(iray)=powj(iray)*p
+         write(*,*)'cone_ec iray,alphaj(iray),powj(iray)',
+     &   iray,alphaj(iray),powj(iray)
+      enddo
+      
       return
-      end
+      end subroutine cone_ec
 
 
 
@@ -218,17 +245,18 @@ c         same size array as mray for gaussian formulation.
 c         Standard setting for gzone=0 is 0.0,0.1,0.05,-0.05,0.05.
 c     outputs:
 c       nray: total number of rays, using mray(*) if gzone.ne.0.
-c       theta(nray): polor injection angle of a given ray (degrees)
+c       theta(nray): polar injection angle of a given ray (degrees)
 c       phi(nray):   toroidal injection angle of a given ray (degrees)
 c------------------------------------------------------------------------
       implicit none
 c
       integer m, n, kk
       integer nray, mray(*), nzone, gzone, numrays
-      doubleprecision r0, r1, r2, r3, ar, am, pi, sfracpwr
-      doubleprecision d, ppz, f, df, ang, x, maxzone
-      doubleprecision thetac, phic, div
-      doubleprecision theta(*), phi(*), cr(*)
+      !doubleprecision to real*8 !YuP[2020-01-27]
+      real*8 r0, r1, r2, r3, ar, am, pi, sfracpwr
+      real*8 d, ppz, f, df, ang, x, maxzone
+      real*8 thetac, phic, div
+      real*8 theta(*), phi(*), cr(*)
 c
       pi=acos(-1.0d0)
 c
@@ -404,12 +432,12 @@ c------------------------------------------------------------------
 
 c-----creates X mesh and array for the function func:
 c     n_mesh_radial_bin is the number of radial bins 
-c     n_mesh=n_mesh_radial_bin + 1 is the number of radius point in which
+c     n_mesh=n_mesh_radial_bin + 1 is the number of radial points in which
 c              the integral is calculated     
-c     array x_mesh_c(n_mesh_radial_bin)  (0<  x_mesh_c <b) 
-c     array x_mesh(n_mesh) (0=<  x_mesh =<b)
+c     array x_mesh_c(n_mesh_radial_bin)  (0<  x_mesh_c <b) ! Bin centers
+c     array x_mesh(n_mesh) (0=<  x_mesh =<b)   Bin edges (bin boundaries)
 c
-c     array f_equal(n n_mesh_radial_bin) of the function func
+c     array f_equal(n_mesh_radial_bin) of the function func
 c                                        at the created mesh
 c
 c     This mesh will be used to calculate the integral
@@ -430,9 +458,9 @@ c     rays with different angles. In the first radial bin there will be
 c     one ray n_mesh_angle(1)=1
 c
 c     The total number of rays n_disk_rays
-c     n_disk_rays = Sum{j=1.n_mesh_radial_bin}
+c     n_disk_rays = Sum{j=1,n_mesh_radial_bin}
 c
-c     The mesh and the function array will be calculate to give
+c     The mesh and the function array will be calculated to give
 c
 c     f_equal(j)*del(j)=Constant=total_integral/n_mesh
 c
@@ -475,11 +503,11 @@ c-----locals
       integer n_mesh ! the number of new mesh points
       integer j,k,k0,n_disk_rays,j_rays,i
       real*8 integral_value
-      real*8 x(n),xc(n-1),ar_integral(n),total_integral
+      real*8 x(n),xc(n-1),ar_integral(n),total_integral ! local work arrays
 
       real*8  total_integral_mesh,total_integral_per_one_ray,
      &integral_per_one_ray
-
+      real*8 p_expected ! local, for printout
 c------------------------------------------------------------
 c     calculate the integral from the function func
 c     ar_integral(j) j=1,...,n
@@ -492,8 +520,8 @@ c------------------------------------------------------------
      &ar_integral,total_integral)
 c------------------------------------------------------------
 
-      write(*,*)'create_equal_mesh: ar_integral',ar_integral
-      write(*,*)'create_equal_mesh: x', x
+      !write(*,*)'create_equal_mesh: ar_integral',ar_integral
+      !write(*,*)'create_equal_mesh: x', x
 
 c------------------------------------------------------------
 c     x_mesh and the function array will be calculated to give
@@ -529,7 +557,7 @@ c      write(*,*)'integral_per_one_ray',integral_per_one_ray
         j_rays=0
         do j=2,n_mesh_radial_bin
 c---------number of rays
-          do i=1,n_mesh_angle(j-1)
+          do i=1,n_mesh_angle(j-1) ! from n_mesh_disk_angle_bin(j-1)
             j_rays=j_rays+1
           enddo
 
@@ -577,8 +605,9 @@ c              if(k.eq.n) then
           enddo !k
  20       continue     
 c          write(*,*)'after 20 j,x_mesh',j,x_mesh
-        enddo !j
-      
+        enddo !j=2,n_mesh_radial_bin  (radial bin centers)
+        !Note: in the above, f_equal(j-1) was defined.
+        ! Still need to set f_equal(n_mesh_radial_bin)
      
         x_mesh_c(n_mesh_radial_bin)=0.5d0*
      &                              (x_mesh(n_mesh)+x_mesh(n_mesh-1))
@@ -587,13 +616,34 @@ c          write(*,*)'after 20 j,x_mesh',j,x_mesh
            
  10     continue
       endif
-      write(*,*)'x_mesh',x_mesh
-      write(*,*)'x_mesh_c',x_mesh_c
+      write(*,*)'x_mesh (bin boundaries in disk)[m]',x_mesh
+      write(*,*)'x_mesh_c  (bin centers in disk)[m]',x_mesh_c
       write(*,*)'f_equal',f_equal
-    
+      !YuP: The meaning of f_equal is that it is ~1/dArea(j)
+      ! where dArea(j) is the area of j-th radial bin on the disk.
+      ! The power density in each radial bin on disk can be calculated as
+      ! f_equal(j)/(2*pi) *powtot(1)*n_mesh_disk_angle_bin(j)
+      write(*,*)
+     &  '  power den[MW/m^2] in each rad bin on disk (for Ptotal=1MW):'
+      do j=1,n_mesh_radial_bin
+        write(*,*) (f_equal(j)/6.2831853)*1.0*n_mesh_angle(j)
+      enddo
+      !Compare to expected power density distribution 
+      ! p_expected= func(x_mesh_c(j)) !=disk_power_distribution(x_mesh_c(j))
+      !which is normalized as 
+      ! INTEGRAL[0;rho_launching_disk] {p_expected(x) xdx} =1.
+      ! Effectively, p_expected includes 2*pi factor;
+      ! More logically, it should be 
+      ! INTEGRAL[0;rho_launching_disk] {p_expected_without2pi(x) 2*pi*xdx} =1.
+      !So, when we printout, we take this 2*pi factor out:
+      write(*,*)'  disk_power_distribution(x_mesh_c(j))/2pi :'
+      do j=1,n_mesh_radial_bin
+        p_expected= func(x_mesh_c(j)) !=disk_power_distribution(x_mesh_c(j))
+        write(*,*) p_expected/6.2831853  ![MW/m^2, if mult-ed by 1MW]
+      enddo
    
 c--------------------------------------------------------------------
-c     check the total integral on the non-uniform mesh
+c     check the total integral on the non-uniform mesh: should be 1.0
       total_integral_mesh=0.d0
       do j=1,n_mesh_radial_bin
          total_integral_mesh=total_integral_mesh+
@@ -604,20 +654,22 @@ c     check the total integral on the non-uniform mesh
         write(*,*)'0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2) = ',
      &             0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2)
         write(*,*)'f_equal(j)*n_mesh_angle(j)*
-     &0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2) = ',
-     &f_equal(j)*n_mesh_angle(j)*
-     &0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2)
-
+     &   0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2) = ',
+     &   f_equal(j)*n_mesh_angle(j)*
+     &   0.5d0*(x_mesh(j+1)**2-x_mesh(j)**2)
       enddo
-      write(*,*)'total_intergal_mesh',total_integral_mesh
+      write(*,*)'total_intergal_mesh',total_integral_mesh !should be 1.0
+      !stop
 
       return
-      end
+      end subroutine create_equal_power_radial_mesh
+      
+      
 
       real*8 function disk_power_distribution(x)
 c     the radial power distribution at the launching disk
 c     x is the radius at the launching disk
-c     Gaussian radial ditribution at the disk
+c     Gaussian radial distribution at the disk
       implicit none
       include 'param.i'
       include 'cone.i'
@@ -638,7 +690,7 @@ c     &(1.d0-(rho_launching_disk/sigma_launching_disk)**2)
       disk_power_distribution=const*dexp(-(x/sigma_launching_disk)**2)
 
       return
-      end      
+      end function disk_power_distribution 
 
 
 
@@ -675,6 +727,8 @@ c-----locals
      &r_launch,cos_phi_launch,phi_launch,
      &beta_launch,gamma_launch,alpha_launch
       real*8 disk_power_distribution
+      
+      real*8 f_focus_launch, rho_focus_disk_c !local
 
 
       external  disk_power_distribution
@@ -730,7 +784,7 @@ c      write(*,*)'dsin(alfast(1)+phist(1))',dsin(alfast(1)+phist(1))
       write(*,*)'dsqrt(cnx**2+cny**2+cnz**2)',
      &dsqrt(cnx**2+cny**2+cnz**2)
 c----------------------------------------------------------------
-c     calulate the coordinate of the focus disk center
+c     calculate the coordinate of the focus disk center
 c     R_f_center_vector=R_disk_center_vector+d_disk*N_st_vector
 c-----------------------------------------------------------------
       x_f_center=x_launch_disk_center+d_disk*cnx
@@ -837,45 +891,62 @@ c------------------------------------------------------------
             rho_disk_z=rho_disk*(rho_0_z*coseta+rho_perp_z*sineta)
             write(*,*)'rho_disk_x,rho_disk_y,rho_disk_z',
      &                 rho_disk_x,rho_disk_y,rho_disk_z
-            write(*,*)'dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)'
-     &                ,dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)       
-            write(*,*)'rho_disk',rho_disk     
-            write(*,*)'rho_focus_disk',rho_focus_disk
+!            write(*,*)'dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)'
+!     &                ,dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)       
+            write(*,*)'rho_disk (Launching: bin centers)[m]',rho_disk   
+            
+            !YuP[2020-08-07] Corrected error in procedure.
+            !Note that rho_disk is the radius of bin CENTER
+            !where the rays are launched (from launching_disk).
+            !The largest rho_disk is NOT the same as rho_launching_disk,
+            !because rho_launching_disk is the outer BOUNDARY
+            !of the last bin, and not the center.
+            !The value of rho_disk was found by 
+            !subr.create_equal_power_radial_mesh().
+            !Recall that in the focus disk, the input variable
+            ! rho_focus_disk also points to the outer BOUNDARY
+            !of the last bin. So, in the focus disk, we also need
+            !to find the corresponding values of bin CENTERS.
+            ! The easiest way is to scale coordinates by 
+            ! factor of 
+            f_focus_launch= rho_focus_disk/rho_launching_disk !YuP
+            rho_focus_disk_c= rho_disk*f_focus_launch !bin CENTER !YuP
+              
+            write(*,*)'rho_focus_disk_c (bin centers)',rho_focus_disk_c
 c------------------------------------------------------------------
 c           calculate coordinates of the vector lying on
 c           the focus disk directed from the focus disk center
 c           to the ray point
 c           rho_focus_disk_vector=rho_disk_vector*
-c                                 rho_focus_disk/rho_disk
+c                                 rho_focus_disk_c/rho_disk
 c------------------------------------------------------------------    
             if (iray_l.eq.1) then
 c----------------------------------------------------------------------
-c              central ray is directed from the center of the first disk
-c              to the center of the center of the second disk
+c              central ray is directed from the center of the launching disk
+c              to the center of the second ("focus") disk
 c-----------------------------------------------------------------------
                rho_focus_disk_x=0.d0
                rho_focus_disk_y=0.d0
                rho_focus_disk_z=0.d0
             else 
-               write(*,*)'rho_disk_x,rho_disk_y,rho_disk_z',
-     &                    rho_disk_x,rho_disk_y,rho_disk_z
-           write(*,*)'dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)'
-     &                ,dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)
-            write(*,*)'rho_disk,rho_focus_disk,rho_focus_disk/rho_disk',
-     &                 rho_disk,rho_focus_disk,rho_focus_disk/rho_disk
+            write(*,*)'Launching disk: rho_disk_x,rho_disk_y,rho_disk_z'
+     &                    ,rho_disk_x,rho_disk_y,rho_disk_z
+!           write(*,*)'dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2)'
+!     &                ,dsqrt(rho_disk_x**2+rho_disk_y**2+rho_disk_z**2) !same as rho_disk
+            write(*,*)'At bin centers: rho_disk, rho_focus_disk_c',
+     &                 rho_disk, rho_focus_disk_c
 
-               write(*,*)'rho_disk',rho_disk
-               rho_focus_disk_x=rho_disk_x*rho_focus_disk/rho_disk
-               rho_focus_disk_y=rho_disk_y*rho_focus_disk/rho_disk
-               rho_focus_disk_z=rho_disk_z*rho_focus_disk/rho_disk
-         write(*,*)'rho_focus_disk_x,rho_focus_disk_y,rho_focus_disk_z'
-     &        ,rho_focus_disk_x,rho_focus_disk_y,rho_focus_disk_z
-              write(*,*)'dsqrt(rho_focus_disk_x**2+rho_focus_disk_y**2+
-     &rho_focus_disk_z**2)',
-     &dsqrt(rho_focus_disk_x**2+rho_focus_disk_y**2+rho_focus_disk_z**2)
+               rho_focus_disk_x=rho_disk_x*f_focus_launch !rho_focus_disk/rho_disk !YuP corrected
+               rho_focus_disk_y=rho_disk_y*f_focus_launch !rho_focus_disk/rho_disk
+               rho_focus_disk_z=rho_disk_z*f_focus_launch !rho_focus_disk/rho_disk
+!         write(*,*)'rho_focus_disk_x,rho_focus_disk_y,rho_focus_disk_z'
+!     &        ,rho_focus_disk_x,rho_focus_disk_y,rho_focus_disk_z
+!              write(*,*)'dsqrt(rho_focus_disk_x**2+rho_focus_disk_y**2+
+!     &rho_focus_disk_z**2)',
+!     &dsqrt(rho_focus_disk_x**2+rho_focus_disk_y**2+rho_focus_disk_z**2)
             endif
 c----------------------------------------------------------------
-c           calculate coordinates of the launchig point M on the
+c           calculate coordinates of the launching point M on the
 c           first disk:
 c           R_M_vector=R_disk_center_vector+rho_disk_vector
 c----------------------------------------------------------------
@@ -913,14 +984,16 @@ c-------------central ray direction
             else
 c-------------non-central rays
               cnx_launch=d_disk*cnx+
-     &              rho_disk_x*(rho_focus_disk/rho_disk-1.d0)
+     &              rho_disk_x*(rho_focus_disk_c/rho_disk-1.d0) !YuP[2020-08-07]corrected
               cny_launch=d_disk*cny+
-     &              rho_disk_y*(rho_focus_disk/rho_disk-1.d0)
+     &              rho_disk_y*(rho_focus_disk_c/rho_disk-1.d0) !YuP[2020-08-07]corrected
               cnz_launch=d_disk*cnz+
-     &              rho_disk_z*(rho_focus_disk/rho_disk-1.d0)
+     &              rho_disk_z*(rho_focus_disk_c/rho_disk-1.d0) !YuP[2020-08-07]corrected
+              !YuP[2020-08-07]corrected: Now rho_focus_disk_c and rho_disk
+              ! refer to bin CENTERs (on focus and launching disks, accordingly)
               write(*,*)'d_disk,cnz,rho_disk_z',d_disk,cnz,rho_disk_z
               write(*,*)'rho_focus_disk,rho_launching_disk',
-     &                   rho_focus_disk,rho_launching_disk
+     &                   rho_focus_disk,rho_launching_disk ! At bin BOUNDARIES
                write(*,*)'non normalized cnz_launch',cnz_launch
             endif
 c-----------normalization
@@ -1052,7 +1125,7 @@ c      stop 'cone_ec disk'
       enddo
 
       return
-      end
+      end subroutine disk_to_disk_rays_initial_launching_data
 
 
       subroutine disk_beam_rays_initial_launching_data(nray)
@@ -1098,7 +1171,8 @@ c---------------------------------------------------
       write(*,*)'in  disk_beam_rays_initial_launching_data'
       write(*,*)'before create_equal_power_radial_mesh'
       write(*,*)'rho_launching_disk',rho_launching_disk
-      call create_equal_power_radial_mesh(rho_launchin g_disk,
+      !YuP[2020-08-06] Was bug/typo in 1st argument:
+      call create_equal_power_radial_mesh(rho_launching_disk,
      &disk_power_distribution,
      &n_mesh_disk_radial_bin,n_mesh_disk_angle_bin,
      &disk_rho_mesh_edge,
@@ -1393,4 +1467,4 @@ c      stop 'cone_ec disk_beam'
       enddo
 
       return
-      end
+      end subroutine disk_beam_rays_initial_launching_data

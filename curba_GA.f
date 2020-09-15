@@ -1,4 +1,6 @@
-      subroutine TorGA_curba (rjpd, rjpd0, ratjpd, denom, aspct, enpar, 
+! YuP[2020-08-20] Renamed all b into b_GA, to avoid conflict with function b()
+
+      subroutine TorGA_curba(rjpd, rjpd0, ratjpd, denom, aspct, enpar, 
      &tc, thtc, theta, elomom, lh, zeff, model, tol, n0, ig)
 cProlog
 
@@ -150,7 +152,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & aspect, sgnj, enpar, charge, zeff, theta, rabs, 
      &rmax, etam, etamh, et0, thtcu, thtc, theth, tc, aspct, costh, rmin
      &, elom, elomom, expeu, enpar2, epst1, epst2, etmax, rjpd, rjpd0, 
@@ -220,6 +221,7 @@ c      write(*,*)' theth', theth
       endif
       ixo = 0
       l = IABS (lh)
+      !write(*,*)' TorGA_curba: lh=',lh
 c
 c     set flag to get ppar**(2*ixo) factor in diffusion coef.;
 c     for ecrh, ixo=0 for E-, E+ and =1 for E_par contributions
@@ -240,8 +242,8 @@ c
       call TorGA_limits (epst1, epst2, etmax)
 
 cSAP080617
-c      write(*,*)'after  TorGA_limits epst1, epst2, etmax',
-c     &epst1, epst2, etmax
+!      write(*,*)'after  TorGA_limits epst1, epst2, etmax',
+!     & epst1, epst2, etmax
        
       if (etmax .le. -1.0d0 .or. ABS(enpar) .lt. 1.d-6) then
       rjpd=0.d0
@@ -258,33 +260,33 @@ c      write(*,*)'etmax,thtc', etmax,thtc
 c
 c     ---calculate integral for resonance divided by trapped region:
 c
-      expel = EXP (-etmax)
-      expe1 = EXP (-epst1)
-      expe2 = EXP (-epst2)
-      n = n0 / 2
-      rint = qgauleg_GA(fcn_GA,expel,expe2,n,ifail)
+        expel = EXP (-etmax)
+        expe1 = EXP (-epst1)
+        expe2 = EXP (-epst2)
+        n = n0 / 2
+        rint = qgauleg_GA(fcn_GA,expel,expe2,n,ifail)
 
-c      write(*,*)'1,expel,expe2,n,ifail,rint',expel,expe2,n,ifail,rint
+!        write(*,*)'1,expel,expe2,n,ifail,rint',expel,expe2,n,ifail,rint
 
-      rint = rint+qgauleg_GA(fcn_GA,expe1,expeu,n,ifail)
+        rint = rint+qgauleg_GA(fcn_GA,expe1,expeu,n,ifail)
 
-c      write(*,*)'2 expe1,expeu,n,ifail,rint', expe1,expeu,n,ifail,rint
+!        write(*,*)'2 expe1,expeu,n,ifail,rint', expe1,expeu,n,ifail,rint
 
       else
 c
 c     ---calculate integral for resonance which doesn't enter trapped region
 c
-      n = MIN0 (64, n0)
-      if (epst2 .le. 0.0d0) expel = EXP (-etmax)
-      if (epst2 .gt. 0.0d0 .and. epst1 .le. 0.0d0) expel = EXP (-MIN (
-     &epst2, etmax))
-      if (epst2 .gt. 0.0d0 .and. epst1 .gt. 0.0d0) expel = EXP (-MIN (
-     &epst1, etmax))
-      rint = qgauleg_GA(fcn_GA,expel,expeu,n,ifail)
+        n = MIN0 (64, n0)
+        if (epst2 .le. 0.0d0) expel = EXP (-etmax)
+        if (epst2 .gt. 0.0d0 .and. epst1 .le. 0.0d0) expel = EXP (-MIN (
+     &  epst2, etmax))
+        if (epst2 .gt. 0.0d0 .and. epst1 .gt. 0.0d0) expel = EXP (-MIN (
+     &  epst1, etmax))
+        rint = qgauleg_GA(fcn_GA,expel,expeu,n,ifail)
 
-c      write(*,*)'3 expel,expeu,n,ifail,rint', expel,expeu,n,ifail,rint
+!        write(*,*)'3 expel,expeu,n,ifail,rint', expel,expeu,n,ifail,rint
 
-      endif
+      endif ! (epst1 .gt. 0.d0 .and. epst2 .lt. etmax)
 
 cSAP080617
 c      write(*,*)'rint',rint
@@ -294,9 +296,9 @@ c     ---calculate denominator
 c
       expeld = EXP (-etmax)
 c%LL         call denomf(denom,expeld,etmax)
+      !write(*,*)'expeld,expeu=',expeld,expeu
       denom=theth*qgauleg_GA(fcd,expeld,expeu,n,ifail)
-
-c      write(*,*)'denom', denom
+      !write(*,*)'denom,zhat,ifail', denom,zhat,ifail
 
 c%LL         PRINT *, denom, zdenom
       rjpd = -0.125d0*sgnj*thtcu*rmax*rint/(denom*zhat)
@@ -322,7 +324,9 @@ c set j/pd to zero if no resonance
       else 
       rjpd = 0.0d0
       gammin = 1.0d0
-      endif
+      endif ! (etmax .gt. 0.d0 .and. thtc .gt. 0.d0)
+      
+      
       h3fac = 4.0d0 * zhat / (5.0d0 + charge)
       rjpd = rjpd*h3fac
 
@@ -343,7 +347,7 @@ c      write(*,*)' ratjpd,rjpd,rjpd0', ratjpd,rjpd,rjpd0
 
       return
 c
-      end
+      end subroutine TorGA_curba
 
 
 
@@ -357,7 +361,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & rl, ra0, rmax, rabs, r3, asp1, aspect, zhat, 
      &charge, agrel, bgrel, ap0, rmin, eparsq, epar, alfsq, elooro, elom
      &, elom2, rlams, etam, alffac, pas, tor, enpar2, theth, emin, 
@@ -367,7 +370,6 @@ c
 c     set eta-independent parameters
 ccSAP080617
       complex*16 
-c      doublecomplex 
      &alpha,chalf,cwun,ci,zarg,cpas,q
       common /TorGA_fcncom/ aspect,epar,rl,rmin,rmax,rabs,etam,charge, 
      &asp1,zhat,ap0,alfsq,elooro,r3, eparsq,l,iheat,lm1,lp1,modl2
@@ -437,7 +439,6 @@ c explicit type declaration 7/12/01 (RAJ)
 
 cSAP080617
       real*8 
-c      doubleprecision
      &etmax0, gam1, gam2, gammin, etmax, etcrit, theth, 
      &gam3, gam4, etam, epst1, epst2, emin, enpar2, aspect, epar, rl, 
      &rmin, rmax, rabs, charge, asp1, zhat, ap0, alfsq, qgrel, r3, 
@@ -493,7 +494,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & gammin, fl, fupr, gammax, fu, hl, hpr, etal, etau,
      & etam, hu, dfh, gam, eta, psq, gamsq, aspect, epar, rl, rmin, rmax
      &, rabs, charge, asp1, zhat, ap0, alfsq, elooro,r3, eparsq
@@ -535,28 +535,23 @@ c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
 
       real*8 
-c      doubleprecision
      &  ac, acc, pi, sv, cv, eim, shv, chv, vr, vi, r1, r2
      &, r3, r4, rr, vri, eip, pisr
 cSAP080617
       real*8 
-c      doubleprecision
      & z_imag, zn24
       integer nvv, ninter, n23, nff, nf, n24, nfrig, ncvg, nc
 c
 cSAP080617
       real*8 
-c      doubleprecision
      & qinf
 cSAP080617
       complex*16
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz,
-c      doublecomplex 
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz,
      &v,z,p,q, zzs,cisp,cism,pt,vvp,zzz, csqrtk_GA
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 c
       data ac /0.0000001d0/
       data qinf /1.79769313486231d+308/
@@ -806,7 +801,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & gam, gamma, gamsq, psq, eta
 c
       common /TorGA_energy/ gam, eta, psq, gamsq
@@ -825,7 +819,6 @@ cProlog
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & cgrel, bfac, bgrel, psq, bfacq, qgrel, afac, agrel
      &, rutaf, fu, fupr, gam, gamsq, denom, eta, enpar2, elom, theth, 
      &emin, ra0, elom2, tor, gammin
@@ -891,13 +884,11 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & rlam, eta, rpa, rppr, hh, rlams, pas, hpr
       integer nc, nf
 c
 cSAP080617
       complex*16 
-c      doublecomplex
      &alpha, zarg, pa, ppr, q
       common /TorGA_mdl3com/ alpha, rlams, pas
 c
@@ -941,16 +932,14 @@ cProlog
 c
 cSAP080617
       complex*16 
-c      doublecomplex
-     &vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     &vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 c
 c explicit type declaration added 7/12/01 RAJ
 cSAP080617
       real*8 
-c      doubleprecision
      & pisr, pi, acc,r1, r2, r3, r4
       integer ibd, ncvg, nfrig
 c
@@ -975,21 +964,18 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      &acc, sgn, pisr, pi, r1, r2, r3, r4
       integer ncvg, nfrig, ncv
 cSAP080617
       complex*16 
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 c
 cSAP080617
       complex*16 
-c      doublecomplex
      & f1, f2, ssrz, clogok_GA, csqrtk_GA, rgam_GA
 c     uses hypgm, clogok_GA, csqrtk_GA, rgam_GA
 c
@@ -1021,13 +1007,13 @@ c     &zz,srz,nfrig,clogok_GA(zz -srz,-nfrig,3)
 c      write(*,*)'f2,zz,srz,nfrig',f2,zz,srz,nfrig
 
       a=1.5d0
-      b=1.0d0
-      ssrz = csqrtk_GA (2.0d0*srz, nfrig, 2) * rgam_GA (vv, a, b)
+      b_GA=1.0d0
+      ssrz = csqrtk_GA (2.0d0*srz, nfrig, 2) * rgam_GA (vv, a, b_GA)
  
 c      write(*,*)'srz, nfrig,csqrtk_GA (2.0d0*srz, nfrig, 2)',
 c     &srz, nfrig,csqrtk_GA (2.0d0*srz, nfrig, 2)
-c       write(*,*)'vv,a,b,rgam_GA (vv, a, b)',
-c     &vv,a,b,rgam_GA (vv, a, b)
+c       write(*,*)'vv,a,b_GA,rgam_GA (vv, a, b_GA)',
+c     &vv,a,b_GA,rgam_GA (vv, a, b_GA)
          
 c      write(*,*)'ssrz,vv',ssrz,vv
 
@@ -1059,43 +1045,39 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & gamma, acc, el, crit_GA, pisr, pi, r1, r2, r3, r4
       integer ncvg, nfrig, l
 cSAP080617
       complex*16 
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 c
 cSAP080617
       complex*16 
-c      doublecomplex
      & sigma, fac
-c      doublecomplex
      &, clogok_GA, psifun_GA
       data gamma /0.5772156649d0/
 c     uses hypgm, clogok_GA, psifun_GA, crit_GA
 c
       a=-vv
-      b=vv+1.0d0
+      b_GA=vv+1.0d0
       c=(1.0d0,0.0d0)
-      call TorGA_hypgm(a,b,c,z1,pp,acc,ncvg)
+      call TorGA_hypgm(a,b_GA,c,z1,pp,acc,ncvg)
       sigma=(0.0d0,0.0d0)
       fac=(1.0d0,0.0d0)
       a = 0.5d0 * clogok_GA((zz+1.0d0)/(zz-1.0d0),nfrig,1) - gamma -
-     & psifun_GA(b)
+     & psifun_GA(b_GA)
       qq=a
       do 17 l=1,50
       el=l
       sigma=sigma+1.0d0/el
       fac=-fac*(vv+el)*(vv-el+1.0d0)*z1/(el*el)
-      b=(a+sigma)*fac
-      qq=qq+b
-      if (crit_GA(qq,b,acc))80,17,17
+      b_GA=(a+sigma)*fac
+      qq=qq+b_GA
+      if (crit_GA(qq,b_GA,acc))80,17,17
    17 continue
       ncvg=ncvg+2
    80 return
@@ -1110,32 +1092,29 @@ cProlog
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & accc, acc, pisr, pi, r1, r2, r3, r4
       integer ncvg, ncv, nfrig
 c
 cSAP080617
       complex*16 
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 cSAP080617
       complex*16 
-c      doublecomplex
      & f1, f2, zv, clogok_GA, rgam_GA
 c     uses clogok_GA, rgam_GA, hypgm, trdz
 c
       gr=clogok_GA(2.0d0*zz,nfrig,2)
       a=1.5d0
-      b=1.0d0
-      zv = rgam_GA (vv, a, b) * EXP (vv*gr)
+      b_GA=1.0d0
+      zv = rgam_GA (vv, a, b_GA) * EXP (vv*gr)
       a=vv/2.0d0+1.0d0
-      b=vv/2.0d0+0.5d0
+      b_GA=vv/2.0d0+0.5d0
       c=vv+1.5d0
       accc=acc/100.0d0
-      call TorGA_hypgm(a,b,c,z2,f1,accc,ncvg)
+      call TorGA_hypgm(a,b_GA,c,z2,f1,accc,ncvg)
       f1=f1/(2.0d0*zz*zv)
       qq=pisr*f1
       if (ABS (cvv) - 0.001d0) 10, 10, 9
@@ -1145,9 +1124,9 @@ c
    10 call TorGA_trdz
       go to 80
     9 a=-vv/2.0d0
-      b=(1.0d0-vv)/2.0d0
+      b_GA=(1.0d0-vv)/2.0d0
       c=0.5d0-vv
-      call TorGA_hypgm(a,b,c,z2,f2,accc,ncv )
+      call TorGA_hypgm(a,b_GA,c,z2,f2,accc,ncv )
       ncvg=ncvg+2*ncv
       f2=f2*zv/(vv+0.5d0)
       pp=(f1*svv/cvv+f2)/pisr
@@ -1164,38 +1143,35 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & pi, pisr, acc, r1, r2, r3, r4
       integer nfrig, ncvg
 cSAP080617
       complex*16 
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 c
 cSAP080617
       complex*16 
-c      doublecomplex
      & rgam_GA
 c     uses rgam_GA
 c
       a=0.5d0*(1.0d0+vv)
-      b = 0.0d0
+      b_GA = 0.0d0
       c=0.5d0
-      gr = rgam_GA (a, b, c)
+      gr = rgam_GA (a, b_GA, c)
       c=u*pi*vv*0.5d0
       a = exp ( c)
-      b = exp (-c)
+      b_GA = exp (-c)
       if (nfrig) 9, 10, 11
     9 qq=pisr*0.5d0*gr*u*a
       go to 12
-   10 qq=u*pisr/4.0d0*gr*(a-b)
+   10 qq=u*pisr/4.0d0*gr*(a-b_GA)
       go to 12
-   11 qq=-pisr/2.0d0*gr*b*u
-   12 pp=gr*(a+b)/(2.0d0*pisr)
+   11 qq=-pisr/2.0d0*gr*b_GA*u
+   12 pp=gr*(a+b_GA)/(2.0d0*pisr)
       return
 c
       end
@@ -1213,7 +1189,6 @@ c
 c     calculates ppr, the derivative of p, as well as p and q.
 cSAP080617
       complex*16 
-c      doublecomplex
      & v,z,p,ppr,q,vm1,pm,qm,c1,zsq
       data c1/(1.0d0,0.0d0)/
 c     uses legfn
@@ -1233,7 +1208,7 @@ c
 
 
 
-      subroutine TorGA_hypgm (a, b, c, z, h, acc, ncvg)
+      subroutine TorGA_hypgm (a, b_GA, c, z, h, acc, ncvg)
 cProlog
 
       implicit none
@@ -1241,21 +1216,19 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 
-c      doubleprecision
      & crit_GA, acc
       integer ncvg, i
 c
 cSAP080617
       complex*16 
-c      doublecomplex
-     & a,b,c,z,h,aa,bb,cc,zz,add,dd,hh
+     & a,b_GA,c,z,h,aa,bb,cc,zz,add,dd,hh
 c     uses crit_GA
 c
       ncvg=0
       zz=z
       hh=(1.0d0,0.0d0)
       aa=a
-      bb=b
+      bb=b_GA
       cc=c
       add=(1.0d0,0.0d0)
       dd=(1.0d0,0.0d0)
@@ -1285,22 +1258,18 @@ c
 c explicit type declaration 7/12/01 (RAJ)SAP080617
 cSAP080617 
       real*8
-c      doubleprecision
      & ek, crit_GA, pi, pisr, acc, r1, r2, r3, r4
       integer k, kk, i, ncvg, nfrig
 cSAP080617
       complex*16 
-c      doublecomplex
-     & vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv,zz1,zz2,srz
+     & vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv,zz1,zz2,srz
 c
 c....&|--1---------2---------3---------4---------5---------6---------7-|
-      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b,c,gr,cvv,svv, zz1,zz2
-     &,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
+      common /TorGA_legbl/ vv,zz,pp,qq,z1,z2,u,a,b_GA,c,gr,cvv,svv, zz1,
+     &zz2,srz,acc,pisr,pi,r1,r2,r3,r4,ncvg,nfrig
 cSAP080617
       complex*16 
-c      doublecomplex
      & rgam_GA, psifun_GA
-c      doublecomplex
      & ,ep, ep2, pie, zzs2, aa, bb, cc, fac, sum, add
 c     uses rgam_GA, crit_GA, psifun_GA
 c
@@ -1314,9 +1283,9 @@ c
       sum = 0.0d0
       if (k) 9, 9, 10
 c
-   10 b = 0.5d0
+   10 b_GA = 0.5d0
       c = 1.0d0
-      fac = rgam_GA (vv, b, c) * EXP (vv*gr)
+      fac = rgam_GA (vv, b_GA, c) * EXP (vv*gr)
       sum = fac
       if (kk) 9, 11, 12
    12 aa = -vv-2.0d0
@@ -1336,15 +1305,15 @@ c
    11 pie = pi*ep
       ep2 = ep/2.0d0
       a = ek
-      b = 0.5d0-ep
+      b_GA = 0.5d0-ep
       c = 1.0d0
       bb = 0.0d0
-      fac = -(1.0d0-pie**2/3.0d0)*rgam_GA(a, b, c)*rgam_GA(c, bb,-ep)/
+      fac = -(1.0d0-pie**2/3.0d0)*rgam_GA(a, b_GA, c)*rgam_GA(c,bb,-ep)/
      & (pi*EXP ((2.0d0*ek-vv)*gr))
       a = ek+0.5d0
-      b = 1.0d0-ep2
+      b_GA = 1.0d0-ep2
       c = ek+1.0d0+ep2
-      add = 2.0d0 * psifun _GA(a) - psifun_GA (b) - 
+      add = 2.0d0 * psifun _GA(a) - psifun_GA (b_GA) - 
      &      psifun_GA (c) - 2.0d0 * gr
       gr = fac*add*(1.0d0+ep2*add)
       sum = sum+gr
@@ -1357,9 +1326,9 @@ c
       bb = bb+1.0d0
       cc = cc+1.0d0
       fac = fac*(1.0d0+aa)*aa*zzs2/(bb*cc)
-      add = add+2.0d0/(a+1.0d0)+2.0d0/a-1.0d0/b-1.0d0/c
+      add = add+2.0d0/(a+1.0d0)+2.0d0/a-1.0d0/b_GA-1.0d0/c
       a = a+2.0d0
-      b = b+1.0d0
+      b_GA = b_GA+1.0d0
       c = c+1.0d0
       gr = fac*add*(1.0d0+ep2*add)
       sum = sum+gr
@@ -1375,17 +1344,14 @@ c      write(*,*)'TorGA_trdz pp,sum,pisr', pp,sum,pisr
 c
       end
 
-cSAP080617
+!=======================================================================
+!=======================================================================
       real*8 function fcn_GA (expe)
-c      doubleprecision function fcn_GA (expe)
-cProlog
-
       implicit none
 c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision 
      &alfh, beta, signv, expe, fu, fupr, etam, hh, hpr, 
      &epar, rl, rmin, rmax, rabs, charge, asp1, zhat, ap0, alfsq, aspect
      &, elooro, r3, eparsq, eta, rlams, pas, gam, psq, gamsq
@@ -1394,7 +1360,6 @@ c
 c added 20 Jan 92 by Joe Freeman
 cSAP080617
       complex*16
-c      doublecomplex
      & alpha 
       common /TorGA_fcncom/ aspect,epar,rl,rmin,rmax,rabs,etam,charge, 
      &asp1,zhat,ap0,alfsq,elooro,r3, eparsq,l,iheat,lm1,lp1,modl2
@@ -1402,18 +1367,18 @@ c      doublecomplex
       common /TorGA_energy/gam,eta,psq,gamsq
 c
 
-c      write(*,*)'in  function fcn_GA (expe)'
+      !write(*,*)'in  function fcn_GA (expe)'
 
       call TorGA_coefc(alfh,beta,signv,expe)
 
 cSAP080617
-c      write(*,*)'after TorGA_coefc alfh,beta,signv,expe',
-c     &alfh,beta,signv,expe
+!      write(*,*)'fcn_GA: after TorGA_coefc alfh,beta',
+!     &alfh,beta
 
       call TorGA_ffp(fu,fupr)
 
 cSAP080617
-c      write(*,*)'after TorGA_ffp fu,fupr',fu,fupr
+       !write(*,*)'fcn_GA: after TorGA_ffp fu,fupr',fu,fupr
 
 c      if (modl2) 10,10,20
 c   10 hh=hfun(eta,hpr)
@@ -1426,21 +1391,20 @@ c      write(*,*)'eta,etam',eta,etam
    20 if (eta-etam) 22,30,30
    22 call TorGA_geth3(hh,hpr,eta)
 
-c      write(*,*)'after 22 TorGA_geth3 hh,hpr,eta',hh,hpr,eta
+      !write(*,*)'fcn_GA: after 22 TorGA_geth3 hh,hpr,eta',hh,hpr,eta
 
       fcn_GA=(alfh*fupr*hh+beta*fu*hpr)*signv
 
 cSAP080617
-c      write(*,*)'fcn_GA,alfh,fupr,hh,beta,fu,hpr,signv',
-c     &fcn_GA,alfh,fupr,hh,beta,fu,hpr,signv
+!      write(*,*)'fcn_GA: fcn_GA,alfh,fupr,hh,beta,fu,hpr,signv',
+!     &fcn_GA,alfh,fupr,hh,beta,fu,hpr,signv
   
       return
-c
    30 fcn_GA = 0.0d0
       return
-c
-      end
-
+      end function fcn_GA
+!=======================================================================
+!=======================================================================
 
 cSAP080617
       real*8 function fcd (x)
@@ -1452,7 +1416,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision
      & gamma, theth, emin, usq, uzsq, elom, uxsq, aspect,
      & epar, rl, rmin, rmax, rabs, etam, charge, asp1, zhat, ap0, alfsq,
      & elooro, r3, eparsq, ra0, elom2, tor, gammin, agrel, bgrel, qgrel,
@@ -1460,7 +1423,6 @@ c      doubleprecision
       integer l, modl2,lm1, lp1, iheat, ixo, kg
 cSAP080617
       real*8 x
-c      doubleprecision fcd, x
 c
       common /TorGA_fcncom/ aspect,epar,rl,rmin,rmax,rabs,etam,charge, 
      &asp1,zhat,ap0,alfsq,elooro,r3, eparsq,l,iheat,lm1,lp1,modl2
@@ -1477,14 +1439,12 @@ c
 
 cSAP080617
       real*8 function fjpd0_GA (epar, lh, sigma, zeff)
-c      doubleprecision function fjpd0_GA (epar, lh, sigma, zeff)
 cProlog
 
       implicit none
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision
      & rutpi,erfcb_GA,sum,erffac, epar, rlfac, rlk, sum1,
      & ckj_GA, sigma, zeff, dz, dzp
 
@@ -1520,7 +1480,6 @@ c
       end
 cSAP080617
       real*8 function fjpd0h_GA (epar, zeff)
-c      doubleprecision function fjpd0h_GA (epar, zeff)
 cProlog
 
       implicit none
@@ -1528,7 +1487,6 @@ c
 c explicit type declaration 7/12/01 (RAJ))
 cSAP080617
       real*8
-c      doubleprecision 
      &rutpi,erfcb_GA,rtepar,erffac, dz, dzp, zeff, epar
 
 c
@@ -1551,7 +1509,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision
      & omre, ra0, eta, rutfac, enpar2, elom2, rut, denomi
      &, elom, gam1, gam2, gamd, emin, tor, gammin, agrel, bgrel, qgrel, 
      &theth
@@ -1596,7 +1553,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision
      & y, x
 
 cSAP080617
@@ -1629,18 +1585,15 @@ c
 
 cSAP080617
       complex*16 function clogok_GA (z, n, m)
-c      doublecomplex function clogok_GA (z, n, m)
 cProlog
 
       implicit none
 ccSAP080617
       complex*16
-c      doublecomplex
      & z,sz
 c explicit type declaration 7/12/02 RAJ
 cSAP080617
       real*8
-c      doubleprecision
      & pi, s
 
       integer nf, n, m
@@ -1666,19 +1619,16 @@ c
 
 cSAP080617
       complex*16 function csqrtk_GA (z, n, m)
-c      doublecomplex function csqrtk_GA (z, n, m)
 cProlog
 
       implicit none
 c
 cSAP080617
       complex*16
-c      doublecomplex
      & z, sz
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 s 
-c      doubleprecision s
 
       integer nf, n, m
 
@@ -1699,8 +1649,7 @@ c
 
 
 cSAP080617
-      complex*16 function rgam_GA (z, a, b)
-c      doublecomplex function rgam_GA (z, a, b)
+      complex*16 function rgam_GA (z, a, b_GA)
 cProlog
 
       implicit none
@@ -1708,7 +1657,6 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision
      & xa, xb, ya, yb
 
       integer la, lb
@@ -1719,12 +1667,11 @@ c
 c
 cSAP080617
       complex*16
-c      doublecomplex 
-     &z, a, b, za, zb, clogam_GA
+     &z, a, b_GA, za, zb, clogam_GA
 c     uses clogam_GA
 c
       za=z+a
-      zb=z+b
+      zb=z+b_GA
       xa = -dble(za)
       xb = -dble(zb)
       ya = dimag(za)
@@ -1737,9 +1684,9 @@ c
       if (la .eq. 1 .and. lb .eq. 1) go to 1
       rgam_GA = 0.0d0
       if (la .eq. 1 .and. lb .eq. 0) return
-      write (iotty, 10) z, a, b
+      write (iotty, 10) z, a, b_GA
    10 format (' RGAM ... is not defined or infinite for z = ',2e12.4, 
-     &5h a = , 2e12.4, 5h b = , 2e12.4)
+     &5h a = , 2e12.4, 8h b_GA = , 2e12.4)
       return
 c
     2 rgam_GA = 1.0d0
@@ -1753,7 +1700,6 @@ c
 
 cSAP080617
       complex*16 function psifun_GA (z)
-c      doublecomplex function psifun_GA (z)
 cProlog
 
       implicit none
@@ -1761,22 +1707,20 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8   
-c      doubleprecision
-     & pi, b, x, a
+     & pi, b_GA, x, a
 
       integer n, i
 
 ccSAP080617
       complex*16
-c      doublecomplex 
      &z, u, v, h, r
-      dimension b(6)
+      dimension b_GA(6)
 c
       integer iotty
       data iotty /6/
 c
       data pi / 3.141592653589793d0/
-      data b / +8.333333333333333d-2, -8.333333333333333d-3, +3.
+      data b_GA / +8.333333333333333d-2, -8.333333333333333d-3, +3.
      &968253968253968d-3, -4.166666666666667d-3, +7.575757575757576d-3, 
      &-2.109279609279609d-2 /
 c
@@ -1796,8 +1740,9 @@ c
     1 h=h+1.0d0/v
     2 v=v+1.0d0
     3 r = 1.0d0 / v**2
-      psifun_GA=LOG(v)- 0.5d0/v - r * (b(1)+r*(b(2)+r*(b(3)+r*(b(4)+r*(
-     &b(5)+r*(b(6)+r*b(1))))))) - h
+      psifun_GA=LOG(v)- 0.5d0/v - 
+     & r * (b_GA(1)+r*(b_GA(2)+r*(b_GA(3)+r*(b_GA(4)+r*(
+     &b_GA(5)+r*(b_GA(6)+r*b_GA(1))))))) - h
       if (x .ge. 0.0d0) return
       h = pi * u
       psifun_GA = psifun_GA + 1.0d0 / u + pi * COS (h) / SIN (h)
@@ -1812,20 +1757,17 @@ c
 
 cSAP080617
       real*8 function crit_GA (sum, del, accs)
-c      doubleprecision function crit_GA (sum, del, accs)
 cProlog
 
       implicit none
 c
 cSAP080617
       complex*16
-c      doublecomplex
      & sum, del
 c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8 accs
-c      doubleprecision accs
 
       crit_GA=dble(del)**2 + dimag(del)**2 - accs * (dble(sum)**2 +dimag
      &(sum)**2)
@@ -1843,7 +1785,6 @@ c
 c explicit type declaration 7/12/02 RAJ
 cSAP080617
       real*8
-c      doubleprecision
      & et, e, emin, signv, gam, theth, elom, gamsq, psq, 
      &gme, gmesq, pparsq, enpar2, eta, ra0, alfh, beta, tor, expe, 
      &aspect, epar, rl, rmin, rmax, rabs, etam, charge, asp1, zhat, ap0,
@@ -1867,6 +1808,8 @@ c
       gmesq=gme*gme
       pparsq=gmesq/enpar2
       eta=(1.0d0-pparsq/psq)/ra0
+!      write(*,*)' TorGA_coefc: expe,et,psq-pparsq,l=',
+!     &                         expe,et,psq-pparsq,l
    40 if (l) 44,44,42
    42 alfh=(psq-pparsq)**l
       go to 46
@@ -1878,12 +1821,11 @@ c
    60 beta=-2.0d0*alfh*eta*gam/psq
       return
 c
-      end
+      end subroutine TorGA_coefc
 
 
 cSAP080617
       real*8 function erfcb_GA (j, z, zp, zhi)
-c      doubleprecision function erfcb_GA (j, z, zp, zhi)
 cProlog
 
       implicit none
@@ -1891,8 +1833,7 @@ c
 c explicit type declaration 7/12/01 (RAJ)
 cSAP080617
       real*8
-c      doubleprecision 
-     &zero, pii, pin, dd, a, b, c, d, e, p, a2, b2, c2, 
+     &zero, pii, pin, dd, a, b_GA, c, d, e, p, a2, b2, c2, 
      &d2, e2, zzz, t, z, zp, zar, zhi, zfb
 
       integer ivar, j
@@ -1907,11 +1848,10 @@ c     zp is derivitive.
 c
 cSAP080617
       complex*16
-c      doublecomplex
      & zarg, cim
       dimension z(*), zp(*)
       data ivar/0/, zero/0.0d0/
-      data pii, pin, dd, a, b, c, d, e, p, a2, b2, c2, d2, e2/1.
+      data pii, pin, dd, a, b_GA, c, d, e, p, a2, b2, c2, d2, e2/1.
      &12837916709551d0 , 0.56418958354776d0 , 0.66666666666667d0 , 0.
      &24598329392237d0 , 0.22260371336736d0 , 0.12873395368514d0 , 0.
      &27281029618672d0 , -.11611455108396d0 , 0.43599403657113d0 , 0.
@@ -1924,7 +1864,7 @@ c
       if (ivar .gt. 0) go to 1
       zarg = sqrt (zzz)
       t = 1.0d0/(1.0d0+p*zarg)
-      zfb = t*(a+t*(a+t*(b+t*(c+t*(d+t*e)))))
+      zfb = t*(a+t*(a+t*(b_GA+t*(c+t*(d+t*e)))))
       erfcb_GA = zfb
       if (j .eq. 0) return
       z(1) = zfb+pii*zarg
@@ -1993,7 +1933,6 @@ c     calculates (.5+k)!/(.5+k-j)!
 c
 cSAP080617
 c      real*8
-c      doubleprecision
 c     & ckj_GA
       integer i,j,k
       ckj_GA = 1.0d0
@@ -2008,15 +1947,13 @@ c
 
 cSAP080617
       complex*16 function clogam_GA (z)
-c      doublecomplex function clogam_GA (z)
 cProlog
 
       implicit none
 ccSAP080617
       complex*16
-c      doublecomplex
      & z, v, h, r
-      dimension b(10)
+      dimension b_GA(10)
 c
       integer iotty
       data iotty /6/
@@ -2024,13 +1961,12 @@ c
 c explicit type declaration 7/12/02 RAJ
 cSAP080617
       real*8
-c      doubleprecision
-     & pi, b, x, t, f, c, d, a, e
+     & pi, b_GA, x, t, f, c, d, a, e
 
       integer i, n
 
       data pi /3.141592653589793d0/
-      data b /+8.33333333333333d-2, -2.77777777777778d-3, +7.
+      data b_GA /+8.33333333333333d-2, -2.77777777777778d-3, +7.
      &93650793650794d-4, -5.95238095238095d-4, +8.41750841750842d-4, -1.
      &91752691752692d-3, +6.41025641025641d-3, -2.95506535947712d-2, +1.
      &79644372368831d-1, -1.39243221690590d+0/
@@ -2057,9 +1993,11 @@ c
     2 h = dcmplx(0.5d0*LOG (dble(h)**2 + dimag(h)**2),a)
       v = v + 1.0d0
     3 r = 1.0d0 / v**2
-      clogam_GA=0.918938533204673d0+(v-0.5d0)*LOG(v)-v+(b(1)+r*(b(2)+r*
-     &(b(
-     &3)+ r*(b(4)+r*(b(5)+r*(b(6)+r*(b(7)+r*(b(8)+r*(b(9)+r*b(10))))))))
+      clogam_GA=0.918938533204673d0+(v-0.5d0)*LOG(v)-v+
+     & (b_GA(1)+r*(b_GA(2)+r*
+     &(b_GA(
+     &3)+ r*(b_GA(4)+r*(b_GA(5)+r*(b_GA(6)+r*(b_GA(7)
+     & +r*(b_GA(8)+r*(b_GA(9)+r*b_GA(10))))))))
      &)) /v-h
       if (x .ge. 0.0d0) go to 4
 c
@@ -2083,8 +2021,8 @@ c
       end
 
 cSAP080617
-      real*8 function qgauleg_GA (func, a, b, n, ifail)
-c      function qgauleg_GA (func, a, b, n, ifail)
+      real*8 function qgauleg_GA (func, a, b_GA, n, ifail)
+c      function qgauleg_GA (func, a, b_GA, n, ifail)
 cProlog
 
 c
@@ -2092,9 +2030,8 @@ c
 c
 cSAP080617
       real*8
-c      doubleprecision
-c     & qgauleg_GA,func,a,b
-     & func,a,b
+c     & qgauleg_GA,func,a,b_GA
+     & func,a,b_GA
       integer n,ifail
       external func
 c
@@ -2109,7 +2046,6 @@ c
       integer nn,ns,j
 cSAP080617
       real*8
-c      doubleprecision
      & x(nmax),w(nmax),xx(nmax),y(nmax),ss,xm,xr
       character errmsg*80
       save ns,x,w,errmsg
@@ -2117,7 +2053,7 @@ c      doubleprecision
       data errmsg/'warning from qgauleg_GA:  n is set to nmax =64'/
 c
 
-c      write(*,*)'in qgauleg_GA   a, b, n', a, b, n
+c      write(*,*)'in qgauleg_GA   a, b_GA, n', a, b_GA, n
       
       nn=n
 
@@ -2141,8 +2077,8 @@ c      write(*,*)'w',w
 
       endif
 c
-      xm=0.5d0*(b+a)
-      xr=0.5d0*(b-a)
+      xm=0.5d0*(b_GA+a)
+      xr=0.5d0*(b_GA-a)
 
 cyup      write(*,*)'xm,xr',xm,xr
 
@@ -2150,7 +2086,7 @@ cyup      write(*,*)'xm,xr',xm,xr
       xx(j)=xm+xr*x(j)
       y(j)=func(xx(j))
 
-c      write(*,*)'j,xx(j),y(j)',j,xx(j),y(j)
+      !write(*,*)'qgauleg_GA: j,xx(j),y(j)',j,xx(j),y(j)
 
       enddo
       ss=0.d0
@@ -2166,7 +2102,7 @@ c      write(*,*)'qgauleg_GA,ss,xr',qgauleg_GA,ss,xr
 
       return
 c
-      end
+      end function qgauleg_GA
 
 
 
@@ -2179,14 +2115,12 @@ c
       integer n
 cSAP080617
       real*8
-c      doubleprecision
      & x(n),w(n)
 c     returns the abscissas and weights for n-point
 c     gauss-legendre integration
 c ----------------------------------------------------------------------
 cSAP080617
       real*8
-c      doubleprecision 
      &pi,eps
 cSAP
 c      parameter (pi=3.141592654d0,eps=3.d-14)
@@ -2194,7 +2128,6 @@ c      parameter (pi=3.141592654d0,eps=3.d-14)
       integer i,j,m
 cSAP080617
       real*8
-c      doubleprecision
      & z,p1,p2,p3,pp,z1
 c
 

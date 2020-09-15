@@ -2,7 +2,7 @@
 
       subroutine coldm(nz,az2,x,y,an2,ncld,icuto)
 
-      implicit double precision (a-h,o-z)
+      implicit none !integer (i-n), real*8 (a-h,o-z)
 c
 c  input:
 c     nz     = parallel refractive index
@@ -18,8 +18,13 @@ c
 c
 c       costruisce l'indice freddo per i due modi
 c
-      double precision ncld(2),nz,an2(2)
-      dimension icuto(2)
+      !double precision ncld(2),nz,an2(2)
+      !dimension icuto(2)
+      real*8 ncld(2),an2(2) !OUTPUT
+      integer icuto(2) !OUTPUT
+      real*8 nz,az2,x,y !INPUT !YuP: nz is not used? Note that az2=nz**2
+      real*8 d,de,dd,b1,b2,y2 !local
+      
 c	"""""""""""""""""""""""""""
 c	write(*,*)'beg. of coldm'
 c	"""""""""""""""""""""""""""

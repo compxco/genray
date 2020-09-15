@@ -22,8 +22,8 @@ c     b0          - characteristic magnetic field (tl)
 c     q0,pq	  -
 c     rho	  -normalized small radius
 c     rho2	  -rho2=rho**2
-c     psifactr    =<1, is used in gr2new to find the last flux surface
-c                  psi(r,z)=psilim*psifactr
+c     psifactr    =<1, is used in gr2new to find the last closed flux surface
+c                  psi(r,z)=psimag+(psilim-psimag)*psifactr
 c     ax	  -
 c     r0x         - characteristic radius(m)
 c     frqncy      - wave friquency (GHz)
@@ -40,7 +40,8 @@ c     dpdzd,dpdrd - derivatives from psi by! i_look_roots=0    !do not plot D(N_
 !                   !as the initial ray condition and calculate ray z and r
 c     dbzdz,dbzdr,dbzdph -derivatives from z-component of magnetic field
 c     dbrdz,dbrdr,dbrdph -derivatives from r-component of magnetic field
-c     dbphdz,dbphdr,dbphdph- derivatives from toroidal magnetic field
+c     dbphdz,dbphdr,dbpdph- derivatives from toroidal magnetic field
+      !YuP: careful! There is {dbphdz,dbphdr,dbpdph}. There is no dbphdph !
 c     dqdrho
 c     dbmdz,dbmdr,dbmdph -derivatives from the module of magnetic field
 c     dc2dz,dc2dr,dc2dph -derivatives from cos(gam)**2 by z,r and phi
@@ -74,12 +75,12 @@ c                equal zero inside the plasma,
 c                dispersion relation is multiplied by delib
 c     id - index of the form of the dispersion relation
 c     isolv -index of the solution method of ray trasing equations
-c     idif  -index of analytical(=1) or numerical (=2) differantiation
+c     idif  -index of analytical(=1) or numerical (=2) differentiation
 c                  of Hamiltonian
 c     irkmeth- index of the modification of Runge-Kutta  procedure
 c     ireflm - maximum number of ray reflections
 c     irefl  - number of ray reflections   
-c     istart - index to shoose wave start is outside the plasma (EC)
+c     istart - index to choose wave start is outside the plasma (EC)
 c                    or inside plasma (LH,FW)
 c     idens  - index of spline or quasiparobolic density,temperature
 c                     and z_eff  approximation
@@ -311,7 +312,7 @@ c---------------------------------------------------------------
 c k_root,       the number of the dispersion tensor
 c               eigenvalue, used for id=10, determined in cninit.f
 c----------------------------------------------------------- 
-c i_geom_optic,       !the form od the ray equations
+c i_geom_optic,       !the form of the ray equations
 c              =1 default:
 c                  ray-tracing equations right hand side=
 c		   dr^/dt=-(dD/dN^)/(dD/domega)
@@ -321,7 +322,7 @@ c              =2  ray-tracing equations right hand side=
 c		   dr^/dl=-ray_direction*(dD/dN^)p
 c                  dN^/dl= ray_direction*(dD/dr^)p
 c                  p=1.d0/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)=
-c                  deru(1)=dD/dN_z,deru(2)=dD/dN_r,deru(c)=dD/dCM,
+c                  deru(1)=dD/dN_z,deru(2)=dD/dN_r,deru(3)=dD/dCM,
 c                  N_phi=cm/r
 c----------------------------------------------------------------------
 c ray_direction =+1 as default it

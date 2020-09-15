@@ -8,7 +8,7 @@ C**** xi_lo,xi_hi,nxi  (float)
       SUBROUTINE Disp_Ram(T_e,N_parallel,X_e,Y_e,
      +  N_perp,eps,D)
 
-C      implicit double precision (a-h, o-z)
+      !implicit double precision (a-h, o-z)
 CENM
 C** Note: by default, only use Trubnikov method
       IMPLICIT NONE
@@ -243,7 +243,7 @@ C............ the fully-relativistic dispersion function .............
 C
       double complex function fr_func(roots,eps)
 C
-CENM      implicit double precision (a-h, o-z)
+CENM      !implicit double precision (a-h, o-z)
       IMPLICIT NONE
 C
       double complex roots,eps(1:3,1:3)
@@ -313,7 +313,7 @@ C       in order to work with iabsorp=12 which uses complex
 C       root finding (Muller algorithm).
       double complex function fr_func_noeps(roots)
 C
-CENM      implicit double precision (a-h, o-z)
+CENM      !implicit double precision (a-h, o-z)
       IMPLICIT NONE
 C
       double complex roots
@@ -1017,14 +1017,16 @@ C
 C
 C---------------------------------------------------------------------
 C
-C... aymptotic form for the modified Bessel function (second kind) ...
+C... asymptotic form for the modified Bessel function (second kind) ...
 C.......... this is for real argument and is exp(x)*K(nu,x) ..........
 C
       double precision function besk_a(nu,z)
 C
-      implicit double precision (a-h,o-z)
+      implicit none !double precision (a-h,o-z)
 C
-      double precision mu
+      integer nu
+      real*8 mu,fac
+      real*8 z
 C
 C.......................... fac=sqrt(pi/2) ...........................
 C
@@ -1042,16 +1044,15 @@ C
 C
 C---------------------------------------------------------------------
 C
-C... aymptotic form for the modified Bessel function (second kind) ...
+C... asymptotic form for the modified Bessel function (second kind) ...
 C........ this is for complex argument and is exp(x)*K(nu,x) .........
 C
       double complex function cbesk_a(nu,z)
 C
-      implicit double precision (a-h,o-z)
-C
-      double precision mu
-C
-      double complex z,cdsqrt
+      implicit none !double precision (a-h,o-z)
+      integer nu
+      real*8 mu,fac
+      double complex z !,cdsqrt
 C
 C.......................... fac=sqrt(pi/2) ...........................
 C
@@ -1111,11 +1112,11 @@ c-----local
 
       call Disp_combined(T_e,N_parallel,X_e,Y_e,N_perp_re,eps,D)
       N_perp_im=dabs(dimag(D)/dD_dNperp_re)
-      write(*,*)'in relativist_absorp_projection_method_det'
-      write(*,*)'T_e,N_parallel,X_e,Y_e,N_perp_re',
-     &T_e,N_parallel,X_e,Y_e,N_perp_re
-      write(*,*)'D,dimag(D),dD_dNperp_re,N_perp_im',
-     & D,dimag(D),dD_dNperp_re,N_perp_im
+!      write(*,*)'in relativist_absorp_projection_method_det'
+!      write(*,*)'T_e,N_parallel,X_e,Y_e,N_perp_re',
+!     &T_e,N_parallel,X_e,Y_e,N_perp_re
+!      write(*,*)'D,dimag(D),dD_dNperp_re,N_perp_im',
+!     & D,dimag(D),dD_dNperp_re,N_perp_im
 
       return
       end

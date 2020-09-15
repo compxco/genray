@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
       subroutine absorpfw(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,
      1nbulk,bmod,cnprim_e,cnprim_i)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       dimension tempiar(nbulka)
@@ -169,23 +169,23 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 l0=1/yi
 	 l1=(1-p)/yi
 	 l2=(1+p)/yi+1
-	 if(l2.gt.98) then
-	   WRITE(*,*)'in absorpwf l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpwf' 
+	 if(l2.gt.(nb-2)) then
+	   WRITE(*,*)'in absorpwf l2>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpwf' 
 	   STOP
-	 endif !l2=98
+	 endif !l2=(nb-2)
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpwf l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpwf' 
+	 if(l1.gt.(nb-2)) then
+     	   WRITE(*,*)'in absorpwf l1>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpwf' 
 	   STOP
-	 endif ! l1=98
+	 endif ! l1=(nb-2)
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpwf l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpwf' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpwf l1<-(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpwf' 
 	   STOP
-	 endif !l1=-98
+	 endif !l1=-(nb-2)
 
 	 do l=l1,l2
 c          cksi_l=(1-l*yi)/(N_par*Vi/cvac)
@@ -269,7 +269,7 @@ c------------------------------------------------------------------
       subroutine absorpf1(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,
      1nbulk,bmod,cnprim_e,cnprim_i)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       dimension tempiar(nbulka)
@@ -385,21 +385,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 l0=1/yi
 	 l1=(1-p)/yi
 	 l2=(1+p)/yi+1
-	 if(l2.gt.98) then
-	   WRITE(*,*)'in absorpf1 l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l2.gt.(nb-2)) then
+	   WRITE(*,*)'in absorpf1 l2>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpf1' 
 	   STOP
 	 endif 
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpf1 l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.gt.(nb-2)) then
+     	   WRITE(*,*)'in absorpf1 l1>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpf1' 
 	   STOP
 	 endif 
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpf1 l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpf1 l1<-(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpf1' 
 	   STOP
 	 endif 
 
@@ -493,11 +493,10 @@ c------------------------------------------------------------------
       subroutine absorpfd(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,
      1nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-  
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
-      include'eps.i'
+      include 'eps.i'
 
       dimension cnprim_s(*)   !BH041009, for separate ion contributions
                               !cnprim_s(1:nbulk), cnprim_s(1)=cnprim_e
@@ -511,8 +510,8 @@ cyup      parameter (nb=200) ! the max order of the modifed Bessel function
 
 c      complex argz,zf,zfp
 c      real rpr,rpim
-       double complex argz,zf,zfp
-       double precision rpr,rpim
+      double complex argz,zf,zfp
+      double precision rpr,rpim
 
       double complex ci,ckappae2,czero
          
@@ -715,20 +714,20 @@ cSAP091015
            write(*,*)'l2,l1,cnpar,vi/cvac,yi,p',
      &                l2,l1,cnpar,vi/cvac,yi,p
 
-	   WRITE(*,*)'in absorpfd l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	   WRITE(*,*)'in absorpfd l2>nb-2  Increase
+     1	   parameter nb in the subroutine absorpfd' 
 	   STOP
 	 endif 
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpfd l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l1.gt.nb-2) then
+     	   WRITE(*,*)'in absorpfd l1>nb-2  Increase
+     1	   parameter nb in the subroutine absorpfd' 
 	   STOP
 	 endif 
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpfd l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpfd l1<-(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfd' 
 	   STOP
 	 endif 
 
@@ -872,10 +871,10 @@ c------------------------------------------------------------------
       subroutine absorpfw_pinsker(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,
      1nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
-      include'eps.i'
+      include 'eps.i'
 
       dimension cnprim_s(1)   !BH041009, for separate ion contributions
                               !cnprim_s(1:nbulk), cnprim_s(1)=cnprim_e
@@ -1049,21 +1048,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 
 c         write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
 
-	 if(l2.gt.98) then
-	   WRITE(*,*)'in absorpfw_pinsker l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l2.gt.(nb-2)) then
+	   WRITE(*,*)'in absorpfw_pinsker l2>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfd' 
 	   STOP
 	 endif 
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpfw_pinsker l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l1.gt.(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker l1>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfd' 
 	   STOP
 	 endif 
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpfw_pinsker l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker l1<-(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpf1' 
 	   STOP
 	 endif 
 
@@ -1203,7 +1202,7 @@ c------------------------------------------------------------------
       subroutine absorpfw_pinsker_1(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,frqncy,
      1nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       include 'eps.i'
@@ -1394,21 +1393,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 
          write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
 
-	 if(l2.gt.98) then
-	   WRITE(*,*)'in absorpfw_pinsker l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l2.gt.(nb-2)) then
+	   WRITE(*,*)'in absorpfw_pinsker_1 l2>(nb-2)  Increase
+     1	   parameter nb' 
 	   STOP
 	 endif 
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpfw_pinsker l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l1.gt.(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker_1 l1>(nb-2)  Increase
+     1	   parameter nb' 
 	   STOP
 	 endif 
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpfw_pinsker l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker_1 l1<-(nb-2)  Increase
+     1	   parameter nb' 
 	   STOP
 	 endif 
 
@@ -1524,7 +1523,7 @@ c                           (cex,cey,cez) will be in common /efield.i/
 c------------------------------------------------------------------
       subroutine absorp_hot(z,r,phi,cnpar,cnper,nbulk,
      &cnprim_e,cnprim_i,cnprim_s)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       include 'eps.i'
@@ -1569,7 +1568,7 @@ c-----external
       if (first) T_perp_r_old=0.d0
       first=.false.      
 
-      pi=4.d0*dtan(1.d0)
+      pi=4.d0*datan(1.d0) !YuP[2018-10-13][2020-01-27] BUG was: pi=4.d0*dtan(1.d0)
 c----------------------------------------------
 c     calculate hot plasma tensor reps(). 
 c     reps() will be in common /eps/ in eps.i file.
@@ -1832,7 +1831,7 @@ c------------------------------------------------------------------
       subroutine absorpfw_pinsker_2(z,r,phi,cnpar,cnper,
      1tempe,dense,tempiar,
      1nbulk,bmod,cnprim_e,cnprim_i,cnprim_s)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       include 'eps.i'
@@ -2020,21 +2019,21 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 
          write(*,*)'absorpfw_pinsker2 l1,l2,1/yi',l1,l2,1./yi
 
-	 if(l2.gt.98) then
-	   WRITE(*,*)'in absorpfw_pinsker2 l2>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l2.gt.(nb-2)) then
+	   WRITE(*,*)'in absorpfw_pinsker2 l2>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfw_pinsker2' 
 	   STOP
 	 endif 
 
-	 if(l1.gt.98) then
-     	   WRITE(*,*)'in absorpfw_pinsker2 l1>98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpfd' 
+	 if(l1.gt.(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker2 l1>(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfw_pinsker2' 
 	   STOP
 	 endif 
 
-	 if(l1.lt.-98) then
-     	   WRITE(*,*)'in absorpfw_pinsker2 l1<-98 it should increase
-     1	   the parameter nb>100 in the subroutine absorpf1' 
+	 if(l1.lt.-(nb-2)) then
+     	   WRITE(*,*)'in absorpfw_pinsker2 l1<-(nb-2)  Increase
+     1	   parameter nb in the subroutine absorpfw_pinsker2' 
 	   STOP
 	 endif 
 

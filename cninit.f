@@ -63,7 +63,11 @@ c---------refractive index is specified by N_toroidal and N_poloidal
 c         calculation of the parallel refractive index component
 c         N_parallel=cnpar
           gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
-          b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+          if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+            b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+          else
+            b_teta=0.d0
+          endif
           cnpar=(cnphi*bphi+cnteta*b_teta)/bmod !N_parallel
           write(*,*)'cninit.f cnteta,cnphi,cnpar',cnteta,cnphi,cnpar
         endif
@@ -359,7 +363,11 @@ c            dpdrd=dpsidr dpdzr=d psidr were calculated by b(z,r,phi)
 c            They are in  common/one/
 c---------------------------------------------------------------------
              gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
-             b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+             if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+               b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+             else
+               b_teta=0.d0
+             endif
              cnteta_full=n_theta_pol
              write(*,*)'cninit i_n_poloidal,n_theta_pol',
      &       i_n_poloidal,n_theta_pol
@@ -393,7 +401,11 @@ cSAP091026
           if (i_n_poloidal.eq.3) then !input N_parallel, ksi_nperp
 c------------calculate N_phi,N_theta,N_rho
              gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
-             b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+             if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+               b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+             else
+               b_teta=0.d0
+             endif
              rad_ksi_nperp=ksi_nperp*pi/180.d0 !transfrm degrees to radians
              cnteta_full=(cnpar*b_teta+cnper*bphi*dsin(rad_ksi_nperp))
      &                    /bmod
@@ -509,8 +521,13 @@ cyup      write(*,*)'cninit.f in cnzcnr cnteta,cirho,cnrho',
 cyup     &cnteta,cirho,cnrho
 c     write(*,*)'cninit.f in cnzcnr dpdzd,dpdrd,gradpsi',
 c    &dpdzd,dpdrd,gradpsi
-      cnz=(cnteta*dpdrd-cirho*cnrho*dpdzd)/gradpsi
-      cnr=(-cnteta*dpdzd-cirho*cnrho*dpdrd)/gradpsi
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+       cnz=(cnteta*dpdrd-cirho*cnrho*dpdzd)/gradpsi
+       cnr=(-cnteta*dpdzd-cirho*cnrho*dpdrd)/gradpsi
+      else
+       cnz=0.d0
+       cnr=0.d0
+      endif
       cm=cnphi*r
 cyup      write(*,*)'cninit.f in cnzcnr cnz,cnr,cm',cnz,cnr,cm
 cSm030515
@@ -578,7 +595,7 @@ c     it uses the following functions and subroutines      !
 c     b ,y,x,s,abc,hamilt1                                 !
 c-----------------------------------------------------------
       subroutine nsolv(z,r,phi,cnz,cnr,cm,cn2p,cn2m)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -802,7 +819,7 @@ c     it uses the following functions and subroutines      !
 c     ias1r,b   ,y,x,gamma1,s,abc,hamilt1,                 !
 c-----------------------------------------------------------
       subroutine npernpar(z,r,phi,cnpar,cnper2p,cnper2m)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -887,7 +904,7 @@ c         WRITE(*,*)'Aplt cnpernpar cnper2p,cnper2m',cnper2p,cnper2m
       end if
 c end if 1
 c------------------------------------------------------------------
-c     cold plasma dispresion relation
+c     cold plasma dispersion relation
 c------------------------------------------------------------------
 c if 0
       if ((id.eq.1).or.(id.eq.2)) then
@@ -896,7 +913,6 @@ c if 0
 c       ib=1 electron resonance condition may be
 c  if 2
         if (ib.eq.1) then
-c         write(*,*)'cnint cold plasma ib=1 '
           xe=x(z,r,phi,1)
           ye=y(z,r,phi,1)
           pyp=xe/(1.d0+ye)
@@ -917,12 +933,23 @@ c new coefficients
           wd=wnew
 
           detin=gd**2-4.d0*fd*wd
+          !write(*,*)' npernpar: detin, fd=',detin, fd
+          !if(fd.eq.0.d0) pause
           if (detin.lt.0d0) then
-             write(*,*)' 2 in npenpar detin  less then zero'
-             cnper2p=-1.d0
-             cnper2m=-1.d0
-             return
-	  end if
+             !YuP[2020-08-04] adjustment for a very small neg.discriminant
+             if(abs(detin).lt. 1.d-6*(gd**2+4.d0*fd*wd) ) then
+               ! Could be a very small negative value, from rounding.
+               ! Then, set it to zero:
+               detin=0.d0
+             else ! large negative discriminant: no wave here.
+               !write(*,*)'npernpar: detin<0. detin,gd**2,Xe=',detin,gd**2,xe
+               !write(*,*)'npernpar: detin<0.    iraystop->1'
+               cnper2p=-1.d0
+               cnper2m=-1.d0
+               return
+             endif 
+          endif ! detin<0
+          
           cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
           cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c          write(*,*)'in cninit.f  1 npernpar cnper2p,cnper2m',
@@ -974,7 +1001,7 @@ c        write(*,*)'in npernpar ib.qt.1 cnper2p,cnper2m',cnper2p,cnper2m
            goto 111
         end if
 c end if 3
-      end if
+      end if ! (id.eq.1).or.(id.eq.2)
 c end if 0
 c if 4
       if ((id.eq.4).or.(id.eq.5)) then
@@ -1001,7 +1028,7 @@ c end if 4
   111 continue
 
       return
-      end ! npernpar
+      end subroutine npernpar
       
 c        **********************cninit3*************************
 c        *                        -                           *
@@ -1937,7 +1964,7 @@ c     b,gamma1                                                    !
 c------------------------------------------------------------------
       subroutine cninit12(z,r,phi,cnpar,cnteta,cnphi,
      1                  cnz,cnr,cm,iraystop)
-      implicit double precision (a-h,o-z)
+      implicit none !double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
       include 'three.i'
@@ -1946,14 +1973,21 @@ cSAP090504
       include 'grill.i'
 
       save
-      double complex cmplnper      
+      double complex cmplnper    
+      integer iraystop   
+      real*8 z,r,phi,cnpar,cnteta,cnphi,cnz,cnr,cm !
+      real*8 b !external
+      integer iroot,id_loc,id_loc_2,ibmx,iraystop_m,iraystop_p
+      real*8 epsmode,b_teta,cnpar2,cntang2,gradpsi,rad_ksi_nperp
+      real*8 cnper,cnrho,cnrho2,cn_m,cn_p,cn2_npar,gamma1,delta
       
       iraystop=0
-      pi=4*datan(1.d0)
+      ! contained in one.i: pi=4*datan(1.d0)
       cnpar2=cnpar*cnpar
       cntang2=cnteta*cnteta+cnphi*cnphi
+      !write(*,*)'cninit12 cntang2=',cntang2
       bmod=b(z,r,phi)
-cyup      write(*,*)'cninit12 ioxm_n_npar=',ioxm_n_npar
+      !write(*,*)'cninit12 ioxm_n_npar=',ioxm_n_npar
       
       if(ioxm_n_npar.eq.0) then ! ioxm_n_npar=0  Use ioxm instead
 c-------------------------------------------------------------
@@ -1996,7 +2030,11 @@ cSAP090504
 c-------------calculate N_phi,N_theta,N_rho
 
               gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
+              if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
               b_teta=(bz*dpdrd-br*dpdzd)/gradpsi !poloidal magnetic field
+              else
+              b_teta=0.d0
+              endif
 
 c              write(*,*)'cninit.f i_n_poloidal=3 ksi_nperp',ksi_nperp
 
@@ -2212,7 +2250,7 @@ c------------------------------------------------------------
 c  10 continue
 cyup      write(*,*)'end of subroutine cninit12 iraystop',iraystop
       return
-      end ! cninit12
+      end subroutine cninit12
 
 
 c        **********************npernpar_test******************
@@ -2232,7 +2270,7 @@ c     it uses the following functions and subroutines      !
 c     ias1r,b   ,y,x,gamma1,s,abc,hamilt1,                 !
 c-----------------------------------------------------------
       subroutine npernpar_test(z,r,phi,cnpar,cnper2p,cnper2m)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -2347,11 +2385,21 @@ c new coefficients
 
           detin=gd**2-4.d0*fd*wd
           if (detin.lt.0d0) then
-             write(*,*)' 2 in npenpar detin  less then zero'
-             cnper2p=-1.d0
-             cnper2m=-1.d0
-             return
-	  end if
+             !YuP[2020-08-04] adjustment for a very small neg.discriminant
+             if(abs(detin).lt. 1.d-6*(gd**2+4.d0*fd*wd) ) then
+               ! Could be a very small negative value, from rounding.
+               ! Then, set it to zero:
+               detin=0.d0
+             else ! large negative discriminant: no wave here.
+               write(*,*)'npernpar_test: detin<0. detin,gd**2,Xe=',
+     +                                            detin,gd**2,xe
+               write(*,*)'npernpar_test: detin<0.    iraystop->1'
+               cnper2p=-1.d0
+               cnper2m=-1.d0
+               return
+             endif 
+          endif ! detin<0
+                   
           cnper2p=(-gd+sign_del*dsqrt(detin))/(2.d0*fd)
           cnper2m=(-gd-sign_del*dsqrt(detin))/(2.d0*fd)
 c          write(*,*)'in cninit.f  1 npernpar cnper2p,cnper2m',

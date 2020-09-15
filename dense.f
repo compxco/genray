@@ -25,7 +25,7 @@ c      functions
 c         _densrho_(rho)    finds dense from spline
 c------------------------------------------------------------------
       real*8 FUNCTION dense_no_RZ_spline(z,r,phi,i)
-c      IMPLICIT double precision (a-h,o-z)
+      !IMPLICIT double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'
@@ -501,7 +501,7 @@ c        write(*,*)'tabl',tabl
 c-----------------------------------------------------------------------
 c     Calculate density and derivatives:d_dentsity/d_rho
 c     d_dentsity/d_theta_poloidal
-c     versus radius and poloidal angle otside LCFS 
+c     versus radius and poloidal angle outside LCFS 
 c     1 < rho_small, 0=< theta_pol <2pi
 c
 c     for i plasma specie
@@ -621,9 +621,9 @@ c      if (dens_rho_theta.lt.dens_min_edge) then
       if (dens_rho_theta.lt.dens_min_edge*dens_ratio) then
          if (iwarn.lt.50) then
          iwarn=iwarn+1   
-         write(*,*)'WARNINNG:in dens_rho_theta_LCFS'
+         write(*,*)'WARNING[dens_rho_theta_LCFS]. rho_small=',rho_small
          write(*,*)'densedge.lt.dens_min_edge*dens_ratio'
-         write(*,*)'It wil be dens_rho_theta=dens_min_edge*dens_ratio'
+         write(*,*)'It will be dens_rho_theta=dens_min_edge*dens_ratio'
          endif
 cSAP090526
 c         dens_rho_theta=dens_min_edge
@@ -668,7 +668,7 @@ c      functions
 c         _densrho_(rho)    finds dense from spline
 c------------------------------------------------------------------
       real*8 FUNCTION dense(z,r,phi,i)
-c      IMPLICIT double precision (a-h,o-z)
+      !IMPLICIT double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'

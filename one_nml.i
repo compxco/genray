@@ -34,6 +34,7 @@ c-----from namelist /dispers/
 c-----from namelist /numercl/
      &            prmt1,prmt2,prmt3,prmt4,prmt6,prmt9,
      &            uh_switch,prmt6_uh_switch,toll_hamilt,
+     +            dL_step, dN_step, der_r, der_n, der_f,
      &            y_power_switch_resonance,
      &            prmt6_power_switch_resonance,
      &            del_y_power_switch_resonance,
@@ -87,6 +88,8 @@ c-----from namelist /wave/
      &            n_points_root,             !number of  N_perp mesh points
      &            i_look_roots,k_hot_root,
      &            i_rho_find_hot_nperp_roots, no_reflection,
+     &            istep_in_lcfs,
+     
 c-----from namelist /dispers/ 
      &            ib,id,iherm,iabsorp, iswitch,jy_d,idswitch,iabswitch,
      &            n_relt_harm,n_relt_intgr,iflux,i_im_nperp,
@@ -170,6 +173,7 @@ c-----from namelist /dispers/
 c-----from namelist /numercl/
      &            prmt1,prmt2,prmt3,prmt4,prmt6,prmt9,
      &            uh_switch,prmt6_uh_switch,toll_hamilt,
+     +            dL_step, dN_step, der_r, der_n, der_f,
      &            y_power_switch_resonance(n_power_switch_resonance_a),
      &            prmt6_power_switch_resonance,
      &            del_y_power_switch_resonance,
@@ -223,6 +227,8 @@ c-----from namelist /wave/
      &            i_look_roots,k_hot_root,
      &            i_rho_find_hot_nperp_roots,
      &            no_reflection,
+     &            istep_in_lcfs,
+
 c-----from namelist /dispers/ 
      &            ib,id,iherm,iabsorp, iswitch,jy_d,idswitch,iabswitch,
      &            n_relt_harm,n_relt_intgr,iflux,i_im_nperp,
@@ -286,8 +292,8 @@ c     b0          - characteristic magnetic field (tl)
 c     q0,pq	  -
 c     rho	  -normalized small radius
 c     rho2	  -rho2=rho**2
-c     psifactr    =<1, is used in gr2new to find the last flux surface
-c                  psi(r,z)=psilim*psifactr
+c     psifactr    =<1, is used in gr2new to find the last closed flux surface
+c                  psi(r,z)=psimag+(psilim-psimag)*psifactr
 c     ax	  -
 c     r0x         - characteristic radius(m)
 c     frqncy      - wave friquency (GHz)
@@ -304,7 +310,8 @@ c     dpdzd,dpdrd - derivatives from psi by! i_look_roots=0    !do not plot D(N_
 !                   !as the initial ray condition and calculate ray z and r
 c     dbzdz,dbzdr,dbzdph -derivatives from z-component of magnetic field
 c     dbrdz,dbrdr,dbrdph -derivatives from r-component of magnetic field
-c     dbphdz,dbphdr,dbphdph- derivatives from toroidal magnetic field
+c     dbphdz,dbphdr,dbpdph- derivatives from toroidal magnetic field
+      !YuP: careful! There is {dbphdz,dbphdr,dbpdph}. There is no dbphdph !
 c     dqdrho
 c     dbmdz,dbmdr,dbmdph -derivatives from the module of magnetic field
 c     dc2dz,dc2dr,dc2dph -derivatives from cos(gam)**2 by z,r and phi
@@ -315,11 +322,11 @@ c     w(4) - (omega_B(j)/omega)    on the magnetic axis
 c     dense0,denseb - central and bound electron densities (in 10**13/cm**3)
 c     den(rho)=denseb+(dense0-denseb)*(1-rho*rn1de)**rn2de
 c     te0,teb - central and bound electron temperatures (keV)
-c     tempe(rho)=teb+(te0-teb)*(1-rho*rn1te)**rn2te !average temperatura
-c     tpop(rho)=tpb+(tp0-tpb)*(1-rho*rn1tp)**rn2tp  !T_perp/T_parallel
-c     vfow(rho)=vflb+(vfl0-vflb)*(1-rho*rn1vfl)**rn2vfl  !drift velocity || B
+c     tempe(rho)=teb+(te0-teb)*(1-rho**rn1te)**rn2te !average temperatura
+c     tpop(rho)=tpb+(tp0-tpb)*(1-rho**rn1tp)**rn2tp  !T_perp/T_parallel
+c     vfow(rho)=vflb+(vfl0-vflb)*(1-rho**rn1vfl)**rn2vfl  !drift velocity || B
 c     zeff0,zeffb - central and bound effective charge
-c     zeff0(rho)=zeffb+(zeff0-zeffb)*(1-rho*rn1zeff)**rn2zeff
+c     zeff0(rho)=zeffb+(zeff0-zeffb)*(1-rho**rn1zeff)**rn2zeff
 c     powtott  - total power summed over antennas
 c     powini   - initial power in ray_iray chanal
 c     delpwrmn - Minimum power in each ray, as a fraction of
@@ -338,7 +345,7 @@ c                equal zero inside the plasma,
 c                dispersion relation is multiplied by delib
 c     id - index of the form of the dispersion relation
 c     isolv -index of the solution method of ray trasing equations
-c     idif  -index of analytical(=1) or numerical (=2) differantiation
+c     idif  -index of analytical(=1) or numerical (=2) differentiation
 c                  of Hamiltonian
 c     irkmeth- index of the modification of Runge-Kutta  procedure
 c     ireflm - maximum number of ray reflections
@@ -354,9 +361,9 @@ c               outside LCFS starting at rho=1 density, for no_reflection=1
 c     sigmedgt =0.02 (default) normalized exponential temperature fall off dist
 c               outside LCFS starting at rho=1 temperature, for no_reflection=1
 c
-c     istart - index to shoose wave start is outside the plasma (EC)
+c     istart - index to choose wave start is outside the plasma (EC)
 c                    or inside plasma (LH,FW)
-c     idens  - index of spline or quasiparobolic density,temperature
+c     idens  - index of spline or quasiparabolic density,temperature
 c                     and z_eff  approximation
 c     indexrho -index to choose radial coordinate
 c     ionetwo - index to calculate power and current drive profiles
@@ -603,17 +610,18 @@ c---------------------------------------------------------------
 c k_root,       the number of the dispersion tensor
 c               eigenvalue, used for id=10, determined in cninit.f
 c----------------------------------------------------------- 
-c i_geom_optic,       !the form od the ray equations
-c              =1 default:
-c                  ray-tracing equations right hand side=
-c		   dr^/dt=-(dD/dN^)/(dD/domega)
-c                  dN^/dt=(dD/dr^)/(dD/domega)
-c                  In this case rside1 gives v_group
-c              =2  ray-tracing equations right hand side=
-c		   dr^/dl=-ray_direction*(dD/dN^)p
-c                  dN^/dl= ray_direction*(dD/dr^)p
+! i_geom_optic sets  the form of the ray equations
+!              =1  integration in time (default):
+!                  ray-tracing equations right hand side=
+!                  dr^/dt=-(dD/dN^)/(dD/domega)
+!                  dN^/dt=+(dD/dr^)/(dD/domega)
+!                  In this case rside1 gives v_group.
+!              =2  integration is space,
+!                  ray-tracing equations right hand side=
+!                  dr^/dl=- ray_direction * (dD/dN^)p
+!                  dN^/dl=  ray_direction * (dD/dr^)p
 c                  p=1.d0/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)=
-c                  deru(1)=dD/dN_z,deru(2)=dD/dN_r,deru(c)=dD/dCM,
+c                  deru(1)=dD/dN_z,deru(2)=dD/dN_r,deru(3)=dD/dCM,
 c                  N_phi=cm/r
 c----------------------------------------------------------------------
 c ray_direction =+1 as default it

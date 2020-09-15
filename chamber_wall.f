@@ -88,7 +88,7 @@ cend for test
       save z_old,r_old,phi_old,rho_old,dif_rho_old,
      &cnz_old,cnr_old,cm_old 
 
-      write(*,*)'wall_limiter_reflection_point rho',rho
+!      write(*,*)'wall_limiter_reflection_point rho',rho
       i_reflection=0
 
       if(rho.le.1.d0) goto 10 !nohting to do

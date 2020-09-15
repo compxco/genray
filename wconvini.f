@@ -1,6 +1,6 @@
-      subroutine owconvr (theta,x0,rhoconv,zconv,rconv)
-c     It detemines the point (zconv,rconv) 
-c     and rhoconv where xe=x0,For x0=1 it gives point of O_X conversion. 
+      subroutine owconvr(theta,x0,rhoconv,zconv,rconv)
+c     It determines the point (zconv,rconv) 
+c     and rhoconv where Xe=X0,For X0=1 it gives point of O_X conversion. 
 c     This point is on the surface rhoconvr and has the
 c     given poloidal angle theta (degree) 
 c     if theta=0  point is on the outer part of the magnetic surface
@@ -21,15 +21,21 @@ c     It solves the equation x(zconv(rhoconv),rconv(rhoconv),phix,1)-xe0=0
       common /convers/ thetax,phix,xe0
       external xe_eq
 
-      thetax=theta*datan(1.d0)*4.d0/180.d0 ! polidal angle in radian
+      thetax=theta*datan(1.d0)*4.d0/180.d0 ! poloidal angle in radian
       xe0=x0
       racc = 1.d-7
 c      write(*,*)'wconvini thetax, xe0',thetax,xe0
       rholeft=0.d0
       xpp=xe_eq(rholeft)
 c      write(*,*)'xe_eq(0)',xpp
-      rhoright=1.d0
-      xpp=xe_eq(rhoright)
+      rhoright=1.d0 !YuP[2020-07-29] This may fail: If edge density is high
+                    !Xe=1 layer could be just outside of rho=1.0
+      rhoright=1.5d0 !YuP[2020-07-29] Give extra room to find Xe=1.
+      xpp=xe_eq(rhoright) !Can handle rhoright>1; 
+           !for rhox>1, it uses psi_rho=psimag+(psilim-psimag)*rhox
+           !                 or psi_rho=psimag+(psilim-psimag)*rhox*rhox,
+           !depending on indexrho
+           
 c      write(*,*)'xe_eq(1)',xpp
 c      write(*,*)'wconvini owconvr before rtbis xe0,thetax',xe0,thetax
 c      write(*,*)'owconvr bef rtbis rholeft,rhoright',
@@ -42,7 +48,9 @@ c      write(*,*)'wconvini psiconv,thetax',psiconv,thetax
       call zr_psith(psiconv,thetax,zconv,rconv)
 c      write(*,*)'wconvin rhoconv,zconv,rconv',rhoconv,zconv,rconv
       return
-      end
+      end subroutine owconvr
+!=======================================================================
+!=======================================================================      
 
       double precision FUNCTION rtbis(FUNC,X1,X2,XACC)
 c     bisection method of the solution of the equation func(rtbis)=0 
@@ -75,6 +83,8 @@ c        IF(dabs(DX).LT.XACC .OR. FMID.EQ.0.d0) RETURN
 11    CONTINUE 
       PAUSE 'too many bisections, increase parameter JMAX in rtbis'
       END
+!=======================================================================
+!=======================================================================      
 
       double precision function	xe_eq(rhox)
 c-----The function xe_eq=x(z(rhox),r(rhox),phix,1)-xe0
@@ -93,7 +103,10 @@ c--------------------------------------
       double precision psix,zx,rx,xp,bmode
       double precision psi_rho,x,b
 c      write(*,*)'wconvini xe_eq rhox,thetax',rhox,thetax
-      psix=psi_rho(rhox)
+      psix=psi_rho(rhox) !Can handle rhox>1; 
+           !for rhox>1, it uses psi_rho=psimag+(psilim-psimag)*rhox
+           !                 or psi_rho=psimag+(psilim-psimag)*rhox*rhox,
+           !depending on indexrho
 c      write(*,*)'wconvini xe_eq psix',psix
       call zr_psith(psix,thetax,zx,rx)
 c      write(*,*)'wcon xe_eq rhox psix thetax',rhox,psix,thetax
@@ -106,4 +119,4 @@ c      write(*,*)'wcon xp',xp
 c      write(*,*)'wconv xe_eq xe0,xp,xe_eq',xe0,xp,xe_eq
 
       return
-      end
+      end function xe_eq

@@ -13,7 +13,7 @@ c        output parameters:					   !
 c              cnteta,cnphi                                        !
 c------------------------------------------------------------------
         subroutine ninit_ec(zu0,ru0,phiu0,cnx,cny,cnz,cnteta,cnphi)
-        implicit double precision (a-h,o-z)
+        implicit none !double precision (a-h,o-z)
 c------------------------------------------------------------------
 c       e_phi=e_psi x e_phi,   x -is the vector product.
 c	           z       r      phi
@@ -29,6 +29,8 @@ c       N_teta=(vector{N}*e_teta) ,N_phi=(vector{N}*e_phi)
 c----------------------------------------------------------------------
       include 'param.i'
       include 'one.i'
+      real*8 zu0,ru0,phiu0,cnx,cny,cnz,cnteta,cnphi ! IN/OUT
+      real*8 gradpsi, cosphi,sinphi !,costet,sintet ! local
 c---------------------------------------------------------------------
 c     dpdrd=dpsidr dpdzr=dpsidr were calculated by b(z,r,phi)
 c     They are in  common/one/
@@ -36,17 +38,15 @@ c---------------------------------------------------------------------
       gradpsi=dsqrt(dpdrd*dpdrd+dpdzd*dpdzd)
       cosphi=dcos(phiu0)
       sinphi=dsin(phiu0)
-      costet=dpdzd/gradpsi
-      sintet=dpdrd/gradpsi
-      cntet=-cnx*costet*cosphi-cny*costet*sinphi+cnz*sintet
-
-c      write(*,*)'cntet=',cntet
-c      write(*,*)'ninit_ec.f dpdzd,dpdrd,gradpsi',
-c     +dpdzd,dpdrd,gradpsi
-c      write(*,*)'cnx,cny,cnz',cnx,cny,cnz
-c      write(*,*)'cosphi,sinphi',cosphi,sinphi
-
-      cnteta=(-dpdzd*(cnx*cosphi+cny*sinphi)+dpdrd*cnz)/gradpsi
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+       !costet=dpdzd/gradpsi
+       !sintet=dpdrd/gradpsi
+       !cntet=-cnx*costet*cosphi-cny*costet*sinphi+cnz*sintet !YuP: not used
+       cnteta=(-dpdzd*(cnx*cosphi+cny*sinphi)+dpdrd*cnz)/gradpsi
+      else
+       !cntet=0.d0
+       cnteta=0.d0
+      endif
       cnphi=-cnx*sinphi+cny*cosphi
 
 c      write(*,*)'ninit_ec.f cnteta,cnphi',cnteta,cnphi

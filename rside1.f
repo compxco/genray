@@ -12,7 +12,7 @@ c-------------------------------------------------------------------
 c								    !
 c        input parameters					    !
 c      								    !
-c      t - parameter of trajectory                                  !
+c      t - parameter of trajectory (YuP: rside1() not actually dep. on t)
 c                                  		         	    !
 c      u - solution of geometrical optics equations at the point t  !
 c	u(1) = z                                                    !
@@ -38,7 +38,7 @@ c     this program uses following functions and subroutines	    !
 c     b,gamma1,dxdz,dxdr,dxdphi,dydz,dydr,dydphi,x,y,s,tensor,	    !
 c     hamilt1    						    !
 c-------------------------------------------------------------------
-      subroutine rside1(t,u,deru)
+      subroutine rside1(t,u,deru) !YuP: Does not actually dep. on t
 cSm070130
       implicit none
       include 'param.i'
@@ -105,7 +105,7 @@ c      dimension vp(nbulka),wp(nbulka)
      &dcn,dcn2,dcn4,dadnz,dbdnz,dcdnz,
      &dadnr,dbdnr,dcdnr,dadm,dbdm,dcdm,
      &p4,p5,p6,p7,
-     &sum,dddn,dddph,
+     &sum,dddn,
 c----for test only
      & cnparp,cnperp,cnparm,cnperm
 
@@ -380,7 +380,7 @@ c          go to 1953
 c----------------------------------------------------------------
 c  end of numerical calculation of hamiltonian derivatives
 c------------------------------------------------------------------
- 1955  continue
+ 1955  continue ! handle for idif.eq.1
 c          write(*,*)'rside1 id=',id
 c-----------------------------------------------------------------
 c analytical calculation of hamiltonian derivatives
@@ -1164,36 +1164,28 @@ c           write(*,*)'rside1 after num_der_d_d0_d_nr_nz_cm'
         endif !id.eq.16
 c----------------------------------------------------------------------
  50     continue
-           deru(1)=dddcnz
-           deru(2)=dddcnr
-           deru(3)=dddcm
-           deru(4)=-dddz
-           deru(5)=-dddr
-           deru(6)=-dddphi
+ 
+        deru(1)=dddcnz
+        deru(2)=dddcnr
+        deru(3)=dddcm
+        deru(4)=-dddz
+        deru(5)=-dddr
+        deru(6)=-dddphi !TEST: setting to 0.d0 gives same result
 
-	   dddw=-dddw*wf
+        dddw=-dddw*wf
 
-           if (i_geom_optic.eq.1) then
-              deru(1)=deru(1)/dddw
- 	      deru(2)=deru(2)/dddw
- 	      deru(3)=deru(3)/dddw
-	      deru(4)=deru(4)/dddw
-	      deru(5)=deru(5)/dddw
-	      deru(6)=deru(6)/dddw
-           else
-              if(i_geom_optic.eq.2) then
-c                p=-0.1d0/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)
-                p=1.d0/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)
-                p=ray_direction*p
-
-                deru(1)=p*deru(1)
- 	        deru(2)=p*deru(2)
- 	        deru(3)=p*deru(3)
-	        deru(4)=p*deru(4)
-	        deru(5)=p*deru(5)
-	        deru(6)=p*deru(6)
-               endif
-           endif
+        if (i_geom_optic.eq.1) then
+           p=1.d0/dddw
+        endif
+        if(i_geom_optic.eq.2) then
+           p=ray_direction/dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)
+        endif
+        deru(1)=p*deru(1)
+        deru(2)=p*deru(2)
+        deru(3)=p*deru(3)
+        deru(4)=p*deru(4)
+        deru(5)=p*deru(5)
+        deru(6)=p*deru(6)  
 ctest
 c           if (dddw.gt.0.d0) then 
 c             sign=-1.d0
@@ -1226,9 +1218,38 @@ c	 write(*,*)'rside1 dddw ',dddw
 c         stop 'rside1 test'
 c test end
 c           write(*,*)'in rside1 before return'
+
+           ! YuP[2020-08-30]: Impose a limit for Vgroup/c components.
+           ! It gives a better stability for integration.
+           ! Note: although each component of Vgroup/c is limited now,
+           ! the magnitude of |Vgroup/c| can still be larger than 1.0.
+           if(abs(deru(1)).gt.1.d0)then ! YuP[2020-08-30]
+             write(*,*)'rside1/WARNING: deru(1)=', deru(1) ! dZ/dt
+             if(deru(1).lt.0.d0)then
+                deru(1)=-1.d0
+             else
+                deru(1)= 1.d0
+             endif
+           endif
+           if(abs(deru(2)).gt.1.d0)then ! YuP[2020-08-30]
+             write(*,*)'rside1/WARNING: deru(2)=', deru(2) ! dR/dt
+             if(deru(2).lt.0.d0)then
+                deru(2)=-1.d0
+             else
+                deru(2)= 1.d0
+             endif
+           endif
+           if(abs(r*deru(3)).gt.1.d0)then ! YuP[2020-08-30]
+             write(*,*)'rside1/WARNING: r*deru(3)=', r*deru(3) ! R*dphi/dt
+             if(deru(3).lt.0.d0)then
+                deru(3)=-1.d0/r
+             else
+                deru(3)= 1.d0/r
+             endif
+           endif
          
-	  return
-          end
+      return
+      end subroutine rside1
 
 
 

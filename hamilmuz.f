@@ -519,17 +519,15 @@ c------------------------------------------------------------------
 ************************************************************************
         subroutine dten161(x,y,mu,nz,eps0,eps1,eps2,eps3,iherm)
 c	:::::::::::::Harvey:::::::::::::::::::::::::::::::::::;
-c        implicit real (a-h,o-z)
-c        implicit double precision (a-h,o-z)
 c       real nz,mu
 c        complex eps1(3,3),eps2(3,3),eps3(3,3)
 c        real bes(1),mmu,order
 c	::::::::::::::::::::::::::::::::::::::::::::::::
 
 c	:::::::::::::Larisa:::::::::::::::::::::::::::::::::::;
-        implicit double precision (a-h,o-z)
-        double precision nz,mu,mmu
-        double complex eps1(3,3),eps2(3,3),eps3(3,3)
+      implicit double precision (a-h,o-z)
+      double precision nz,mu,mmu
+      double complex eps1(3,3),eps2(3,3),eps3(3,3)
 	double precision bes(1),order
 c	::::::::::::::::::::::::::::::::::::::::::::::::
 

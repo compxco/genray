@@ -28,7 +28,7 @@ c-----------------------------------------------------------------*
       subroutine absorplh(u,cnpar,cnper,tempe,dense,tempiar
      1 ,b_z,b_r,b_phi,nbulk,bmod,frqncy,zeff,
      1 cnprim_e,cnprim_i,cnprim_cl)
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       include 'param.i'
       include 'ions.i'
       dimension u(6),deruu(6)
@@ -152,8 +152,8 @@ c     vi=(sqrt(Ti/mi)),    vi in (cm/sec),Ti(keV)
       tempi=tempiar(2)
       vi=1.87d9*dsqrt(0.5d0*tempi/dmas(2))
       xi=x(z,r,phi,2)
-      pi=vi/cvac
-      pi2=pi*pi
+      pion=vi/cvac !YuP[2020-08-20] renamed, to avoid conflict with 'pi'
+      pi2=pion*pion
       p6=-(3.d0*xi*pi2+0.75d0*xe/ye4*pe2)
 c------------------------------------------
       p4=epsper
@@ -164,7 +164,7 @@ c------------------------------------------
       dddnper=(6.d0*p6*cnper4+4.d0*p4*cnper2+2.d0*p2)*cnper
       cnprim_e=-(di_e/dddnper)
       cnprim_i=-(di_i/dddnper)
-      cnprim_cl=-(di_ic/dddnper) !   *coll_mult !BH: added 191017, Needs passing
+      cnprim_cl=-(di_ic/dddnper) !   *coll_mult !BH: added 191017, Needs passing?
       cnprim_e=dabs(cnprim_e)
       cnprim_i=dabs(cnprim_i)
       cnprim_cl=dabs(cnprim_cl)
@@ -183,7 +183,7 @@ c     1 cnprim_e,cnprim_i,cnprim_cl
 c      calculates the imaginary part of refractive index
 c      due to collisional electron-ion damping 
 c      using the formula 
-c      Im(N)=(nu_ei/(v_gr_perp))*clight/omega)
+c      Im(N)= nu_ei/(omega*Vgr_perp/clight)
 c
 c      input parameters: 
 c                        tempe -electron temperature  (keV)  
@@ -191,7 +191,7 @@ c                        dense -electron density   (10*13/cm**3
 c                        frqncy- wave friquency [GHz]	  
 c                        zeff  - plasma charge
 c        		 v_gr_perp -perpendicular to the magnetic field
-c                                   group velocity nirmalized by clight
+c                           group velocity normalized by clight
 c      output parameter: 
 c                        cnprim_cl-imaginary part of N_perp	  
 c                                collisional(ions and electron)	  
@@ -209,7 +209,7 @@ c-----local
 c-----Coulomb Logarithm = cln      
       arg=(1.d3/tempe)*dsqrt(10.d0*dense) !tempe KeV, 
                                            !dense 10**13/sm**3   
-      cln=24.d0-dlog(arg)
+      cln= 24.d0 -dlog(arg)
 
 c-----electron-ion collision rate =r_nu_ei [1/sec] 
       r_nu_ei=dense/(tempe*dsqrt(tempe))*zeff*cln*0.919d3 ![1/sec]

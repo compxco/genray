@@ -77,7 +77,7 @@ c       K double complex dielectric tensor
 c       iraystop=0 the root have been found,
 c       iraystop=1 the root was not found
 c-----------------------------------------------------    
-c      implicit double precision (a-h,o-z) 
+      !implicit double precision (a-h,o-z) 
 cSm060725
       implicit none
       include 'param.i'
@@ -541,7 +541,7 @@ c                           (cex,cey,cez) will be in common /efield.i/
 c------------------------------------------------------------------
       subroutine absorp_relativist_disp_combined(z,r,phi,cnpar,cnper,
      &cnprim_e)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
 cSm060725
       implicit none
       include 'param.i'
@@ -576,7 +576,7 @@ C  because disp_combined expects a complex n_perp as input (Also moved cnper_p a
 c-----external
       real*8 b,x,y,tempe,tpoprho
 
-      pi=4.d0*dtan(1.d0)
+      pi=4.d0*datan(1.d0) !YuP[2018-10-13][2020-01-27] BUG was: pi=4.d0*dtan(1.d0)
       c_cnper=dcmplx(cnper,0.0d0)
 c----------------------------------------------
 c     calculate relativisticplasma tensor reps(). 

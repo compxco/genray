@@ -114,8 +114,8 @@ c             in the plasma (meters and degs)
 c         =0, no effect (the default)
 c  This option is added for comparison with other codes.
 c  r0launch is the major radius of the launch point [m]
-c  z0launch is the vertical position of the launch pimt [m]
-c  phi0launch is the toroidal angle of the launch point [degree] 
+c  z0launch is the vertical position of the launch point [m]
+c  phi0launch - toroidal angle (in X-Y plane) of the launch point [degree]
 c---------------------------------------------------------------------
 
 c       i_grill_pol_mesh: option specifying the poloidal mesh wtheta(j)

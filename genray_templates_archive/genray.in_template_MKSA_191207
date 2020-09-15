@@ -552,7 +552,7 @@
 !iabsorp -choice of Imag(N_perp) (N_perp is the perpendicular refractive index)
 !-------------------------------------------------------------------------
 ! iabsorp=1 for EC waves with Mazzucato solver (ki/kr<<1)
-!        =2 for LH waves
+!        =2 for LH waves, Bonoli, IEEE Trans. Plasma Science,PS-12, p95 (1984).
 !        =3 for FW waves, Chiu et al themal corr., NF 1989, with corrections.
 !           At this time, this is only iabsorp value which provides power
 !           profiles to individual ions (via powden_s/powtot_s).
@@ -655,11 +655,13 @@
 !                ='disabled' do not add ion absorption
 !-------------------------------------------------------------------------
 ! iabsorp_collisional =0 no additional collisional absorption
-!                     =1 collisional absorption  using formula
+!                     =1 additional collisional absorption  using formula
 !                        Im(N)=dabs(nu_ei/(gr_perp))*clight/omega)
 !                     [For LH, there is separate coll absorption included,
 !                      not switched by this flag and always on.]
 ! coll_mult =1.d0(default), multiplies above coll absorp expression
+!                           Also, multiplies the Bonoli LH coll expression
+!                           for iabsorp=2.
 !--------------------------------------------------------------------------
 ! The change of the dispersion relation and absorption
 ! near the gyro-frequency points
@@ -2767,7 +2769,7 @@ eps_xe=1.d-2
 ! epsi_adj  the accuracy used in integration by adaptive Simpson
 !           Works at i_resonance_curve_integration_method_adj=4 case only
 !------------------------------------------------------------------------
-!        choose the integration method for power and CD calulations 
+!        choose the integration method for power and CD calculations 
 !       i_resonance_curve_integration_method_adj=1 !rectangle integration
 !                                              !over angle,
 !                                              !for ellipse case only

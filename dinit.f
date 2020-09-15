@@ -587,10 +587,12 @@ c      /ox/
 
       if(i_ox.eq.1) then
         istart=3
-        prmt(3)=-prmt3 !to create the negative time
+        prmt(3)=-prmt3 !case i_ox=1,  to create the negative time
         i_vgr_ini=+1
         ireflm=1   
-cyup        write(*,*)'dinit_mr:  i_ox.eq.1 prmt(3)',prmt(3)
+        !WRITE(*,*)'WARNING:dinit_mr: Enforcing id=2 for i_ox=1 run'
+        !id=2 !YuP[2020-07-29] Added: enforce cold plasma for i_ox=1 run
+	!Actually, not really needed.
       endif
 
       if(((i_ox.ne.0).and.(i_ox.ne.1)).and.(i_ox.ne.2)) then
@@ -1002,8 +1004,8 @@ cyup               write(*,*)'disk_beam_rays_initial_launching_data'
 
                call disk_beam_rays_initial_launching_data(nray)
 
-cyup               write(*,*)'dinit_mr:  after'
-cyup               write(*,*)'disk_beam_rays_initial_launching_data'
+               !write(*,*)'dinit_mr:  after'
+               !write(*,*)'disk_beam_rays_initial_launching_data'
 
             endif !diskdisk
 c            stop 'dinit.f after disk_beam_rays_initial_launching_dat'           
@@ -1082,7 +1084,7 @@ c          theta=0.d0   !poloidal angle  (degree)
 c          theta=-30.d0
           theta=thgrill(1)
 cyup          write(*,*)'dinit before owconvr theta=',theta
-          call owconvr (theta,x0,rhoconv,zconv,rconv)
+          call owconvr(theta,x0,rhoconv,zconv,rconv)
 cyup    	  write(*,*)'dinit_mr: rhoconv,zconv,rconv',rhoconv,zconv,rconv
 	  rhopsi0(1)=rhoconv
           phiconv=0.d0
@@ -1268,7 +1270,7 @@ c        iraystop- index to stop the ray determination(=1)	   !
 c       	   or make the ray determination (=0)		   !
 c------------------------------------------------------------------
 c        it uses the following functions and subroutines           !
-c        ias1r,bmod,y,x,gamma1,s,abc,hamilt1,plasmaray,ninit_ec     !
+c        ias1r,bmod,y,x,gamma1,s,abc,hamilt1,plasmray,ninit_ec     !
 c        cinit                                                     !
 c------------------------------------------------------------------
       subroutine dinit_1ray(zst,rst,phist,alfast,betast,
@@ -1307,7 +1309,7 @@ c------for  rho_ini_LHFW
       pi=4*datan(1.d0)
       trnspi=pi/180.d0
 c---------------------------------------------------------------
-c     if ray start point is outside the plasma (ECR -case)
+c     if ray starting point is outside plasma[LCFS] (EC -case)
 c     then:
 c          determine:    1) where the vacuum ray
 c                           intersects the plasma boundary
@@ -1317,63 +1319,91 @@ c                           refractive index
 c---------------------------------------------------------------
       call set_output ! initialize output.i
                       ! for each new ray
+                      
+      !{zu0,ru0,phiu0} values will be changed by subr.plasmray(for istart=1):
+      zu0=zst     !YuP[2020-07-23] added: initialize
+      ru0=rst     !YuP[2020-07-23] added: initialize
+      phiu0=phist !YuP[2020-07-23] added: initialize
       
 c      if (i_ox.eq.1) then
-          call set_oxb          ! initialize oxb.i
-                                ! for each new ray
+          call set_oxb  ! initialize oxb.i for each new ray
 c      endif
+
       if (istart.eq.1) then
 c--------EC wave
-cyup         write(*,*)' bef plasmray zst,rst,phist,alfast,betast',
-cyup     1	 zst,rst,phist,alfast,betast
-         call plasmray(zst,rst,phist,alfast,betast,
+         if(istep_in_lcfs.eq.1) then !YuP[2020-09-03]  added if() condition     
+           ! istep_in_lcfs=0  means No stepping inside LCFS.
+           ! Just start the ray in ~vacuum or wherever it is set in namelist. 
+           ! Default is 1, to match the original coding.    
+           write(*,*)'dinit_1 bef plasmray zst,rst,phist,alfast,betast',
+     1	   zst,rst,phist,alfast,betast
+           !------------------------------------------------   
+           call plasmray(zst,rst,phist,alfast,betast,
      1                  zu0,ru0,phiu0,iraystop)
-cyup         write(*,*)'in dinit_1ray after plasmaray zu0=',zu0,'ru0=',ru0,
-cyup     1   'phiu0=',phiu0,'iraystop=',iraystop
-         if (iraystop.eq.1) then
-	    return
-         end if
-c	 -------------------------------
-c        the shift of the initial point inside the plasma from the boundary
-	 z=zu0
-	 r=ru0
-cSAP091127
-         phi=0.d0
-         bmod=b(z,r,phi)
-cyup         write(*,*)'befor edgcor z,r,rho',z,r,rho
-         call edgcor(z,r,zu0,ru0)
+           !------------------------------------------------   
+           write(*,*)'dinit_1ray aft plasmray zu0=',zu0,'ru0=',ru0,
+     1     'phiu0=',phiu0
+           if (iraystop.eq.1) then
+	      return !cannot get inside LCFS; check initial N_vector
+           end if
+           !the shift of the initial point inside the plasma from the boundary
+           z=zu0
+           r=ru0
+           phi=phiu0 !0.d0 !YuP[2020-07-23]: Was 0.d0; Why not phiu0 ?
+           bmod=b(z,r,phi)
+           !------------------------------------------------   
+           call edgcor(z,r,zu0,ru0)
+           !------------------------------------------------   
+         !write(*,*)'dinit_1ray after edgecor zu0=',zu0,'ru0=',ru0
 c        end of the shift
 cyup	 write(*,*)'in dinit_1ray after initial point shift'
 c	 write(*,*)'ru0,zu0',ru0,zu0
+         endif !if(istep_in_lcfs.eq.1)
 cSAP091127
 cRobtAndre140412         bmod=b(z0,r0,phi)  BH: but no effective change.
          bmod=b(zu0,ru0,phi)
 cRobtAndre140412         write(*,*)'after edgcor z0,r0,rho',z0,r0,rho
 cyup         write(*,*)'after edgcor z0,r0,rho',zu0,ru0,rho
 c	 -------------------------------
-c        nx,ny,nz in start point
+c        nx,ny,nz at starting point:
          cnzst=dsin(betast)
          cnxst=dcos(betast)*dcos(alfast+phist)
          cnyst=dcos(betast)*dsin(alfast+phist)
+         !YuP[2020-07-23] Should we better use phiu0 in the above
+         !two lines? Angle phi could be changed during stepping in.
+         
+         !YuP: Here, {cnxst,cnyst,cnzst} vector is normalized to 1.
+         ! If not in vacuum (where |N_refraction_vector|=1)
+         ! these components do not correspond to actual N_vector,
+         ! they only set the direction of N_vector.
+         !Need to add a more accurate procedure
+         !for definition of {cnxst,cnyst,cnzst} if the launching point
+         !is inside plasma. Need to find the value of |N| refr.index.
+         !We find it from cold plasma, using value of given ioxm.
+         !See GENRAY-C, it was done there.
 
-cyup         write(*,*)'dinit betast,alfast+phist',betast,alfast+phist
-c         write(*,*)'cnxst=',cnxst,'cnyst=',cnyst,'cnzst=',cnzst
+         write(*,*)'rmin,rmax [m]=',rmin,rmax
+         write(*,*)'dinit_1/plasmray+edgcor: betast,alfast+phiu0',
+     &    betast,alfast+phiu0
+         write(*,*)' cnxst=',cnxst,' cnyst=',cnyst,' cnzst=',cnzst
+         write(*,*)'dinit_1/plasmray+edgcor: N=',
+     &    dsqrt(cnxst**2+cnyst**2+cnzst**2)
+         
 c----------------------------------------------------------------
-	 bmod=b(zu0,ru0,phiu0)
+         bmod=b(zu0,ru0,phiu0)
 c----------------------------------------------------------------
 c        ninit_ec creates the tangent to magnetic surface
 c        components  of the refractive index cnteta,cnp                 
-c        in the initial point (zu0,ru0,phiu0) for ECR wave
+c        in the initial point (zu0,ru0,phiu0) for EC wave
 c-----------------------------------------------------------------
 c         write(*,*)'in dinit_1ray before ninit_ec bz,br,bphi,bmod'
 c         write(*,*)bz,br,bphi,bmod
-cyup         write(*,*)'dinit_1ray cnxst,cnyst,cnzst',cnxst,cnyst,cnzst
-cyup         write(*,*)'dinit_1ray dsqrt(cnxst**2+cnyst**2+cnzst**2)',
-cyup     &dsqrt(cnxst**2+cnyst**2+cnzst**2)
          call ninit_ec(zu0,ru0,phiu0,cnxst,cnyst,cnzst,cnteta,cnphi)
-cyup	 write(*,*)' after ninit_ec cnteta,cnphi',cnteta,cnphi
+         !OUTPUT: cnteta,cnphi   [all other args are input]
+         !write(*,*)'after ninit_ec cnteta,cnphi',cnteta,cnphi
+         !pause
 
-      endif
+      endif ! (istart.eq.1)
 
       if ((istart.eq.2).or.(istart.eq.3)) then
 c--------LH and FW wave, OX-conversion pt.
@@ -1410,7 +1440,11 @@ c     e_theta=(e_z*dpsi/dr-e_r*dpsi/dz)/abs(grad(psi))
 c--------------------------------------------------------------
       ppp=(dpdzd*dpdzd+dpdrd*dpdrd)
       gradpsi=dsqrt(dpdzd*dpdzd+dpdrd*dpdrd)
-      cnpar1=(cnphi*bphi+cnteta*(bz*dpdrd-br*dpdzd)/gradpsi)/bmod
+      if(gradpsi.gt.0.d0)then !YuP[2020-08-17] Added check of gradpsi=0
+        cnpar1=(cnphi*bphi+cnteta*(bz*dpdrd-br*dpdzd)/gradpsi)/bmod
+      else
+        cnpar1= cnphi*bphi/bmod
+      endif
       cnpar2=cnpar1**2
 c Smirnov 961210 beg
 c     test of the initial conditions
@@ -1812,9 +1846,16 @@ c-----------------------------------------------
 
       cnpar1=(cnz*bz+cnr*br+(cm/r)*bphi)/bmod
    
-      v_gr=dsqrt(deru(1)**2+deru(2)**2+deru(3)**2)
-      v_gr_rho=(dpdzd*deru(1)+dpdrd*deru(2))/
-     &              dsqrt(dpdzd**2+dpdrd**2)
+      !v_gr=dsqrt(deru(1)**2+deru(2)**2+deru(3)**2) !YuP[2020-08-28] BUG?
+      v_gr=dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2) !YuP[2020-08-28] seems not important
+      
+      grad_psid=dsqrt(dpdzd**2+dpdrd**2)
+      if(grad_psid.ne.0.d0)then !YuP[2020-08-19] added checking
+        v_gr_rho=(dpdzd*deru(1)+dpdrd*deru(2))/grad_psid
+      else
+        write(*,*)'dinit-1: grad_psid=',grad_psid
+        v_gr_rho= v_gr
+      endif
 
 cyup      write(*,*)'v_gr,v_gr_rho',v_gr,v_gr_rho
 
@@ -1848,10 +1889,13 @@ c      write(*,*)'dpdzd,dpdrd',dpdzd,dpdrd
 c      write(*,*)'dsqrt(dpdzd**2+dpdrd**2)',
 c     &           dsqrt(dpdzd**2+dpdrd**2)
 c      write(*,*)'cnper_test',cnper_test
-
-      cos_ksi_test=(cnper_z*dpdzd+cnper_r*dpdrd)/
-     &                      (dsqrt(dpdzd**2+dpdrd**2)*cnper_test)
-   
+      grad_psid=dsqrt(dpdzd**2+dpdrd**2)
+      if(grad_psid.ne.0.d0)then !YuP[2020-08-19] added checking
+       cos_ksi_test=(cnper_z*dpdzd+cnper_r*dpdrd)/(grad_psid*cnper_test)
+      else
+       write(*,*)'dinit-2: grad_psid=',grad_psid
+       cos_ksi_test=1.d0
+      endif
       cos_ksi_vg=v_gr_rho/v_gr
       
       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
@@ -1883,7 +1927,7 @@ c-----safety factor calculations
       endif ! outprint
       
       return
-      end
+      end subroutine dinit_1ray
 
 
 
@@ -2424,7 +2468,7 @@ c     xybrhoth.dat: rho(i),theta(j),xe,ye,(xe+ye*ye),bmod,bphi,
 c     *              dsqrt(bz**2+br**2)
 c     Here (0<rho<1,0<theta<pi) are the points of mesh
 
-c      implicit none
+      !implicit none
       implicit double precision (a-h,o-z)
       include 'param.i'
       
@@ -2537,8 +2581,8 @@ c                                         |0           0             1   |
 c
 c     =e_z*grad_psi_r - e_r*grad_psi_z
 c
-c     popoidal_z =   grad_psi_r/dsqrt(grad_psi_z**2+grad_psi_r**2)
-c     popoidal_z = - grad_psi_z/dsqrt(grad_psi_z**2+grad_psi_r**2)
+c     poloidal_z =   grad_psi_r/dsqrt(grad_psi_z**2+grad_psi_r**2)
+c     poloidal_z = - grad_psi_z/dsqrt(grad_psi_z**2+grad_psi_r**2)
 c
 c-------------------------------------------------------------------------
       implicit none  
@@ -2555,8 +2599,14 @@ c-----locals
 
       bmod=b(z,r,phi)
       grad_psid=dsqrt(dpdzd**2+dpdrd**2)
-      poloid_z=  dpdrd/grad_psid
-      poloid_r= -dpdzd/grad_psid
+      if(grad_psid.ne.0.d0)then !YuP[2020-08-19] added checking
+        poloid_z=  dpdrd/grad_psid
+        poloid_r= -dpdzd/grad_psid
+      else
+        write(*,*)'poloidal_vector: grad_psid',grad_psid
+        poloid_z= 0.d0
+        poloid_r= 0.d0
+      endif
 
       return
       end
@@ -3349,55 +3399,57 @@ cyup      write(*,*)'after allocate   w_theta_pol_nc istat',istat
 c-----electric field complex polarization
 
       allocate( cwexde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
-cyup      write(*,*)'after allocate  cwexde_nc istat',istat
-      call ccast(cwexde_nc,zero,SIZE( cwexde_nc))
-
+      !write(*,*)'after allocate  cwexde_nc istat',istat
+      call ccast(cwexde_nc,(0.d0,0.d0),SIZE( cwexde_nc)) !YuP[2020-03-10] corrected
+      !write(*,*)'dinit/alloc: sum(cwexde_nc)=',sum(cwexde_nc)
+      !YuP: could simply use cwexde_nc(1:nrelta,1:nray*nfreq)=(0.d0,0.d0)
+      
       allocate( cweyde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
 cyup      write(*,*)'after allocate  cweyde_nc istat',istat
-      call ccast(cweyde_nc,zero,SIZE( cweyde_nc))
+      call ccast(cweyde_nc,(0.d0,0.d0),SIZE( cweyde_nc))
 
       allocate( cwezde_nc(1:nrelta,1:nray*nfreq),STAT=istat)
 cyup      write(*,*)'after allocate  cwezde_nc istat',istat
-      call ccast(cwezde_nc,zero,SIZE( cwezde_nc))
+      call ccast(cwezde_nc,(0.d0,0.d0),SIZE( cwezde_nc))
 
       if (dielectric_op.eq.'enabled') then
 c--------write dielectric tensor elements
 
          allocate( cweps11_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps11_nc istat',istat
-         call ccast( cweps11_nc,zero,SIZE( cweps11_nc))
+         call ccast( cweps11_nc,(0.d0,0.d0),SIZE( cweps11_nc))
 
          allocate( cweps12_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps12_nc istat',istat
-         call ccast( cweps12_nc,zero,SIZE( cweps12_nc))
+         call ccast( cweps12_nc,(0.d0,0.d0),SIZE( cweps12_nc))
 
          allocate( cweps13_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps13_nc istat',istat
-         call ccast( cweps13_nc,zero,SIZE( cweps13_nc))
+         call ccast( cweps13_nc,(0.d0,0.d0),SIZE( cweps13_nc))
 
          allocate( cweps21_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps21_nc istat',istat
-         call ccast( cweps21_nc,zero,SIZE( cweps21_nc))
+         call ccast( cweps21_nc,(0.d0,0.d0),SIZE( cweps21_nc))
 
          allocate( cweps22_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps22_nc istat',istat
-         call ccast( cweps22_nc,zero,SIZE( cweps22_nc))
+         call ccast( cweps22_nc,(0.d0,0.d0),SIZE( cweps22_nc))
 
          allocate( cweps23_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps23_nc istat',istat
-         call ccast( cweps23_nc,zero,SIZE( cweps23_nc))
+         call ccast( cweps23_nc,(0.d0,0.d0),SIZE( cweps23_nc))
 
          allocate( cweps31_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps31_nc istat',istat
-         call ccast( cweps31_nc,zero,SIZE( cweps31_nc))
+         call ccast( cweps31_nc,(0.d0,0.d0),SIZE( cweps31_nc))
 
          allocate( cweps32_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps32_nc istat',istat
-         call ccast( cweps32_nc,zero,SIZE( cweps32_nc))
+         call ccast( cweps32_nc,(0.d0,0.d0),SIZE( cweps32_nc))
 
          allocate( cweps33_nc(1:nrelta,1:nray*nfreq),STAT=istat)
          write(*,*)'after allocate  cweps33_nc istat',istat
-         call ccast( cweps33_nc,zero,SIZE( cweps33_nc))        
+         call ccast( cweps33_nc,(0.d0,0.d0),SIZE( cweps33_nc))        
 
       endif
 c----------------------------      
@@ -3704,6 +3756,11 @@ cBH130508         write(*,*)'after allocate( wxe_0',istat
 cBH130508         call bcast(wxe_0,zero,SIZE(wxe_0))
 
 cBH130508      endif !(i_emission.eq.1)
+
+      delpwr(:)=0.d0 !YuP[2020-03-10] added
+      cwexde(1:nrelta)=(0.d0,0.d0) !YuP[2020-03-10] added
+      cweyde(1:nrelta)=(0.d0,0.d0) !YuP[2020-03-10] added
+      cwezde(1:nrelta)=(0.d0,0.d0) !YuP[2020-03-10] added
 
       return
       end

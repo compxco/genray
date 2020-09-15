@@ -2383,12 +2383,13 @@ c
 c
       end
 
-      subroutine sgeim1 (a,lda,n,b,x,relerr,tol,aa,r,ipvt,info)
+      subroutine sgeim1 (a,lda,n,bsg,x,relerr,tol,aa,r,ipvt,info)
+! YuP[2020-08-20] Renamed b into bsg, to avoid conflict with function b()
 c
       implicit none
 c
       integer lda,n,info
-      real a(lda,1),b(n),x(n),relerr,tol,aa(lda,1),r(n)
+      real a(lda,1),bsg(n),x(n),relerr,tol,aa(lda,1),r(n)
       integer ipvt(n)
 c     uses subroutines 'sgefa1','sgesl1'
 c     uses functions 'sdsdot1','sasum1'
@@ -2416,7 +2417,7 @@ c
          do i=1,n
             aa(i,j)=a(i,j)
          end do
-         x(j)=b(j)
+         x(j)=bsg(j)
       end do
 c
       call sgefa1(aa,lda,n,ipvt,info)
@@ -2431,7 +2432,7 @@ c
       xnormp=xnorm+tol
       do iter=1,itermax
          do i=1,n
-            r(i)=sdsdot1(n,a(i,1),lda,x(1),1,-b(i))
+            r(i)=sdsdot1(n,a(i,1),lda,x(1),1,-bsg(i))
          end do
          call sgesl1(aa,lda,n,ipvt,r,0)
          do i=1,n
@@ -2449,12 +2450,13 @@ c
       end
 
 
-      subroutine sgesl1(a,lda,n,ipvt,b,job)
+      subroutine sgesl1(a,lda,n,ipvt,bsg,job)
+! YuP[2020-08-20] Renamed b into bsg, to avoid conflict with function b()
 c
       implicit none
 c
       integer lda,n,ipvt(1),job
-      real a(lda,1),b(1)
+      real a(lda,1),bsg(1)
 c     uses function 'sdot1'
       real sdot1
 c     uses subroutine 'saxpy1'
@@ -2470,34 +2472,34 @@ c
          if (nm1 .ge. 1) then
             do k=1,nm1    ! solve L.y = b
                l=ipvt(k)
-               t=b(l)
+               t=bsg(l)
                if (l .ne. k) then
-                  b(l)=b(k)
-                  b(k)=t
+                  bsg(l)=bsg(k)
+                  bsg(k)=t
                end if
-               call saxpy1(n-k,t,a(k+1,k),1,b(k+1),1)
+               call saxpy1(n-k,t,a(k+1,k),1,bsg(k+1),1)
             end do
          end if
          do kb=1,n    ! solve U.x = y
             k=n+1-kb
-            b(k)=b(k)/a(k,k)
-            t=-b(k)
-            call saxpy1(k-1,t,a(1,k),1,b(1),1)
+            bsg(k)=bsg(k)/a(k,k)
+            t=-bsg(k)
+            call saxpy1(k-1,t,a(1,k),1,bsg(1),1)
          end do
       else                        ! solve a(transpose).x = b
          do k=1,n                 ! solve U(transpose).t = b
-            t=sdot1(k-1,a(1,k),1,b(1),1)
-            b(k)=(b(k)-t)/a(k,k)
+            t=sdot1(k-1,a(1,k),1,bsg(1),1)
+            bsg(k)=(bsg(k)-t)/a(k,k)
          end do
          if (nm1 .lt. 1)  return
          do kb=1,nm1
             k=n-kb
-            b(k)=b(k)+sdot1(n-k,a(k+1,k),1,b(k+1),1)
+            bsg(k)=bsg(k)+sdot1(n-k,a(k+1,k),1,bsg(k+1),1)
             l=ipvt(k)
             if (l .ne. k) then
-               t=b(l)
-               b(l)=b(k)
-               b(k)=t
+               t=bsg(l)
+               bsg(l)=bsg(k)
+               bsg(k)=t
             end if
          end do
       end if

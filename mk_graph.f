@@ -1808,7 +1808,7 @@ c     rmin ,rmax are the min and max values of the major radius
 c                at the limitter  
 c     zmax,zmin are the min and max values of vertical coordinate z
 c                at the limitter
-c      implicit none
+      !implicit none
       implicit double precision (a-h,o-z)
       include 'param.i'
       
@@ -2941,7 +2941,7 @@ c     freq_ci=(Z*e*B/m_i*clihgt)/2pi
 C     straightpath_plot_fcefuh to plot f_ce*j, f_uh, f_pe
 C     with a path through the plasma (midplane for example)  
 
-c      implicit none
+      !implicit none
       implicit double precision (a-h,o-z)
 
       include 'param.i' ! specifies code parameters 
@@ -3850,9 +3850,9 @@ c-----plot old and new power along ray at one LSC power iteration
 c      include 'onetwo.i'   
 
 c-----locals
-      real
+      real*4
      &delpwr_min,delpwr_max, 
-     &s_pol_min,s_pol_max  
+     &s_pol_min,s_pol_max  !YuP: arguments of PGPLOT subs are real*4
       integer is,iray
 
       integer maxsteps
@@ -3898,11 +3898,11 @@ c-----plot to plot.ps file
 c-----------------------------------------------------------------
 c     calculate maximal power and maximal s_poloidal along rays
 c------------------------------------------------------------------
-      delpwr_min=0.d0 
-      delpwr_max=0.d0
+      delpwr_min=0.0 
+      delpwr_max=0.0
 
-      s_pol_min=0.d0
-      s_pol_max=0.d0
+      s_pol_min=0.0
+      s_pol_max=0.0
 
 c      write(*,*)'in plot_lsc_powers nrayl',nrayl
       do iray=1,nrayl
@@ -3960,18 +3960,17 @@ c     &               iray,nrayelt_nc(iray)
   
  
          allocate(newy(1:nrayelt_nc(iray)),STAT=istat)
-c         write(*,*)' in plot_lsc_powers 5_1 istat',istat
+         !write(*,*)' in plot_lsc_powers 5_1 istat',istat
+         !write(*,*)' nrayelt_nc(iray)=',nrayelt_nc(iray) !YuP: should be at least 2
      
          call r4bcast(newy,zero,SIZE(newy))
-        
-
-c         write(*,*)' in plot_lsc_powers 6'
+         !write(*,*)' in plot_lsc_powers 6'
   
  
          allocate(newx(1:nrayelt_nc(iray)),STAT=istat)
          call r4bcast(newx,zero,SIZE(newx))
-c         write(*,*)'in  plot_lsc_powers aft newx istat',
-c     &              istat 
+!         write(*,*)'in  plot_lsc_powers aft newx istat',
+!     &              istat 
 
 c         write(*,*)' in plot_lsc_powers 7'
   
@@ -3980,27 +3979,27 @@ c         write(*,*)' in plot_lsc_powers 7'
             newx(is)=ws_nc(is,iray)  
          ENDDO
 
-c         write(*,*)' in plot_lsc_powers 8'
+         !write(*,*)' in plot_lsc_powers 8'
   
          CALL PGSLS(2)
          CALL PGSCI(BLUE)
          CALL PGLINE(nrayelt_nc(iray),newx,newy)
 c         print *,'BLUE: new delpwr'
 
-c         write(*,*)' in plot_lsc_powers 9'
+         !write(*,*)' in plot_lsc_powers 9'
   
          DO is=1,nrayelt_nc(iray)
             newy(is)=delpwr_nc_old_lsc(is,iray)    
          ENDDO
 
    
-c         write(*,*)' in plot_lsc_powers 10'
+         !write(*,*)' in plot_lsc_powers 10'
   
          CALL PGSLS(3)
          CALL PGSCI(RED)
          CALL PGLINE(nrayelt_nc(iray),newx,newy)
 
-c         write(*,*)' in plot_lsc_powers 11'
+         !write(*,*)' in plot_lsc_powers 11'
   
 c         print *,'RED: old delpwr'
 

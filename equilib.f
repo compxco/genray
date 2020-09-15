@@ -23,7 +23,7 @@ c  This program uses following external files:
 c  input , dinitr , limitr 
 c*********************************************************************
       subroutine equilib
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none 
 
       call input
@@ -50,7 +50,7 @@ c        common 'three' and 'fourb'                                 !
 c-------------------------------------------------------------------!
       subroutine input
 
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none 
 
       include 'param.i'
@@ -115,6 +115,8 @@ cSm070426
       include 'name_tokamak.i'
       integer kode,i,j
       integer io1,io2
+      integer ierr !YuP[2020-03-09] for read(,,iostat=ierr)
+      logical file_exists !YuP[2020-03-09] for INQUIRE (FILE=fname,EXIST=exists)
       real*8  dpsiar,dflux,pr,pb,dpsi,dstep
 
       external length_char
@@ -248,9 +250,17 @@ c-----------------------------------------------------------
 c     Read the EQDSK file
 c-----------------------------------------------------------
       write(*,*)'eqdskin= ',trim(eqdskin)
+      
+      !YuP[2020-03-09] Added message+stopping if no eqdsk file
+      !INQUIRE about file's existence:
+      INQUIRE(FILE=trim(eqdskin), EXIST=file_exists)
+      write(*,*)'file_exists=',file_exists
+      if (.NOT. file_exists) then
+        WRITE(*,'(2A/)') 'equilib: Cannot find file ', trim(eqdskin)
+        STOP
+      endif
 
-      open(30,file=trim(eqdskin))
-
+      open(30,file=trim(eqdskin),iostat=ierr)
 cBH020822  Adding nveqd (.le. nxeqd) for different number of
 cBH020822  flux surfaces on which p,feqd,p',feqd',q are tabulated.
 cBH020822  The standard EQDSK does not incorporate this feature,
@@ -290,9 +300,23 @@ cyup      write(*,*)'xdimeqd,ydimeqd,reqd,redeqd,ymideqd'
 cyup      write(*,*)xdimeqd,ydimeqd,reqd,redeqd,ymideqd
 3     format(5e16.9)
 
+!YuP[2020-07-23] added, for border control
+      rdimeqd=xdimeqd
+      zdimeqd=ydimeqd
+      zmideqd=ymideqd
+      xeqmax= redeqd+rdimeqd ! YuP max for x-grid of cartesian grid
+      xeqmin=-xeqmax
+      yeqmax= redeqd+rdimeqd ! YuP max for y-grid of cartesian grid
+      yeqmin=-yeqmax
+      zeqmax= zmideqd + 0.5d0*zdimeqd
+      zeqmin= zmideqd - 0.5d0*zdimeqd
+      write(*,*)'xeqmin,xeqmax=',xeqmin,xeqmax
+      write(*,*)'yeqmin,yeqmax=',yeqmin,yeqmax
+      write(*,*)'zeqmin,zeqmax=',zeqmin,zeqmax
+
       read(30,3) xma,yma,psimag,psilim,beqd
-cyup      write(*,*)'xma,yma,psimag,psilim,beqd'
-cyup      write(*,*)xma,yma,psimag,psilim,beqd
+      write(*,*)'equilib/reading magn.axis coord xma[m],yma[m]=',xma,yma
+!yup      write(*,*)xma,yma,psimag,psilim,beqd
       if(psimag.gt.psilim) then
         dpsimax=-1
       else
@@ -326,33 +350,54 @@ c     on the magnetic axis (psimag<psilim)
 cc      write(*,*)'in equilib after change of the peqd sign'
 c------------------------------------------------------------
       read(30,3) (qpsi(i),i=1,nveqd)
-cyup      write(*,*)'in equilib after qpsi'
-c      read(30,4) nnlim,nnves
-cc      write(*,*)'in equilib after nnlim,nnves',nnlim,nnves
+      write(*,*)'in equilib after reading qpsi'
+      
+      read(30,4,iostat=ierr) nnlim,nnves !YuP[2020-03-09] Why was it skipped?
+      if(ierr.eq.0)then !YuP[2020-03-09]
+        continue
+      else ! lines with 'nnlim,nnves' are not present in file
+        nnlim=0
+        nnves=0
+        !Note: Declared rlimit(nlimit),zlimit(nlimit); nlimit in param.i
+        !Note: Declared rves(nves),zves(nves), where nves is in param.i
+      endif !YuP[2020-03-09]
+      write(*,*)'in equilib after reading nnlim,nnves=',nnlim,nnves
+      write(*,*)'(if nnlim=0 and nnves=0 then - no data in eqdsk)'
  4    format(2i5)
+     
 c-----------------------------
-c test
-      nnlim=0
+!YuP[2020-03-09] Why skipping?  Not skipping - affects results of a run.
+      nnlim=0 !=0 means skip the data from eqdskin ! affects results !
+      !nnves=0 !=0 means skipping data from eqdskin ! no effect on results
 c-----------------------------
-      if (nnlim.ne.0) then
-c        these values must coincide with the parameters
-c        nlimit= nnlim,nves=nnves in common five and fourb.cb
-         read(30,3) (rlimit(i),zlimit(i),i=1,nnlim)
-         read(30,3) (rves(i),zves(i),i=1,nnves)
-         if(nlimit.ne.nnlim) then
-           write(*,*)'nlimit=',nlimit,'is not equal to nnlim=',nnlim
-           write(*,*)' see  common five and fourb.cb'
-	   stop
+      if (nnlim.ne.0) then 
+         if(nlimit.lt.nnlim) then !YuP[2020-03-09] adjusted
+           write(*,*)'nlimit=',nlimit,' is smaller than nnlim=',nnlim
+           write(*,*)' see  common five.i and fourb.i'
+           WRITE(*,*)'equilib.f: increase nlimit in param.i'
+           stop
          endif
+         read(30,3) (rlimit(i),zlimit(i),i=1,nnlim)
       else
-c        ------------------------------------
-c        The eqdsk data without limiter points.
-c        ------------------------------------
-         write(*,*)'nnlim=0 eqdsk data without limiter points'
-	 psisep=psilim
+         !eqdsk data w/o limiter points, or skipped because of nnlim=0 above
+         write(*,*)'nnlim=0: eqdsk data w/o limiter points, or skipped'
+         psisep=psilim
          write(*,*)'psisep,psilim',psisep,psilim
       endif
-      close(30)
+      
+      if (nnves.ne.0) then
+         if(nves.lt.nnves) then !YuP[2020-03-09] adjusted
+           write(*,*)'nves=',nves,' is smaller than nnves=',nnves
+           write(*,*)' see  common five.i and fourb.i'
+           WRITE(*,*)'equilib.f: increase nves in param.i'
+           stop
+         endif
+         read(30,3) (rves(i),zves(i),i=1,nnves)
+      else
+         write(*,*)'nnves=0 : eqdsk data without vessel points'
+      endif
+
+      close(30) !file=eqdskin ---------------------------------
       
       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)' nxeqd,nyeqd,nveqd'
@@ -513,6 +558,12 @@ c--------------------------------------------------------
       ymideqd=ymideqd*pr
       xma=xma*pr
       yma=yma*pr
+      xeqmin=xeqmin*pr
+      xeqmax=xeqmax*pr
+      yeqmin=yeqmin*pr
+      yeqmax=yeqmax*pr
+      zeqmin=zeqmin*pr
+      zeqmax=zeqmax*pr
       psimag=psimag*pr*pr*pb
       psilim=psilim*pr*pr*pb
       write(*,*)'equilib psimag,psilim,pr,pb',psimag,psilim,pr,pb
@@ -777,7 +828,7 @@ c        ------------------------------------------------
 c        creation of arrays zlimit(nlimit), rlimit(nlimit)
 c        They set equal to rpsi(npsi,i) zpsi(npsi,i) (the
 c        coordinates of the magnetic surface psi(r,s)=psilim.
-c        In this case it must be nlimitr=nteta1
+c        In this case it must be nlimit=nteta1
 c      	 -------------------------------------------------
 
 cSAP091208
@@ -932,7 +983,7 @@ c----------------------------------------------------------------------
       double precision zlimr(nlimit),rlimr(nlimit)
 c------------------------------------------------------------------
 c   determination rmin and rmax  of limitter and
-c   coordinates of these points: (zrmas,rmax),(zrmin,rmin)
+c   coordinates of these points: (zrmax,rmax),(zrmin,rmin)
 c------------------------------------------------------------------
 cSmirnov961226 test beg
 cyup      write(*,*)'in limitr nlimit',nlimit

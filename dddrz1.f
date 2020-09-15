@@ -40,7 +40,7 @@ c     hamilt1, etc.    						    !
 c-------------------------------------------------------------------
       subroutine dddrz1(t,u,deru)
       implicit none
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       include 'param.i'
       include 'one.i'
 c this line only for call control
@@ -186,8 +186,7 @@ c----------------------------------------------------------------
            deru(3)=dddcm
 c           write(*,*)'rside1 cmplus,hp',cnrplus,hp
 c           write(*,*)'rside1 cmminus,hm',cmminus,hm
-c           write(*,*)'rside1 dddcm,deru(3)',dddcm,deru(3)  
-
+c           write(*,*)'rside1 dddcm,deru(3)',dddcm,deru(3) 
 
 	   zplus=z+hz
 	   zminus=z-hz
@@ -926,7 +925,7 @@ c-----------------------------------------------------------------
            deru(3)=dddcm
            deru(4)=-dddz
            deru(5)=-dddr
-           deru(6)=-dddphi
+           deru(6)=-dddphi !TEST: setting to 0.d0 gives same result
 
 
 ctest

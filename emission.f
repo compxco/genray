@@ -1649,7 +1649,7 @@ c     input npar,nper,omega=omega/omega_ce,omegape=omegape/omegac_e
 c     In this version the variable st is used.
 c     It has the problem for st=0 case (nperp=0)      
     
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
 c      double precision npar,npar2,nper,nper2,n2
 c-----input 
       real*8 npar,nper,omega,omegpe 
@@ -1988,7 +1988,7 @@ c     input data are from param.i, emission.i
 c     output data are  in emission.i     	
 c-----------------------------------------------------------------
       implicit none
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       include 'param.i'
       include 'emissa.i'
       include 'write.i'
@@ -2303,7 +2303,7 @@ c     double precision FUNCTION r_ray(s,nrayelt)
 c-------------------------------------------------------
 c     major radius r on the length s (cm) along the ray (from spline)
 c-------------------------------------------------------
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'emissa.i'
@@ -3625,7 +3625,7 @@ c---- local
       double precision npar2m1 !N_par**1-1
 
 c 
-      pi=4.d0*dtan(1.d0)
+      pi=4.d0*datan(1.d0) !YuP[2018-10-13][2020-01-27] BUG was: pi=4.d0*dtan(1.d0)
 
       ires=1
       vpar1=0.d0
@@ -4891,7 +4891,7 @@ c-----calculate Ye(r,z=0)-0.5.
 c     This function will be used to find the major radius of
 c     the second EC harmonic reconance point.
 c     f_y(r)=omega_ce(r,z=0)/omega-0.5d0=y(r,z=0,phi=0,1)-0.5
-c      implicit none
+      !implicit none
       implicit double precision (a-h,o-z) 
       include 'param.i'
       include 'one.i' !

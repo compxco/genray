@@ -1372,7 +1372,8 @@ c---- wr_nc and wz_nc are in (cm)
 
       vgr(1)=deru(1)
       vgr(2)=deru(2)
-      vgr(3)=u(1)*deru(3)
+      !vgr(3)=u(1)*deru(3) !YuP[2020-08-28] BUG? Not important
+      vgr(3)=u(2)*deru(3) !YuP[2020-08-28] Correct?  R*(dphi/dt) Not used anyway
 
       vgr_pol=dsqrt(vgr(1)**2+vgr(2)**2) ! poloidal group velocity
                                          ! normalized to clight    
@@ -2165,10 +2166,12 @@ c-----calculate the group velocity
       vgr(3)=r*deru(3)
       
       vgrmods=vgr(1)**2+vgr(2)**2+vgr(3)**2
-      if(vgrmods.gt.1.d0) then
+      if(vgrmods.gt.1.01d0) then !YuP[2020-08-17] Changed gt.1 to gt.1.01
+         !otherwise too much of printout; 
+         ! vgroup=1.00005 (slightly larger than 1) might happen in near-vacuum
          write(*,*)
          write(*,*) '*************************************************'
-         write(*,*)'WARNING vgroup>1,   abs(vgroup) = ',dsqrt(vgrmods)  
+         write(*,*)'prep3d_lsc:WARNING vgroup>1, vgroup=',dsqrt(vgrmods)
          write(*,*) '*************************************************'
          write(*,*)
       endif
@@ -2899,7 +2902,8 @@ c-----externals
       end
 
       subroutine norm_difference(ndim1_low,ndim1_top,
-     &ndim2_low,ndim2_top,a,b,norm_diff)
+     &ndim2_low,ndim2_top,a,bnd,norm_diff)
+      !YuP[2020-08-20] renamed b to bnd, to avoid conflict with function b()
 c-----calculates norm of arrays a and b difference
       implicit none
 c-----input
@@ -2907,7 +2911,7 @@ c-----input
 
       real*8
      &a(ndim1_low:ndim1_top,ndim2_low:ndim2_top),
-     &b(ndim1_low:ndim1_top,ndim2_low:ndim2_top)  !2D arrays
+     &bnd(ndim1_low:ndim1_top,ndim2_low:ndim2_top)  !2D arrays
    
 
 c-----output
@@ -2923,11 +2927,11 @@ c-----locals
 
       do i=ndim1_low,ndim1_top           	 
          do n=ndim2_low,ndim2_top
-            dif=dabs(a(i,n)-b(i,n))/dabs(a(i,n)+b(i,n)+eps)
-c            dif=dabs(a(i,n)-b(i,n))
+            dif=dabs(a(i,n)-bnd(i,n))/dabs(a(i,n)+bnd(i,n)+eps)
+c            dif=dabs(a(i,n)-bnd(i,n))
             if(norm_diff.lt.dif) norm_diff=dif
 c            norm_diff=norm_diff+
-c     &      2.d0*dabs(a(i,n)-b(i,n))/dabs(a(i,n)+b(i,n)+eps)
+c     &      2.d0*dabs(a(i,n)-bnd(i,n))/dabs(a(i,n)+bnd(i,n)+eps)
          enddo
       enddo
 
@@ -2935,7 +2939,7 @@ c      norm_diff= norm_diff/
 c     &           ((ndim1_top-ndim1_low)*(ndim2_top-ndim2_low))     
 
       return
-      end
+      end subroutine norm_difference
 
 
       subroutine norm_power_difference(norm_diff)
@@ -3500,7 +3504,7 @@ c----------------------------------------------------------------
 c     this subroutine calculates absorted power profiles
 c     calculates RF current  profiles	 (from deposited power)
 c-----------------------------------------------------------------
-c      IMPLICIT double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i'
       include 'one.i'

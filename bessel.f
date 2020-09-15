@@ -2755,7 +2755,7 @@ c     erroneous. if the user wishes to calculate g(n-1) to higher
 c     accuracy, he should use an asymptotic formula for large order.
 c
 c*****     *****     *****     *****     *****     *****     *****
-      implicit double precision (a-h,o-z)
+      implicit integer (i-n), real*8 (a-h,o-z)
       dimension br(*),bi(*)
 c      data nsig,nten,largez,exparg/15,307,10000,700./
 c      data nsig,nten,largez,exparg/15,38,10000,81./

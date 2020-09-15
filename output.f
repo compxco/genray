@@ -60,7 +60,7 @@ cSAP120517
 c     &i_go_to_previous_output_step)
      &i_go_to_previous_output_step,s_total,s_total_old )
 cSAP1200603
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
       implicit none
       include 'param.i' 
       include 'one.i'
@@ -133,6 +133,7 @@ c-----locals
      &cnper_max_ebw,
      &dif_phi,sum,vgrmods,yj,xi,xe,yi,ye,yma_loc,xma_loc,
      &y0_cr, Y_abs,s_total_new
+      real*8 b_grad_psi !local
 
 
       integer
@@ -352,10 +353,10 @@ cSAP100514
 
 c     if Group Velocity, normalized to c, is greater than 1.1
 c     (give 10 percent grace) then stop the ray.  [RWH: 030427].
-
       vgrmods=deru(1)**2+deru(2)**2+(u(2)*deru(3))**2
 
-      if ((vgrmods.gt.1.1).and.
+      !YuP[2020-07] if ((vgrmods.gt.1.1).and.
+      if ((vgrmods.gt.2.1).and.
      1    ((id.ne.10).and.(id.ne.12).and.(id.ne.13)))
      1   then
          write(*,*)
@@ -385,15 +386,15 @@ CENM 1Sep05 -- best to really stop the ray when using the relativistic
 C    dispersion relation, otherwise it goes on and on without much progress.
 C    vgrmods.gt.1.1 usually when it has nearly reached full depletion of power
 C    in the ray anyway.
-      	 if (id.eq.14) iraystop=1
-cSAP100514
-         iray_status_one_ray=8 
-cBH131024c      	 iraystop=1
-         iraystop=1
-cSAP090724
-cBH131024c	 return
-         return
-      end if
+         if(i_ox.eq.1)then !YuP[2020-07-29]
+           continue !!YuP[2020-07-29] allow to continue; do not stop the ray
+         else ! i_ox=2 [normal run] Stop the ray in this case of vgroup>c
+      	   if (id.eq.14) iraystop=1
+           iray_status_one_ray=8 
+           iraystop=1
+           return
+         endif
+      endif ! vgrmods.gt.2.1
 
 c---------------------------------------------------------------------
 c     change of the dispersion function near the cyclotron resonance 
@@ -448,7 +449,7 @@ c---------------------------------------------------------
 c     the  switch off the Hamiltonian correction procedure
       if(icorrect.eq.0) goto 11
 c---------------------------------------------------------
-      epscor=prmt(4)
+      epscor=prmt(4) !YuP: Not a good idea to use prmt4 here.
       bmod=b(z1,r1,phi1)
       gam=gamma1(z1,r1,phi1,cnz1,cnr1,cm1)
       eps=hamilt1(u(1),u(2),u(3),u(4),u(5),u(6))
@@ -491,8 +492,8 @@ cSm000324
         enddo
  
         cnpar=(bz*cnz1+br*cnr1+bphi*cm1/r1)/bmod
-        accurcy=epscor 
-        naccurc=5
+        accurcy=epscor !=prmt4 in present design. YuP: Not a good idea.
+        naccurc=10 !YuP[2020-08-26] !was 5
         cnper=dsqrt(dabs((cnz1**2+cnr1**2+(cm1/r1)**2)-cnpar**2))
 c        write(*,*)'output before solvnperp cnpar,cnper',cnpar,cnper
         ihermloc=iherm
@@ -504,8 +505,8 @@ c        endif
 
         call solvnperp(nbulk,massc,xc,yc,tec,tpopc,vflowc,cnpar,id,
      *  ihermloc,accurcy,naccurc,cnprim,cnper)
-c        write(*,*)'output after solvnperp cnpar,cnper',cnpar,cnper
-c        write(*,*)'output before correct2 cnz1,cnr1',cnz1,cnr1
+        !write(*,*)'output after solvnperp cnpar,cnper',cnpar,cnper
+        !write(*,*)'output before correct2 cnz1,cnr1',cnz1,cnr1
         
         call  correct2(cnpar,cnper,
      *  cnz1,cnr1,cm1,r1,bz,br,bphi,bmod,cnznew,cnrnew)
@@ -569,7 +570,7 @@ cSm070116
 c 50	   pu(i)=u(i)+0.5*dlambd*deru(i+3)
  50	   pu(i)=u(i)
 
-         write(*,*)'dlambd',dlambd
+         !write(*,*)'dlambd',dlambd
 
 	 do 51 i=4,5
  51      pu(i)=u(i)-0.5*dlambd*deru(i-3)
@@ -715,12 +716,12 @@ cSAP100514
          return
       endif
 c------------------------------------------------------------------
-c     Creates the jump of the ray point throw the OX mode conversion
+c     Creates the jump of the ray point through the OX mode conversion
 c     area where X_e=1 (V_perp=0)
 c-------------------------------------------------------------------
       if (i_ox.eq.2) then
-        write(*,*)'was_not_ox_conversion',was_not_ox_conversion
         i_call_prep3d_in_output_at_i_ox_conversion_eq_1=0
+        !write(*,*)'was_not_ox_conversion',was_not_ox_conversion
         if (was_not_ox_conversion) then
           xma_loc=xma
           yma_loc=yma
@@ -769,9 +770,15 @@ c           the output data for mnemonic.nc file
             cnpar_ox=(bz*u(4)+br*u(5)+bphi*u(6)/u(2))/bmod ! N_parallel
                                                            ! before OX
                                                            ! conversion
+           b_grad_psi= 
+     &     dsqrt((bphi*dpdzd)**2+(br*dpdzd-bz*dpdrd)**2+(bphi*dpdrd)**2)
+           if(b_grad_psi.eq.0.d0)then
+             stop 'outpt: b_grad_psi=0'
+           endif
             cn_b_gradpsi=(u(5)*bphi*dpdzd-
      &      (u(6)/u(2))*(br*dpdzd-bz*dpdrd)-u(4)*bphi*dpdrd)/
-     &   dsqrt((bphi*dpdzd)**2+(br*dpdzd-bz*dpdrd)**2+(bphi*dpdrd)**2)
+     &       b_grad_psi
+!     &   dsqrt((bphi*dpdzd)**2+(br*dpdzd-bz*dpdrd)**2+(bphi*dpdrd)**2)
 
 
 c-------------------------------------------------------
@@ -971,7 +978,7 @@ c---------------plot wave normal surfaces
             endif
           endif
 
-        enddo !k
+        enddo !k=1,n_plot_disp_cold
       endif !n_plot_disp_cold.gt.0
  41   continue
      
@@ -1191,17 +1198,17 @@ c      write(*,*)'in output.f before  rside1 t',t
 
 c      write(*,*)'in output.f after  rside1 t',t
 c-----------------------------------------------------------
-c      write(*,*)' 20 output before bound u(2),u(1)',u(2),u(1)
+      !write(*,*)' 20 outpt: before bound: u(2),u(1)',u(2),u(1)
       call bound(u(1),u(2),u(3),u(4),u(5),u(6),iflref,
      &      z_ref,r_ref,phi_ref,cnzref,cnrref,cmref,
      &      ibound,deru(1),deru(2))
 
-c      write(*,*)'20 output after bound ibound,iflref,u(2),u(1)',
-c     &           ibound,iflref,u(2),u(1)
+!      write(*,*)'20 outpt: after bound: ibound,iflref,u(2),u(1)',
+!     &           ibound,iflref,u(2),u(1)
 
-      if (iflref.eq.1) then
+      if (iflref.eq.1) then !after bound(): reflection happened
 
-        write(*,*)'the data in reflection point before reflection'
+        write(*,*)'the data in reflection point before reflection:'
         write(*,*)'z=',u(1),'r=',u(2),'phi=',u(3)
         write(*,*)'cnz=',u(4),'cnr=',u(5),'cm=',u(6)
         bmod=b(u(1),u(2),u(3))    
@@ -1209,12 +1216,12 @@ c     &           ibound,iflref,u(2),u(1)
         write(*,*)'cn2=',u(4)**2+u(5)**2+(u(6)/u(2))**2
         write(*,*)'cnper=',dsqrt((u(4)**2+u(5)**2+(u(6)/u(2))**2)-
      &                 ((u(4)*bz+u(5)*br+u(6)*bphi/u(2))/bmod)**2)
-        write(*,*)'after reflection'
 
         u(1)= z_ref
         u(2)= r_ref
         u(3)= phi_ref
 
+        write(*,*)'after reflection:'
         write(*,*)'z_ref=',z_ref,'r_ref=',z_ref,'pfi_ref=',phi_ref
         write(*,*)'cnzref=',cnzref,'cnrref=',cnrref,'cmref=',cmref
         write(*,*)'cnpar=',(cnzref*bz+cnrref*br+u(6)*bphi/u(2))/bmod
@@ -1243,7 +1250,7 @@ c        for the optimal OX mode conversion
            cnr0=u(5)
            cm0=u(6)
            cnphi0=cm0/r0              
-cyup           write(*,*)'output i_ox=1'
+           !write(*,*)'outpt: i_ox=1'
 cyup           write(*,*)'z0,r0,phi0',z0,r0,phi0
 cyup           write(*,*)'cnz0,cnr0,cm0,cnphi0',cnz0,cnr0,cm0,cnphi0
            
@@ -1285,24 +1292,26 @@ c----------put the data into cone.i
            alpha_st_ox=alpha_st
            beta_st_ox=beta_st
 
-cyup           write(*,*)'oxb r_st,phi_st,z_st,alpha_st,beta_st',
-cyup     &     r_st,phi_st,z_st,alpha_st,beta_st
+           write(*,*)'oxb/outpt/i_ox=1: r_st_ox, z_st_ox[m]',r_st,z_st
+           write(*,*)
+     &   'oxb/outpt/i_ox=1: alpha_st_ox, beta_st_ox, phi_st_ox[degree]',
+     &     alpha_st, beta_st, phi_st
  
-      endif ! ((i_ox.eq.1).and.(iflref.eq.1)  
+      endif ! (i_ox.eq.1)
 
       u(4)=cnzref
       u(5)=cnrref
       u(6)=cmref
 
 cSAP081010
-      if (iflref.eq.1) call prep3d(t,u,deru,iraystop)
+      if (iflref.eq.1) call prep3d(t,u,deru,iraystop) ! Reflection happened
 c----------------------------------------------------------
 c     call b() to calculate the small radius rho (inside b())
 c     the resulting will be in common block  one.i
 c-----------------------------------------------------------
       bmod=b(u(1),u(2),u(3)) 
 c      write(*,*)'output iflref=',iflref
-      if (iflref.eq.1) then         
+      if (iflref.eq.1) then  ! Reflection happened   
 c-----------------------------------------------------------
 c        Reflecting procedure have worked
 c        The scattering of N_perp after the reflection
@@ -1392,14 +1401,13 @@ c     write(*,*)'in output phiold,u(3)',phiold,u(3)
 c----------------------------------------------------
 c      write(*,*)'end outpt iraystop',iraystop
       return
-      end
+      end subroutine outpt
+      
+!=======================================================================      
 
       subroutine correct2(cnpar,cnper,
      *cnz,cnr,cm,r,bz,br,bphi,bmod,cnz1,cnr1)
 
-c      subroutine correct2(xe,ye,te_kev,tpope,vflowe,cnpar,id,
-c     *ihermloc,accurcy,naccurc,cnprim,cnper,
-c     *cnz,cnr,cm,r,bz,br,bphi,bmod,cnz1,cnr1)
 c-----------------------------------------------------------
 c     it calculates new values of N_perp coordinate
 c     to get the Hamiltonian conservation
@@ -1575,13 +1583,16 @@ ctest_end
 c
 
       return
-      end
+      end subroutine correct2
 
 
 c-------------------------------------------------------------
 c     calculation n_perp(n_par) for Mazzucato and Forest codes
 c     It uses the input cnper=Re(n_perp) for the first iteration
 c     It calculates cnprim=Im(N_perp) for forest case (id=6)
+!     YuP[2020-08-26] Revised, for better convergence, 
+!     and a more clear logic flow; added many comments.
+!     Value of accurcy0 is set to a fixed value, independent from prmt4.
       subroutine solvnperp(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
      .vflow_ar,
      .cnpar,id,
@@ -1596,8 +1607,9 @@ c-----input
 c-----output 
 c     cnper,cnprim   
 c-----local
-      double precision step,hamr,hamrp,hamrm,dhamrdnr
-      double precision cnperp,cnperm,dcnper,hamold,cnpernew,cnpernw1
+      double precision step,accurcy0, hamrp,hamrm,dhamrdnr
+      double precision cnperp,cnperm,dcnper
+      real*8 cnperold,hamrold, cnpernew,hamrnew, cnper1,hamr1
       double complex chamilt
       integer iter
 c     calculation cnper from the solution of the equation
@@ -1605,88 +1617,152 @@ c     dhamr/d_nper*delnper=-hamr
 
       
       cnprim=0.d0
-      step=1.d-7
+      step=1.d-7 ! a relative step, as in cnperp=cnper+step*cnper
+      accurcy0=accurcy ! Originally set.
+      !accurcy0=1.d-4 !Note: accurcy=epscor=prmt4 in present design.
+      !YuP: Not a good idea, so here we set it to independent value.
+      !Practically, the results are almost unaffected, 
+      ! if accurcy0 is small enough.
+      !However, if it is too small, the iterations may fail to converge
+      ! [may need larger naccurc]
+      
       iter=0
-c      write(*,*)'solvnper xe,ye,te_kev',xe,ye,te_kev
-c      write(*,*)'solvnper cnpar,cnper,id,naccurc',cnpar,cnper,id,naccurc
-      cnpernew=cnper !initial value
-      cnpernw1=cnpernew
-
- 10   continue
-
-c      write(*,*)'1 solvnper cnpar,cnper,id',cnpar,cnper,id
-c      write(*,*)'solvnperp bef dispfun1 cnpar,iter,cnpernew',
-c     *cnpar,iter,cnpernew
-
+c      write(*,*)'solvnperp: xe,ye,te_kev',xe,ye,te_kev
+c      write(*,*)'solvnperp: cnpar,cnper,id,naccurc',cnpar,cnper,id,naccurc
+      cnperold=cnper !initial value (iter=0)
       call dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
      &vflow_ar,
-     *cnpar,cnpernew,cnprim,id,ihermloc,
+     *cnpar,cnperold,cnprim,id,ihermloc,
      *chamilt)
-      hamr=dreal(chamilt)
-
-c      write(*,*)'solvnperp after dispfun1 iter,hamr,cnpernw1,cnpernew'
-c     *,iter,hamr,cnpernw1,cnpernew
-
-      if (iter.eq.0) then 
-        hamold=hamr
-      else        
-        if (dabs(hamold).le.dabs(hamr)) then
-          write(*,*)'solvnperp dabs(hamold)<dabs(hamr) iter=',iter
-          write(*,*)'solution Nperp not found hamold,hamr',hamold,hamr
-          write(*,*)'cnper=cnpernw1',cnpernw1
-          cnper=cnpernw1     
-          goto 20
-        else
-          cnper=cnpernew
-          cnpernw1=cnpernew
-        endif
+      hamrold=dreal(chamilt)  !initial value (iter=0)
+      if (dabs(hamrold).le.accurcy0) then !Got lucky
+        write(*,*)'solvnperp-1: FOUND cnper,iter=',cnper,iter
+        goto 20 !No need for correction procedure
+      !YuP: Note that in present design, it is set accurcy=epscor=prmt(4).
+      !     Not a very good idea.
       endif
+      
 
-      if (dabs(hamr).le.accurcy) goto 20
+ 10   continue ! Handle for iterations. --------------------------------
+      !Usually 1-2 iterations is sufficient.
+      iter=iter+1 ! Incremented.
 
+!      write(*,*)'solvnperp: bef dispfun1 cnpar,cnper,iter',
+!     & cnpar,cnper,iter
+
+      !For Newton iteration method: X_n+1 = Xn -F(Xn)/F'(Xn)
+      ! First, find the derivative F'
+      
       cnperp=cnper+step*cnper
       call dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
-     &vflow_ar,
-     *cnpar,cnperp,cnprim,id,ihermloc,chamilt)
+     &                    vflow_ar,
+     &                    cnpar,cnperp,cnprim,id,ihermloc,chamilt)
       hamrp=dreal(chamilt)
+      if (dabs(hamrp).le.accurcy0) then !Got lucky
+        cnper=cnperp ! This value gives D(Nperp)~0
+        write(*,*)'solvnperp-2: FOUND cnper,iter=',cnper,iter
+        goto 20 !No need to continue correction procedure
+      endif
       
       cnperm=cnper-step*cnper
       call dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
-     &vflow_ar,
-     *cnpar,cnperm,cnprim,id,ihermloc,chamilt)
+     &                    vflow_ar,
+     &                    cnpar,cnperm,cnprim,id,ihermloc,chamilt)
       hamrm=dreal(chamilt)
-         
-      dhamrdnr=(hamrp-hamrm)/(2.d0*step*cnper)
-       
-c      write(*,*)'dhamrdnr,hamr',dhamrdnr,hamr
-      if (dhamrdnr.eq.0.d0) then
-        write(*,*)'solvnperp dhamdnnr=0'
-        goto 20
-      else    
-        dcnper=-hamr/dhamrdnr
-        cnpernew=cnper+dcnper
-        iter=iter+1
-
-        if(cnpernew.lt.0.d0) then
-          write(*,*)'output.f in solvnper cnpernew<0'
-          cnpernew=cnper
-          goto 20
-        endif
-
-        if (iter.gt.naccurc) then
-           write(*,*)'solvnper iter>naccurc'
-           cnper=cnpernew
-           goto 20
-        endif
-
+      if (dabs(hamrm).le.accurcy0) then !Got lucky
+        cnper=cnperm ! This value gives D(Nperp)~0
+        write(*,*)'solvnperp-3: FOUND cnper,iter=',cnper,iter
+        goto 20 !No need to continue correction procedure
       endif
-      hamold=hamr
-      goto 10
+         
+      dhamrdnr=(hamrp-hamrm)/(2.d0*step*cnper) !== F'
+       
+      if (dhamrdnr.eq.0.d0) then !(F'=0: cannot continue iterations)
+        write(*,*)'solvnperp: dhamrdnr=0 [D(cnperm)=D(cnperp)]'
+        cnper=0.5*(cnperm+cnperp) !==cnper [or some other value]
+        goto 20 !exit iterations 
+      else    
+        !Newton iteration method: X_n+1 = Xn -F(Xn)/F'(Xn)
+        dcnper=-hamrold/dhamrdnr !== -F(Xn)/F'(Xn)
+        cnpernew=cnper+dcnper !Adjust, and make new iteration 
+        ! But before proceeding to new iterations, verify:
+        if(cnpernew.lt.0.d0) then
+          write(*,*)'output.f in solvnperp: cnpernew<0'
+          !cnper=cnper ! do not change the previous value
+          goto 20 !exit iterations
+        endif
+        ! Passed basic verification, now check the new hamilt value:
+        call dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
+     &                      vflow_ar,
+     &                      cnpar,cnpernew,cnprim,id,ihermloc,chamilt)
+        hamrnew=dreal(chamilt)
+        if (dabs(hamrnew).le.accurcy0) then 
+          ! Most common case. Convergence in 1-2 iterations 
+          cnper=cnpernew ! This value gives D(Nperp)~0
+          !write(*,*)'solvnperp-4: FOUND cnper,iter=',cnper,iter
+          goto 20 !No need to continue iterations
+        endif
+      endif
+!      write(*,*)'solvnperp: after dispfun1 iter,hamrnew,cnpernew'
+!     &,iter,hamrnew,cnpernew
+      !--- Here, the new value cnpernew is defined, but need more iterations
+      !Check how many iterations were done so far:
+      if (iter.gt.naccurc) then
+         cnper=cnpernew
+         write(*,*)'solvnperp: iter>naccurc; cnper,iter=',cnper,iter
+         goto 20 !exit: failed. Note that naccurc=5, set above
+      endif
 
- 20   continue
+      ! Before proceeding to new iteration,
+      ! compare hamiltonian at present and previous iterations,
+      ! to check: convergence or divergence ?
+      if (dabs(hamrold).lt.dabs(hamrnew)) then
+        !Looks like diverging?  Maybe not yet; check:
+        if(hamrold*hamrnew.lt.0.d0)then !YuP[2020-08-26]
+          !Give it a chance, in case D(Nperp_old) and D(Nperp_new)
+          !have opposite signs.
+          cnper1=0.5*(cnperold+cnpernew) !Adjust, and make new iteration
+          call dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
+     &                      vflow_ar,
+     &                      cnpar,cnper1,cnprim,id,ihermloc,chamilt)
+          hamr1=dreal(chamilt)
+          if (dabs(hamr1).le.accurcy0) then !Got lucky?
+            cnper=cnper1 ! This value gives D(Nperp)~0
+            write(*,*)'solvnperp-5: FOUND cnper,iter=',cnper,iter
+            goto 20 !No need to continue iterations
+          endif
+          if(hamr1*hamrnew.lt.0.d0)then 
+            ! hamr1 and hamrnew have opposite signs
+            !cnperold=cnpernew
+            !hamrold=hamrnew
+            cnpernew=cnper1
+            hamrnew=hamr1
+            cnper=cnpernew ! for the next iteration
+          else ! hamr1 and hamrold have opposite signs
+            !cnperold=cnperold
+            !hamrold=hamrold
+            cnpernew=cnper1
+            hamrnew=hamr1
+            cnper=cnpernew ! for the next iteration
+          endif
+        else !  D(Nperp_old) and D(Nperp_new) have same sign
+          write(*,*)'solvnperp: abs(hamrold)<abs(hamrnew) iter=',iter
+          write(*,*)'Nperp not found hamrold,hamrnew',hamrold,hamrnew
+          cnper=cnperold     
+          goto 20 !exit iterations (failed: diverging)
+        endif
+      endif
+      
+      cnper=cnpernew ! for the next iteration
+      hamrold=hamrnew
+      cnperold=cnpernew
+      goto 10 ! Back to new iteration.
+
+ 20   continue !exit handle
 c      write(*,*)'solvnper bef end cnper,iter',cnper,iter
       return
-      end
+      end subroutine solvnperp
+      
 
       subroutine dispfun_output(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
      .vflow_ar,
@@ -1762,7 +1838,7 @@ c        electron + ions non-relativistic plasma
 
  100  continue
       return
-      end
+      end subroutine dispfun_output
 
       subroutine rdispfun(nbulk,dmas,x_ar,y_ar,te_ev_ar,tpop_ar,
      .vflow_ar,
@@ -3089,8 +3165,8 @@ c      write(*,*)'in refractive_index_relative_error after dddrz1'
 c      write(*,*)'in  refractive_index_relative_error d=',d
 
 
-      grad_d=dsqrt(deru(1)**2+deru(2)**2+deru(3)**2*r**2)
-      cn=dsqrt(cnz**2+cnr**2+(cm/r)**2)
+      grad_d=dsqrt(deru(1)**2+deru(2)**2+(r*deru(3))**2)
+      cn=dsqrt(cnz**2+cnr**2+(cm/r)**2) !=N
        
       delta_n_devide_n=d/(cn*grad_d)
 
@@ -3106,17 +3182,17 @@ c      write(*,*)'toll_hamilt=',toll_hamilt
       if(iraystop.eq.1) then
          write(*,*)
          write(*,*) '*************************************************'
-         write(*,*) 'outpt: in  refractive_index_relative_error'
-         write(*,*) ' D/(N|gradD|) > toll_hamilt'
-         write(*,*) 'D=',d,'N=',cn,'grad_d=',grad_d
-         write(*,*) 'D/(N|gradD|)=delta_n_devide_n',delta_n_devide_n
+         write(*,*) 'outpt:refractive_index_relative_error. At R=',r
+         write(*,*) 'D/(N|gradD|) > toll_hamilt'
+         write(*,'(3(a,e10.3))') 'D=',d,', N=',cn,', grad(D)=',grad_d
+         write(*,*) 'D/(N|gradD|)=delta_n_devide_n=',delta_n_devide_n
          write(*,*) 'toll_hamilt=',toll_hamilt
          write(*,*) '*************************************************'
          write(*,*)
       endif
    
       return
-      end
+      end subroutine refractive_index_relative_error
 
       subroutine map_dcold_nz_nr(m_nz,m_nr, 
      &max_nz,min_nz,max_nr,min_nr,n_contour,

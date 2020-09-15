@@ -669,7 +669,12 @@ c***********************************************************************
 
 
       subroutine coeff1 (n,x,f,w,iop,int,wk)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      integer n,iop,int
+      integer i,i1,i2,ii,j0,j1,j2,j3,j4,jm,ml,mk,nn,in,iw1,index
+      real*8 x,f,w,wk,y2,b2,a12,a13,a14,a23,a24,a34
+      
 cSm030221 
 c     dimension       x(n)       ,f(n*int)       ,w(n*int)      ,iop(2),
 c     1  wk(n,*)
@@ -842,7 +847,10 @@ c
 
 
       subroutine coeff2 (nx,x,ny,y,f,fxx,fyy,fxxyy,idm,ibd,wk)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      integer i,j,ny,nx,idm,ibd,iloc,jloc
+      real*8 x,y,f,fxx,fyy,fxxyy,wk
 c
 cSm030221
 c      dimension       x(nx)       ,y(ny)       ,f(idm,ny)  ,fxx(idm,ny),
@@ -1462,7 +1470,10 @@ c
 c
 c
 c
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none
+      integer i,j,i1,j1,jj,n,ny,nx,isrch,ixd,iyd,idm,isav,jsav,itab
+      real*8 x,xb,y,yb,f,ff,fxx,fyy,fxxyy,ww,tab
 cSm030221
 c      dimension       x(1)       ,y(1)       ,f(idm,1)   ,fxx(idm,1) ,
 c     1                fyy(idm,1) ,fxxyy(idm,1)           ,ff(2)      ,
@@ -1526,7 +1537,10 @@ cSm030221
 c     nxa is the maximal value of nx.
 c     nx is dimension of arrays f,fxx,fyy,fxxyy(nxa,nya) and wk
 c--------------------------------------------------------
-      implicit integer (i-n), real*8 (a-h,o-z)
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      integer i,j,ny,nx,nxa, iloc,jloc, ibd,idm
+      real*8 x,y,f,fxx,fyy,fxxyy,wk
 c
 cSm030220
 c      dimension       x(nx)       ,y(ny)       ,f(idm,ny)  ,fxx(idm,ny),
@@ -1852,7 +1866,10 @@ c
 c
 c
 c
-      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
+      implicit none
+      integer i,j,i1,j1,jj,n,ny,nx,nxa,isrch,ixd,iyd,idm,isav,jsav,itab
+      real*8 x,xb,y,yb,f,ff,fxx,fyy,fxxyy,ww,tab
 cSm030220
 c      dimension       x(1)       ,y(1)       ,f(idm,1)   ,fxx(idm,1) ,
 c     1                fyy(idm,1) ,fxxyy(idm,1)           ,ff(2)      ,

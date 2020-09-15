@@ -75,11 +75,8 @@ c     external zeroK, npnllmin, ec_cond, intgr_rl,fdens_fdist
 
       theta=mass_e*c**2/(k_1_kev*T_kev)
 
-c      write(*,*)'relt_tens.f sub anth_rlt: r,z,T_kev,theta',
-c     &r,z,T_kev,theta
-      write(*,*)'relt_tens.f sub anth_rlt:'
-      write(*,*)'i_resonance_curve_integration_method',
-     & i_resonance_curve_integration_method
+!      write(*,*)'-1- anth_rlt: i_resonance_curve_integration_method',
+!     & i_resonance_curve_integration_method
 
       pi=4.d0*datan(1.d0)
 
@@ -89,14 +86,15 @@ c     &r,z,T_kev,theta
 c-----initialization aK=0
       call zeroK(aK)
 
-      write(*,*)'n_relt_harm1,n_relt_harm2',n_relt_harm1,n_relt_harm2
+!      write(*,*)'-2- anth_rlt: n_relt_harm1,n_relt_harm2',
+!     & n_relt_harm1,n_relt_harm2
 c-----the loop over the cyclotron harmonics 
       do jn=n_relt_harm1,n_relt_harm2               
 c-------control the EC resonance condition
 cSm060315 -jn         
         call ec_cond(-jn,Y,nll,ires,p_perp0)
 
-        write(*,*)'anth_rl jn,ires,p_perp0',jn,ires,p_perp0
+        !write(*,*)'anth_rl jn,ires,p_perp0',jn,ires,p_perp0
 
         if(ires.eq.0) then
 c---------no resonace
@@ -104,8 +102,8 @@ c---------no resonace
         endif
 cSm060315 -jn      
 c        write(*,*)'relt_tens.f sub anth_rlt jn=',jn
-        write(*,*)'bef intgr_rl i_resonance_curve_integration_method',
-     &  i_resonance_curve_integration_method
+!        write(*,*)'bef intgr_rl i_resonance_curve_integration_method',
+!     &  i_resonance_curve_integration_method
    
         call intgr_rl(-jn,nll,np,Y,theta,ires,p_perp0,n_relt_intgr,
      &  i_resonance_curve_integration_method,epsi,
@@ -152,6 +150,7 @@ c-----normalization for the unit electron density
       aK(2,1)=-aK(1,2)
       aK(3,1)= aK(1,3)
       aK(3,2)=-aK(2,3)
+      !write(*,*)'-3- anth_rlt: END'
 
       return
       end
@@ -165,8 +164,8 @@ c     input
 c       K(3,3)   complex hermition tensor
 c       aK(3,3)  complex anti-hermition relativistic tensor
 c       nll      Re(N_parallel)
-c       np       Rr(N_perpendicular)
-c       nprim    IM(N_perpendicular)
+c       np       Re(N_perpendicular)
+c       nprim    Im(N_perpendicular)
 
       implicit none
 c     input
@@ -213,10 +212,10 @@ cSm060707
         cnp=dcmplx(np,nprim)
 	nps=cnp*cnp
 
-      write(*,*)'nlls,nps',nlls,nps 
-      write(*,*)'Kxx,Kxy,Kxz',Kxx,Kxy,Kxz 
-      write(*,*)'Kyx,Kyy,Kyz',Kyx,Kyy,Kyz 
-      write(*,*)'Kzx,Kzy,KXz',Kzx,Kzy,Kzz    
+      !write(*,*)'nlls,nps',nlls,nps 
+      !write(*,*)'Kxx,Kxy,Kxz',Kxx,Kxy,Kxz 
+      !write(*,*)'Kyx,Kyy,Kyz',Kyx,Kyy,Kyz 
+      !write(*,*)'Kzx,Kzy,KXz',Kzx,Kzy,Kzz    
          	
 	dhot_rlt =(Kxx-nlls) * (Kyy-nlls-nps) * (Kzz-nps)
      .+  Kxy * Kyz * (Kzx+cnp*nll) 
@@ -224,7 +223,7 @@ cSm060707
      .- (Kzx+cnp*nll) * (Kyy-nlls-nps) * (Kxz+cnp*nll)
      .-  Kzy * Kyz * (Kxx-nlls)
      .- (Kzz - nps) * Kyx * Kxy
-           write(*,*)'dhot_rlt',dhot_rlt
+           !write(*,*)'dhot_rlt',dhot_rlt
       return
 	end
 
@@ -497,7 +496,7 @@ c     external
 c     ec_cond, zeroK, g_n 
       double precision temperho
  
-      write(*,*)'relt_tens.f sub intgr_rl:'
+      !write(*,*)'relt_tens.f sub intgr_rl:'
 c      write(*,*)'i_resonance_curve_integration_method',
 c     & i_resonance_curve_integration_method
 
@@ -510,8 +509,8 @@ c     & i_resonance_curve_integration_method
       call p_perp_max_calc(i_fkin,theta,n,Y,nll,vmax_d_vt,
      &vnormloc,p_permax,ires)
 
-      write(*,*)'in intgr_rl after p_perp_max_calc p_permax,ires',
-     &p_permax,ires
+!      write(*,*)'in intgr_rl after p_perp_max_calc p_permax,ires',
+!     &p_permax,ires
 
       if(ires.eq.4) then
 c-------the resonance curve is outside the grid
@@ -521,11 +520,11 @@ c-------the resonance curve is outside the grid
          h=p_permax/(n_relt_intgr)   ! step of integration over p_perp
       endif
 
-      write(*,*)'in intgr_rl h',h
+      !write(*,*)'in intgr_rl h',h
 
 c-----calculations of the integrals over p_perp
       call zeroK(integral)
-      write(*,*)'in intgr_rl set integral=zero integral',integral
+      !write(*,*)'in intgr_rl set integral=zero integral',integral
 
 c----------------------------------------------------------
 c     i_resonance_curve_interation_method
@@ -692,13 +691,13 @@ c     integration along the resonance curve using
 c     the adaptive Simpson function
 c     begin
 c--------------------------------------------------------------------
-      write(*,*)'before calc_integral_array_by_adaptive_simpson'
+      !write(*,*)'before calc_integral_array_by_adaptive_simpson'
 
       call  calc_absorption_integral_array_by_adaptive_simpson
      &(y,nll,np,theta,n,i_fkin,r,z,phi,p_permax,epsi,integral)
-      write(*,*)'in intgr_rl after'
-      write(*,*)'calc_absorption_integral_array_by_adaptive_simpson'
-      write(*,*)'integral',integral
+      !write(*,*)'in intgr_rl after'
+      !write(*,*)'calc_absorption_integral_array_by_adaptive_simpson'
+      !write(*,*)'integral',integral
 
 c----------------------------------------------------------------------                  
  20   continue
@@ -712,7 +711,7 @@ c----------------------------------------------------------------------
       return
       end   
   
-
+C=====================================================================
       subroutine root_res(p_perp,nll,n,Y,kmax,p_par_rl)
 c     calculates the roots p_par_k(p_perp) of the relativistic
 c     resonance condition gamma=N_par*p_par+nY
@@ -758,13 +757,24 @@ c        write(*,*)'root_res in ires=1 p_perp,p_perp0',p_perp,p_perp0
         if(p_perp.lt.p_perp0) then
 c---------two roots
           kmax=2
-          det=nlls+nys-1.d0-(1.d0-nlls)*p_perps
-
-          if(det.lt.0.d0)then
-             write(*,*)'in root_res det<0'
+          !YuP[2018-06-13][2020-01-27] Re-arranged, to improve accuracy:
+          !det= nlls+(ny-1.d0)*(ny+1.d0) -(1.d0-nll)*(1.d0+nll)*p_perps
+          !However, the test results are not exactly same (in few last digits);
+          !Reverting to original:
+          det= nlls  +nys-1.d0 -(1.d0-nlls)*p_perps !original
+          !YuP: was  if(det.lt.0.d0)then
+          if(det.lt. -1.d-8)then !YuP[2018-06-13][2020-01-27]
+             !Because of rounding error, allow det to be slightly negative.
+             !Example:  nll=0, ny=1, p_perps=0 should give det=0,
+             !but because of rounding error, det is approximately -1e-10
+             write(*,*)'root_res: det<0. det,nlls,nys,p_perps',
+     +                                   det,nlls,nys,p_perps
+             !pause
              ires=0
              kmax=0
              goto 10
+          else ! det > -1.d-8
+             det=abs(det) !det can be within [-1d-8; any positive value]
           endif
 
           sqrdet=dsqrt(det)                     
@@ -817,7 +827,7 @@ c      write(*,*)'root_res after 10 kmax',kmax
       return
       end
       
-
+C=====================================================================
 
       subroutine s_calcn(n,p_perp,p_par,np,y,sn)
 c     calculates tensor sn=p_perp*S(n)
@@ -1024,6 +1034,7 @@ c     distributin function and its derivatives
 c      write(*,*)'in un:p_perp,p_par,p',p_perp,p_par,p
 
       gamma=dsqrt(1.d0+ps)
+      u_n=0.d0 ! to initialize [2020-01-27]
 
       if (i_fkin.eq.0) then
 c--------usage of the analytical relativistic Maxwellian distribution
@@ -1667,7 +1678,7 @@ c---------two roots
           det=nlls+nys-1.d0-(1.d0-nlls)*p_perps
 
           if(det.lt.0.d0)then
-             write(*,*)'in root_res det<0'
+             write(*,*)'root_res_test:  det<0. n,Y',n,Y
              ires=0
              kmax=0
              goto 10
@@ -1721,6 +1732,7 @@ c---------nll.gt.1 and p||_2=>+infinity
  10   continue
       return
       end
+C======================================================================
       
       subroutine p_perp_max_calc(i_fkin,theta,n,Y,npar,vmax_d_vt,
      &vnorm,p_perp_max,ires)
@@ -1756,17 +1768,17 @@ c-----locals
      
       clight=2.99792458d10          !cm/sec           
       call ec_cond(n,Y,npar,ires,p_perp0)
-      write(*,*)'in sub p_perp_max_calc after ec_cond'
-      write(*,*)'i_fkin,ires,p_perp0',i_fkin,ires,p_perp0
+      !write(*,*)'in sub p_perp_max_calc after ec_cond'
+      !write(*,*)'i_fkin,ires,p_perp0',i_fkin,ires,p_perp0
 
       if (i_fkin.eq.0) then
 c--------analytical Maxwellian distribution
          p_perp_max=vmax_d_vt*dsqrt((1.d0/theta+1.d0)**2-1.d0) ! vmax_d_vt*
                                                                ! thermal momentum
                                                                ! [p/mc]
-         write(*,*)'in sub p_perp_max_calc 1 p_perp_max',p_perp_max
+         !write(*,*)'in sub p_perp_max_calc 1 p_perp_max',p_perp_max
          if (ires.eq.1) p_perp_max=dmin1(p_perp_max,p_perp0)
-         write(*,*)'p_perp_max=dmin1(p_perp_max,p_perp0)',p_perp_max
+         !write(*,*)'p_perp_max=dmin1(p_perp_max,p_perp0)',p_perp_max
       elseif (i_fkin.eq.1) then
 c--------distribution was set on the grid
          vnorm_d_c=vnorm/clight      
@@ -1931,7 +1943,7 @@ c----------------------------------------------------------------
       end
 
 
-      SUBROUTINE PUSH(A,B,LEVEL,STACK,IST,I)
+      subroutine PUSH(A,B,LEVEL,STACK,IST,I)
  
       implicit none
       integer level,ist,i
@@ -1951,7 +1963,7 @@ c        STACK(I,3) = dREAL(LEVEL)
       END IF      
       END 
   
-      SUBROUTINE POP(A,B,LEVEL,STACK,IST,I)
+      subroutine POP(A,B,LEVEL,STACK,IST,I)
       implicit none
       real*8 a,b
       integeri,ist,level     
@@ -1968,7 +1980,7 @@ c        STACK(I,3) = dREAL(LEVEL)
       END IF      
       END 
   
-      SUBROUTINE ASMP(FCN_vector,k_max,fcn,
+      subroutine ASMP(FCN_vector,k_max,fcn,
      &A,B,EPSI,LVMAX,STACK,IST,FSTACK,IFS,
      &SUM,IFLAG)
       implicit none
@@ -2023,7 +2035,7 @@ c          enddo
    3  FORMAT(//5X,'NOT ENOUGH WORKSPACE IN STACK OR FSTACK')
       END 
   
-      SUBROUTINE SIMP(FCN_vector,k_max,fcn,
+      subroutine SIMP(FCN_vector,k_max,fcn,
      &A,B,EPSI,LVMAX,STACK,IST,FSTACK,IFS,
      &SUM,IFLAG)
       implicit none
@@ -2201,7 +2213,7 @@ c      enddo
       IF(IFLAG .EQ. 0) THEN 
 c$$$        PRINT 4   
       ELSE
-        write(*,*)'          WITH BAD SUBINTERVALS:'   
+        write(*,*)' [absorption__simpson]  WITH BAD SUBINTERVALS:'   
         DO 2 I=1,IFLAG      
           write(*,*) FSTACK(I,1),FSTACK(I,2),INT(FSTACK(I,3))
     2   CONTINUE  
@@ -2319,7 +2331,7 @@ c-------control the EC resonance condition
 cSm060315 -jn         
         call ec_cond(-jn,Y,nll,ires,p_perp0)
 
-        write(*,*)'anth_rl jn,ires,p_perp0',jn,ires,p_perp0
+        !write(*,*)'anth_rl jn,ires,p_perp0',jn,ires,p_perp0
 
         if(ires.eq.0) then
 c---------no resonace
@@ -2478,7 +2490,7 @@ c     & i_resonance_curve_integration_method
 
       call p_perp_max_calc(i_fkin,theta,n,Y,nll,vmax_d_vt,
      &vnormloc,p_permax,ires)
-      write(*,*)'in sub intgr_rl_test p_permax,ires ',p_permax,ires
+      !write(*,*)'in sub intgr_rl_test p_permax,ires ',p_permax,ires
       if(ires.eq.4) then
 c-------the resonance curve is outside the grid
         call zeroK(integral)
@@ -2617,7 +2629,7 @@ c     integration along the resonance curve using trapezoidal
 c     formula
 c     begin
 c--------------------------------------------------------------------
-      write(*,*)'3 jmax=',jmax,'h',h
+      !write(*,*)'3 jmax=',jmax,'h',h
       do j=0,jmax
          p_int=1.d0
          if((j.eq.1).or.(j.eq.jmax)) p_int=0.5d0
@@ -2625,13 +2637,13 @@ c--------------------------------------------------------------------
          if(p_perp.lt.1.d-3) p_perp=1.d-3
          if(j.eq.jmax) p_perp=p_perp-1.d-3
 
-         write(*,*)'j,h*j,p_perp',j,h*j,p_perp
+         !write(*,*)'j,h*j,p_perp',j,h*j,p_perp
 
          call g_n_calc_test(p_perp,y,nll,np,theta,n,i_fkin,r,z,phi,g_n)
-         write(*,*)'g_n(1,1),g_n(1,2)g_n(1,3)',
-     &   g_n(1,1),g_n(1,2),g_n(1,3)
-         write(*,*)'g_n(2,2,)g_n(2,3),g_n(3,3)',
-     &   g_n(2,2),g_n(2,3),g_n(3,3)
+!         write(*,*)'g_n(1,1),g_n(1,2)g_n(1,3)',
+!     &   g_n(1,1),g_n(1,2),g_n(1,3)
+!         write(*,*)'g_n(2,2,)g_n(2,3),g_n(3,3)',
+!     &   g_n(2,2),g_n(2,3),g_n(3,3)
 
          integral(1,1)=integral(1,1)+p_int*g_n(1,1)
          integral(1,2)=integral(1,2)+p_int*g_n(1,2)
@@ -2648,7 +2660,7 @@ c--------------------------------------------------------------------
       integral(2,3)=integral(2,3)*h
       integral(3,3)=integral(3,3)*h
 
-      write(*,*)'3 integral',integral
+      !write(*,*)'3 integral',integral
 
       goto20
 c-------------------------------------------------------------------
@@ -2768,12 +2780,12 @@ c      A = 0.0d0
 c      A = 1.d-3
       B = p_permax-1.d-5
 
-      write(*,*)'Simpson A,B,p_permax',A,B,p_permax
+      !write(*,*)'Simpson A,B,p_permax',A,B,p_permax
       do i=1,100
         p_perp=A+(B-A)/(100-1)*(i-1)
         call FCN_absorption_vector(p_perp,fcn)
-        write(*,*)'i,p_perp',i,p_perp
-        write(*,*)'fcn',fcn
+        !write(*,*)'i,p_perp',i,p_perp
+        !write(*,*)'fcn',fcn
       enddo
  
       CALL ASMP_test(FCN_absorption_vector_test,A,B,EPSI,LVMAX,STACK,
@@ -2886,10 +2898,10 @@ c      include 'param_kmax.i'
 c        X(I) = A + dREAL(I)*H4
         X(I) = A + dfloat(I)*H4
         call fcn_vector(X(I),fcn)
-        write(*,*)'i,X(i)',i,X(i)
+        !write(*,*)'i,X(i)',i,X(i)
         do k=1,k_max 
            F(I,k) = FCN(k)
-           write(*,*)'k,F(I,k)',k,F(I,k)
+           !write(*,*)'k,F(I,k)',k,F(I,k)
         enddo  
    2  CONTINUE
 
@@ -2976,13 +2988,13 @@ c-----------------------------------------------------------------
 c     locals
 c----------------------------------------------------------------
       double complex g_n(3,3) !comples under integral functions
-      write(*,*)'fcn_vector_test'
-      write(*,*)'p_perp,y_l,nll_l,np_l,theta_l,n_l,i_fkin_l',
-     &p_perp,y_l,nll_l,np_l,theta_l,n_l,i_fkin_l
-      write(*,*)'r_l,z_l,phi_l',r_l,z_l,phi_l
+      !write(*,*)'fcn_vector_test'
+      !write(*,*)'p_perp,y_l,nll_l,np_l,theta_l,n_l,i_fkin_l',
+      !&p_perp,y_l,nll_l,np_l,theta_l,n_l,i_fkin_l
+      !write(*,*)'r_l,z_l,phi_l',r_l,z_l,phi_l
       call g_n_calc_test(p_perp,y_l,nll_l,np_l,theta_l,n_l,i_fkin_l,
      &r_l,z_l,phi_l,g_n)
-      write(*,*)'fcn_absorption_vector_test g_n',g_n
+      !write(*,*)'fcn_absorption_vector_test g_n',g_n
 
       FCN(1) =dreal(g_n(1,1)) 
       FCN(2) =dimag(g_n(1,2))
@@ -3039,8 +3051,8 @@ c-----gamma=N_par*p_par_rl+nY
 
       call root_res(p_perp,nll,n,Y,kmax,p_par_rl)
 
-      write(*,*)'in g_n_calc_test: p_perp, nll,n,Y,kmax,p_par_rl'
-     &,p_perp, nll,n,Y,kmax,p_par_rl
+!      write(*,*)'in g_n_calc_test: p_perp, nll,n,Y,kmax,p_par_rl'
+!     &,p_perp, nll,n,Y,kmax,p_par_rl
 c-----initialize g_n
       call zeroK(g_n)
 
@@ -3048,7 +3060,7 @@ c-----initialize g_n
   
 c      eps=1.d-9 ! the min value of Maxwell exponent
 c      p s_max=(1.d0-dlog(eps)/theta)**2-1.d0
-      write(*,*)'g_n_calc_test kmax',kmax      
+      !write(*,*)'g_n_calc_test kmax',kmax      
       do k=1,kmax ! the sum over all P_parallel_k(perp) roots 
    
          ps=p_perp*p_perp+p_par_rl(k)*p_par_rl(k)
@@ -3059,9 +3071,9 @@ c           write(*,*)'relat_tens g_n k,ps,ps_max',k,ps,ps_max
 c           goto 10
 c         endif
  
-         write(*,*)'g_n_calc_test before s_calcn: k',k  
+         !write(*,*)'g_n_calc_test before s_calcn: k',k  
          call s_calcn_test(n,p_perp,p_par_rl(k),np,y,sn_k)
-         write(*,*)'g_n_calc_test after s_calcn: k,sn_k',k,sn_k  
+         !write(*,*)'g_n_calc_test after s_calcn: k,sn_k',k,sn_k  
 
 c--------resonance condition uses the delta function with argument
 c        g_delta=gamma-nll*p_par-n*y
@@ -3070,7 +3082,7 @@ c        the derivative from this argument d(g_delta)/dp_par=dgdp_par
 c         dgdp_par=(p_par_rl(k)-nll*y)/gamma
          dgdp_par=dabs((p_par_rl(k)-nll*gamma)/gamma)
 
-         write(*,*)'in g_n_calc_test before u_nk theta',theta
+         !write(*,*)'in g_n_calc_test before u_nk theta',theta
 
          u_nk=u_n(p_perp,p_par_rl(k),y,nll,theta,n,i_fkin,r,z,phi)
 
@@ -3079,10 +3091,10 @@ c        write(*,*)'g_n   dgdp_par',  dgdp_par
 
          coeff=2.d0*pi*u_nk/dgdp_par
 
-         write(*,*)'g_n k,p_perp,p_par_rl(k)',k,p_perp,p_par_rl(k)
-         write(*,*)'g_n dsqrt(ps),u_nk',dsqrt(ps),u_nk
-         write(*,*)'g_n u_nk,dgdp_par,coeff',u_nk,dgdp_par,coeff 
-         write(*,*)'coeff',coeff           
+         !write(*,*)'g_n k,p_perp,p_par_rl(k)',k,p_perp,p_par_rl(k)
+         !write(*,*)'g_n dsqrt(ps),u_nk',dsqrt(ps),u_nk
+         !write(*,*)'g_n u_nk,dgdp_par,coeff',u_nk,dgdp_par,coeff 
+         !write(*,*)'coeff',coeff           
 
          g_nk(1,1)=coeff*sn_k(1,1)  
          g_nk(1,2)=coeff*sn_k(1,2)
@@ -3105,7 +3117,7 @@ c         write(*,*)'in g_n: g_nk',g_nk
 
  10      continue
        
-         write(*,*)'in g_n_calc_test g_nk',g_nk
+         !write(*,*)'in g_n_calc_test g_nk',g_nk
       enddo !kmax
 
  20   continue
@@ -3153,7 +3165,7 @@ c-----Calculation of the Bessel function bj= J_n(b) and
 c     its derivative bj_prim=dJ_n(b)/db.
 c-----d is the relative error (input),ier -error switch,ier=0 is OK
 
-      write(*,*)'s_calncl_test n,p_perp,p_par,np,y',n,p_perp,p_par,np,y
+      !write(*,*)'s_calncl_test n,p_perp,p_par,np,y',n,p_perp,p_par,np,y
         
       n_abs=iabs(n)            ! the order of the Bessel function
 
@@ -3164,7 +3176,7 @@ c-----d is the relative error (input),ier -error switch,ier=0 is OK
 
       b_abs=dabs(b)
 
-      write(*,*)'s_calncl_test b,b_abs',b,b_abs
+      !write(*,*)'s_calncl_test b,b_abs',b,b_abs
 c      goto 10 
 
 cSm060318       
@@ -3176,7 +3188,7 @@ c      write(*,*)'relat_tens new n_abs,bj',n_abs,bj
  
 cSm060318
       call DBESJ(b_abs,dble(n_abs+1),1,bj1,nz)
-      write(*,*)'s_calcn_test,old n_abs+1 bj1',bj1
+      !write(*,*)'s_calcn_test,old n_abs+1 bj1',bj1
       if(b.lt.0.d0) bj1=bj1*(-1)**(n_abs+1) !negative argument b for J_(n_abs+1)(b)      
      
       if(n.eq.0) then 
@@ -3195,13 +3207,13 @@ c-----------n_abs.ge.2
 c---------argument b.ne.0
           bj_prim=-bj1+n_abs*bj/b
         endif
-         write(*,*)'s_calcn_testbj_prim=',bj_prim
+         !write(*,*)'s_calcn_testbj_prim=',bj_prim
       endif
     
       bj=k*bj               ! for negative n
       bj_prim=k*bj_prim     ! for negative n
 
-      write(*,*)'in s_calcn_test old bj,bj_prim',bj,bj_prim
+      !write(*,*)'in s_calcn_test old bj,bj_prim',bj,bj_prim
  
 10    continue
 cSAP080104
@@ -3241,7 +3253,7 @@ c-----double complex sn(3,3)
       sn(3,1)= sn(1,3)
       sn(3,2)=-sn(2,3)
 
-      write(*,*)'s_calcn_test in s_calcn() sn',sn
+      !write(*,*)'s_calcn_test in s_calcn() sn',sn
             
       return
       end

@@ -118,7 +118,7 @@ c     ndim is a number of ray-tracing equations (=6 at isolv=1)
 c                                                (=5 at isolv=2) 
 c     nray is a number of all rays. 
 c          It will be calculated for
-c          1)istartr=1 and
+c          1)istart=1 and
 c            raypatt='diskdisk' or 'diskbeam' 
       implicit none
 
@@ -2705,42 +2705,46 @@ c
 
 
      
-      subroutine pack21(a,ibot,itop,jbot,jtop,b,iy,jx)
-      implicit integer (i-n), real*8 (a-h,o-z)
+      subroutine pack21(a,ibot,itop,jbot,jtop,bpk,iy,jx)
+      !YuP[2020-08-20] renamed b to bpk, to avoid conflict with function b()
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none !YuP[2020-01-14]
+      integer ibot,itop,jbot,jtop,iy,jx, j,i1
+      real*8 a,bpk
 c.......................................................................
 c     It sometimes becomes necessary to take a
 c     2-D array dimensioned ibot:itop by jbot:jtop
 c     and repack it as though it were
 c     dimensioned 1:iy by 1:jx, starting at a(1,1).
 c     This routine does this, transfering relevant data
-c     from array a to b.
+c     from array a to bpk.
 c.......................................................................
 
       save
       dimension a(ibot:itop,jbot:jtop)
-      dimension b(iy*jx)
+      dimension bpk(iy*jx)
 c      write(*,*)'pack21 ibot,itop,jbot,jtop',ibot,itop,jbot,jtop
 c      write(*,*)'pack21 iy,jx',iy,jx
 
       do 1 j=1,jx
         i1=(j-1)*iy+1
-c        call scopy(iy,a(1,j),1,b(i1),1)
+c        call scopy(iy,a(1,j),1,bpk(i1),1)
 
 c         write(*,*)'pack21 a(1,j)'
 c         do i=1,iy
 c           write(*,*)'i,a(i,j)',i,a(i,j)
 c         enddo
  
-        call ddcopy(iy,a(1,j),1,b(i1) ,1)
+        call ddcopy(iy,a(1,j),1,bpk(i1) ,1)
 
-c        write(*,*)'pack21 b(i1,j)'
+c        write(*,*)'pack21 bpk(i1,j)'
 c        do k=i1,i1+jx-1
-c           write(*,*)'k,b(k)',k,b(k)
+c           write(*,*)'k,bpk(k)',k,bpk(k)
 c        enddo
 
  1    continue
       return
-      end
+      end subroutine pack21
 
 
       subroutine ddcopy_integer(n,dx,incx,dy,incy)
@@ -2797,7 +2801,7 @@ c
       return
       end
 
-      subroutine pack21_integer(a,ibot,itop,jbot,jtop,b,iy,jx)
+      subroutine pack21_integer(a,ibot,itop,jbot,jtop,bpk,iy,jx)
       implicit none
 c.......................................................................
 c     It sometimes becomes necessary to take a
@@ -2813,8 +2817,8 @@ c-----input
       integer a,ibot,itop,jbot,jtop,iy,jx
       dimension a(ibot:itop,jbot:jtop)
 c-----output
-      integer b
-      dimension b(iy*jx)
+      integer bpk
+      dimension bpk(iy*jx)
 c-----local
       integer j,i1
 
@@ -2826,30 +2830,30 @@ c      write(*,*)'pack21_integer iy,jx',iy,jx
 
       do 1 j=1,jx
         i1=(j-1)*iy+1
-c        call scopy(iy,a(1,j),1,b(i1),1)
+c        call scopy(iy,a(1,j),1,bpk(i1),1)
 
-c         write(*,*)'pack211 a(1,j)'
+c         write(*,*)'pack21 a(1,j)'
 c         do i=1,iy
 c           write(*,*)'i,a(i,j)',i,a(i,j)
 c         enddo
  
-        call ddcopy_integer(iy,a(1,j),1,b(i1) ,1)
+        call ddcopy_integer(iy,a(1,j),1,bpk(i1) ,1)
 
-c        write(*,*)'pack21_integer b(i1,j)'
+c        write(*,*)'pack21_integer bpk(i1,j)'
 c        do k=i1,i1+jx-1
-c           write(*,*)'k,b(k)',k,b(k)
+c           write(*,*)'k,bpk(k)',k,bpk(k)
 c        enddo
 
  1    continue
       return
-      end
+      end subroutine pack21_integer
 
 c
 c
 
-      subroutine pack21_dentab(a,ndensa,nbulka,b,ndens,nbulk)
+      subroutine pack21_dentab(a,ndensa,nbulka,bpk,ndens,nbulk)
 c-------------------------------------------------------------
-c     pack 2d array a(ndensa,nbulka) to 1D array b(ndens*nbulk)
+c     pack 2d array a(ndensa,nbulka) to 1D array bpk(ndens*nbulk)
 c     to write profiles plasma profiles 
 c     (dentab,temptab,tpoptab,vlowtab) to genray.dat file
 c-------------------------------------------------------------
@@ -2859,7 +2863,7 @@ c-----input
       real*8 a(ndensa,nbulka)
 
 c-----output
-      real*8 b(ndensa*nbulka)
+      real*8 bpk(ndensa*nbulka)
 
 c-----locals
       integer i,j,k         
@@ -2868,7 +2872,7 @@ c-----locals
       do j=1,ndens
          do i=1,nbulk
            k=k+1
-           b(k)=a(j,i)
+           bpk(k)=a(j,i)
          enddo
       enddo
 
@@ -3689,6 +3693,7 @@ c     &phi_limiter,h_add_wall
 c      namelist /wave/ frqncy,ioxm,ireflm,jwave,istart,delpwrmn,ibw,
 cSAP090304
 c     *no_reflection,
+!     &            istep_in_lcfs,
 c     *i_vgr_ini,poldist_mx,ioxm_n_npar
 c     &cnperp_plot_min,cnperp_plot_max,n_nperp_plot,
 c     &cN_perp_root_max,n_points_root,
@@ -3830,6 +3835,7 @@ c&genr
       dielectric_op='disabled'
       partner='disabled'
 c&end
+
       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
       write(*,*)'in default_in after set data for /genr/'
       write(*,*)'r0x=',r0x
@@ -3916,7 +3922,7 @@ c&end
 !        =4 Lin-Liu (TorGA_curgap subroutine)
 !        =5 using ADJ function for n_harmonic=0 case (LH wave)
 !           it works for i_adj=1 case only
-!        =6 using ADJ function for all harminics general case
+!        =6 using ADJ function for all harmonics general case
 !           it works for i_adj=1 case only
 !--------------------------------------------------------------------------
 ! ieffic_mom_cons = 0 - NO momentum conservation in Lin-Liu subroutine 
@@ -3924,9 +3930,9 @@ c&end
 !                   1 - WITH momentum conservation in Lin-Liu subroutine 
 !                    (i.e., to be used with ieffic = 4)
 !--------------------------------------------------------------------------
-! psifactr (it should be 0 < psifactr =<1,  psifcatr ~1)
-!         is the parameter for the creation of the limiter points
-!         using the closed flux surface:  psi(r,z)=psilim*psifactr 
+! psifactr (it should be 0 < psifactr =<1,  psifactr should be close to ~1)
+!         is the parameter for the creation of the LCFS points
+!         using the closed flux surface:  psi(r,z)=psimag+(psilim-psimag)*psifactr 
 !         psifactr is a parameter (it must be .le.1) to avoid
 !         problems with the psi function near the separatrix.
 !--------------------------------------------------------------------------
@@ -4171,7 +4177,7 @@ c Use ioxm_n_npar=-1 for FW, and +1 for SW.
 !               !=0 (default) switch on the artificial reflection from 
 !               !the last closed flux surface.
 !-------------------------------------------------------------------------
-! jwave  (0 - LH wave, -1 AW, 1 - EC wave) wave harmonic used in calc.
+! jwave  (0 - LH wave, -1 AW, 1 or larger - EC wave) wave harmonic used in calc.
 !    of current drive efficiency (see ieffic).
 ! N.B., the resonant velocity used in the CD calc is specified using
 !       jwave,  v_res=(omega-n*omegac)/kpar.
@@ -4255,6 +4261,17 @@ c&wave
       ioxm=-1
       ireflm=3
       no_reflection=0
+      istep_in_lcfs=1    !YuP[2020-09-03] Added:
+         !  For istart=1 (EC cone) starting method, choose
+         !  how the EC ray is launched with respect to the LCFS:
+         ! istep_in_lcfs=1 means Step inside LCFS (slightly).
+         !  This is the default option, for reverse consistency with original coding.
+         ! istep_in_lcfs=0 means Start ray-tracing directly from {rst,zst} even
+         !  if it is far outside  of the LCFS. That is, no stepping inside LCFS.
+         !  This is more physical, because there is
+         !  some plasma outside of LCFS (exponential drop-off of density),
+         !  and this option is required in cases when O-X conversion
+         !  happens just outside of LCFS.
 cSAP090304
 c      sigmedgn =0.02   moved to/ edge_prof_nml/ 
 c      sigmedgt =0.02   moved to/ edge_prof_nml/ 
@@ -4578,8 +4595,8 @@ c&end
 !                  deru(1)=dD/dN_z, deru(2)=dD/dN_r,deru(3)=dD/dCM,
 !                  N_phi=cm/r
 !----------------------------------------------------------------------
-! ray_direction =+1 as default it
-!               -1 !Only for i_geom_optic=2
+! ray_direction =+1.0 as default
+!                -1.0 !Only for i_geom_optic=2
 ! It is a multiplier in right hand side of ray-tracing equations
 ! It is used for i_geom_optic=2 case
 !----------------------------------------------------------------------
@@ -4661,6 +4678,38 @@ c&end
 !                prmt3=1.000d-04
 !                prmt4=5.000d-04
 !                prmt6=1.0d-03
+!
+!  irkmeth=3 [2020-08-26] NEW option [adapted from GENRAY-C]
+!     For irkmeth=3 option (usage of drkgs_auto), set (Example):
+!      dL_step=1.d-3 ! [m]  max allowed change in cartesian coords.
+!      dN_step=1.d-2 ! max allowed change in refraction index.
+!     The code will set the time step h = dt_code for integration
+!     in such a way that the change |dr| in configuration space
+!     is not larger than dL_step, and also
+!     the change in refr. index |N| is not larger than dN_step.
+!     It is recommended to set dN_step to be ~1% of expected N(t) value.
+!     For EC waves, N~1, then dN_step=1.d-2.  For EBW, N~10-100, 
+!     then dN_step~0.1-1.0. 
+!     If too small, the code will be making too many steps.
+!     Also needed (example):
+!      prmt6=1.d-3 [m] ! distance step along ray [m] for saving data.
+!     In irkmeth=3 run, prmt6 WILL NOT AFFECT the step of integration !
+!     Other prmt* values are not needed.
+!     This new option (irkmeth=3) is ~4x faster than irkmeth=2 (per ray element)
+!     ! The advantage of using both drdt/dL_step and dNdt/dN_step is:
+!     ! At plasma edge, for example, when starting as O-mode,
+!     ! the value of N is ~1, change of N is also small, dN ~1 
+!     ! (going down to 0 at O-X cutoff), while the group velocity 
+!     ! is large Vgr~c. In this case the time step is determined by 
+!     ! step_inv= drdt/dL_step, so that dt_code= dL_step/drdt.
+!     ! In opposite case of slow electrostatic waves, 
+!     ! the group velocity can be very low, so that drdt~0.
+!     ! On the other hand, the change in N can be very steep,
+!     ! dN>10 over a short travel distance.
+!     ! In this case the time step is determined by dNdt/dN_step term
+!     ! so that dt_code= dN_step/dNdt .
+!     Value of toll_hamilt is still operational, as usually.
+!
 !---------------------------------------------------------------------------              
 ! ndim1 (number of the ray tracing equations)
 ! isolv=1 correction,=2 expl.solution
@@ -4786,6 +4835,85 @@ c&numercl
       uh_switch=1.5d0 
       prmt6_uh_switch=1.d-5
       toll_hamilt=1.d-3
+      
+
+!     For irkmeth=3 option (usage of drkgs_auto), set (Example):
+      dL_step=1.d-3 ! [m]  max allowed change in cartesian coords.
+      dN_step=1.d-2 ! max allowed change in refraction index.
+!     The code will set the time step h = dt_code for integration
+!     in such a way that the change |dr| in configuration space
+!     is not larger than dL_step, and also
+!     the change in refr. index |N| is not larger than dN_step.
+!     Also needed (example):
+!      prmt6=1.d-3 [m] ! distance along ray [m] for saving data.
+!     With this option (usage of drkgs_auto) the value of prmt6 
+!     does NOT affect the step of Ruge-Kutta integration.
+!     Other prmt* values are not needed.
+!     This new option (irkmeth=3) is ~4x faster than irkmeth=2 (per ray element)
+!     Value of toll_hamilt is still operational, as usually.
+!
+!     [2020-08-26] NEW option [adapted from GENRAY-C]   
+!     ------------ [Not functional yet] ---------------------
+!     Set the steps for numerical derivatives of dispersion equation
+!     over cartesian coordinates (der_r) and refr. index (der_n).
+!     This is only needed for idif=2 option.
+!     Derivatives are needed for the right-hand side of ODE,
+!     dD/dx, etc., dD/dn_x, etc.
+!     where D(x,y,z,n_x,n_y,n_z,omega)=0 is the dispersion function,
+!     or the "Hamiltonian" defined through function hamilt_xyz().
+!     The derivatives are calculated in rside_xyz() and dddrz1_xyz().
+!     For example, the derivative of D over x will be found as
+!     [ D(x+der_r,...) - D(x-der_r,...) ] / (2*der_r)
+!     Similarly - for y and z directions (using same step der_r).
+      der_r=1.d-6 ! [m] keep der_r in range 1e-9...1e-4  [Not functional yet]
+!--------
+!     FOR REFRACTION INDEX derivative, the procedure is revised [2017-12].
+!--------
+!     The revised procedure is based on the fact that D depends on 
+!     refractive vector only through N^2 and gamma angle
+!     [see func. hamilt_xyz(x,y,z, cn2), where cn2==N^2, 
+!     and angle gam==gamma is accessible through one_no_nml.i].
+!     Then, the partial derivative @D/@Nx, for example, 
+!     is found as 
+!     @D/@Nx = (@D/@N^2)*2*Nx + (@D/@gam)(@gam/@cosgam)(@cosgam/@Nx)
+!     To find (@D/@N^2), we use a step in N^2, der_n2= 2*cn2*der_n ;
+!     it is based on der_n, to be set in namelist.
+!     Note that cn2 (==N^2) is 1 in vacuum, 
+!     and can be very large (1e4 or more) for EBW or IBW.
+!     Also note that der_n2 is proportional to N^2.
+!     Based on tests, it is recommended to keep der_n in range 1e-10...1e-2.
+      der_n=1.d-6 ![no units] keep it in range 1e-10...1e-2 [Not functional yet]
+!     For the numerical derivative @D/@gam, we set [see subr.rside_xyz()]     
+!     der_gam=pi*1.d-5 ! Step in gamma [rad]; Hard-wired, for now.
+!     Then the the partial derivative @D/@Nx, for example, is
+!     @D/@Nx= [@D/@N^2]*2*Nx + 
+!            +[@D/@gam]*[-1/singam]*[(Bx/B)-(Nx/N)*cosgam]/N
+!     where  (-1/singam) is from  @(gam)/@(cosgam)
+
+!     Note: If used together with irkmeth=3 option,
+!     it is recommended to "coordinate" the values of der_r and der_n
+!     with values of dL_step and dN_step;  For example, 
+!     set der_r= 0.1*dL_step and der_n= 0.1*dN_step.
+!     Generally, der_r should be smaller than dL_step
+!     and der_n should be smaller than dN_step.
+!     Smaller values are supposed to yield better accuracy,
+!     however, if der_r or der_n are too small, 
+!     the derivative may become zero because of computer accuracy,
+!     i.e. it may happen that, within rounding error,
+!     D(x+der_r,...) - D(x-der_r,...) = 0
+!     although physically there should be a difference.
+!     So, the steps for derivatives should not be too large
+!     but also not too small.
+!     The optimal values can only be found by trials -
+!     they depend on scale of gradients (B and density),
+!     also on wave type, proximity of resonance, etc.
+!     Another derivative step:
+      der_f=1.d-4 ! Units: fraction of frqncy f. [Not functional yet]
+!     This is needed for calc. of dD/domega derivative,
+!     [ D(...,f*(1+der_f)) - D(...,f*(1-der_f)) ] / (2*f*der_f)
+!     The result is not very sensitive to the value of der_f.
+!     It is recommended to keep it within 1.d-6...1.d-4 range. 
+
 c
       i_power_switch_resonance   =0 
       prmt6_power_switch_resonance=prmt6*1.d-1
@@ -4795,7 +4923,7 @@ c
 
       i_resonance_curve_integration_method=4
       epsi=1.d-5
-c&end
+
       prmt(1)=prmt1  
       prmt(2)=prmt2  
       prmt(3)=prmt3   
@@ -4806,6 +4934,8 @@ c&end
 c      ihlf=prmt9
 c      prmt(9)=ihlf
       eps_delta_pow=1.d+10 
+c&end
+
 !/output/
 !----------------------------------------------------------------------
 ! iwcntr =1 genray.f will calculate the contours of the
@@ -5690,59 +5820,90 @@ c&end
 !       same size array as mray for gaussian formulation.
 !      Standard setting for gzone=0 is 0.0,0.1,0.05,-0.05,0.05.
 !      
+!
 ! ----input data for disk to disk launching, raypatt='diskdisk':
 !     power distribution at the first disk has the gaussian variation
-!     w.r.t. disk radius rho:
-!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!     w.r.t. radius rho (at radial bin centers):
+!     power(rho)=Const*exp[-(rho/sigma_launching_disk)**2]
 !
-!     The power destribution at the launching disk will be determine by the
+!     The power distribution at the launching disk will be determined by the
 !     parameter : 0. < part_gauss_power =< 1.
-!     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
-!     2/(sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!     part_gauss_power= Integral(0,rho_launchin_disk){ rho*d(rho)*
+!     (2/sigma_launching_disk**2) * exp[-(rho/sigma_launching_disk)**2] }
+!       when part_gauss_power<1, sigma_launching_disk is calculated
+!       as sigma_launching_disk= rho_launching_disk/sqrt(ln(1./(1-part_gauss_power)))
 !
 !     input parameters for diskdisk case are
-!     sigma_launching_disk [m] It works at 1.<part_gauss_power
+!     sigma_launching_disk [m] It is an input when part_gauss_power>1.,
+!                              otherwise it is calculated.
 !     d_disk is distance between the disks perpendicular to disks [m]
 !     part_gauss_power  It is from 0. to 1.
-!                              if 0.<part_gauss_power<1.    
+!                              if 0.<part_gauss_power<1. then   
 !                              sigma_launching_disk will be calculated using:
-!                                sigma_launching_disk=rho_launching_disk/
-!                                dsqrt(dlog(1.d0/(1-part_gauss_power))))
+!                              sigma_launching_disk=rho_launching_disk/
+!                                sqrt(ln(1./(1-part_gauss_power))))
 !                             
 !                              If part_gauss_power.ge.1 then
 !                              sigma_launching_disk will be taken from         
-!                              genray.dat and the code will recalculate
+!                              genray.dat(in) and the code will recalculate
 !                              part_gauss_power using given
 !                              sigma_launching_disk
+!     rho_launching_disk  [m] radius of the first (launching) disk
+!           Suggestion: set rho_launching_disk as ~2*sigma_launching_disk.
 !     rho_focus_disk  [m] the second disk radius
+!           Note that each disk is divided into radial shells (or bins),
+!           and the rays in each shell (bin) are started from the CENTER
+!           of given bin.  However, the values of rho_launching_disk and 
+!           rho_focus_disk point to the OUTER BOUNDARY of the last radial bin.
+!           The sizes of radial bins are found automatically by the code,
+!           in such a way that the power density (= [number of rays 
+!           in given radial bin] * [power in each ray] / [area of bin] )
+!           is C*exp[-(rho_bin_center/sigma_launching_disk)**2] .
+!           The power in each ray is set to be the same.
+!           Therefore, the radial width of each bin depends on number of
+!           rays that are set for this bin (see n_mesh_disk_angle_bin below).
 !     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!           (and same number of radial bins is set at the second disk).
+!           The number of radial bins should not exceed the max value:
+!           Presently, n_mesh_disk_radial_bin_a=5 (see param.i for changes).
 !     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
-!                 of angle bins at each radius bin
-!     initial_azimuth_angle_degree((n_mesh_disk_radial_bin) are initial
+!                 of angle bins in each radial bin
+!           (i.e. they are the number of rays in each radial bin in disk)
+!         Suggestion for setting:
+!         n_mesh_disk_angle_bin(1)=1 ! The central ray (should always be 1)
+!         n_mesh_disk_angle_bin(2)=4 
+!         n_mesh_disk_angle_bin(3)=8
+!         n_mesh_disk_angle_bin(4)=12
+!         n_mesh_disk_angle_bin(5)=16
+!     initial_azimuth_angle_degree(n_mesh_disk_radial_bin) are initial
 !                  angles on the first disk around the central ray
-!
+!         (this is like an angular phase of rays in each radial bin on disk)
 !     The central ray will be directed from the center of the first
-!     disk to the center of the second disk
-!     The other rays will be directed from the first disk
-!     to edge of the second disk
+!     disk to the center of the second disk;
+!     The other rays will be directed from the centers of radial bins of the 
+!     first disk to centers of corresponding radial bins of the second disk.
+!
 !
 ! ----the input data for diskbeam launching, raypatt='diskbeam'
+!     [YuP: this option is not really needed, as everything here
+!      can be reproduced with the 'diskdisk' option, 
+!      if rho_focus_disk=rho_launching_disk ]
 !     Rays will be launched from the launching disk parallel to
-!     the central ray
-!     power distribution at the launhing disk has the gaussian form
-!     on disk radius: rho
-!     power(rho)=Const*exp(-rho/sigma_launching_disk)**2
+!     the central ray.
+!     power distribution at the launching disk has the gaussian form
+!     on disk radius rho (at radial bin centers)
+!     power(rho)=Const*exp[-(rho/sigma_launching_disk)**2]
 !
-!     The power at the launching disk will be determine by the
+!     The power at the launching disk will be determined by the
 !     parameter : 0. < part_gauss_power =< 1.
 !     part_gauss_power=Integral(0,rho_launchin_disk){rho*d(rho)*
-!     (2/sigma_launching_disk)**2*exp(-rho/sigma_launching_disk)**2}
+!     (2/sigma_launching_disk**2) * exp[-(rho/sigma_launching_disk)**2] }
 !
 !                               
-!     input parameters for diskdisk case are
-!     sigma_launching_disk [m] It works for 1.<part_gauss_power
+!     input parameters for diskbeam case are
+!     sigma_launching_disk [m] Needed when part_gauss_power.ge.1.
 !     part_gauss_power  It is from 0. to 1.
-!                              if <part_gauss_power<1    
+!                              if 0<part_gauss_power<1    
 !                              sigma_launching_disk will be calculated using:
 !                                sigma_launching_disk=rho_launching_disk/
 !                                dsqrt(dlog(1.d0/(1-part_gauss_power)))
@@ -5753,15 +5914,16 @@ c&end
 !                              part_gauss_power using given
 !                              sigma_launching_disk
 !     rho_launching_disk  [m] radius of the launching disk
-!     rho_focus_disk      [m] radius of the second disk   
-!     n_mesh_disk_radial_bin is the number of radial bins at the first disk
+!           Suggestion: set rho_launching_disk as ~2*sigma_launching_disk.
+!     n_mesh_disk_radial_bin is the number of radial bins at the disk
 !     n_mesh_disk_angle_bin(n_mesh_disk_radial_bin) are the number 
-!                 of angle bins at each radius bin
-!                 It should be n_mesh_disk_angle_bin(1)=1.
+!                 of angle bins at each radial bin.
+!                 In the 1st radial bin, should have n_mesh_disk_angle_bin(1)=1.
 !
 !     initial_azimuth_angle_degree(n_mesh_disk_radial_bin) are initial
-!                  angles on the first disk around the central ray 
+!                  angles on the disk around the central ray 
 !                  directed clockwise from the vector R_0 
+!         (this is like an angular phase of rays in each radial bin on disk)
 !                
 !     The central ray will be directed from the center of the launching
 !     disk. The central ray direction is set by angles:
@@ -5826,18 +5988,22 @@ c &eccone
            
       rho_launching_disk=0.1d0 !m
       rho_focus_disk=0.015d0   !m
-      n_mesh_disk_radial_bin=1
+      n_mesh_disk_radial_bin=1 ! Number of radial groups in disk distribution
+      !For each radial bin in disk, specify number of rays:
       n_mesh_disk_angle_bin(1)=1
       n_mesh_disk_angle_bin(2)=1
       n_mesh_disk_angle_bin(3)=1
       n_mesh_disk_angle_bin(4)=1
       n_mesh_disk_angle_bin(5)=1
-      initial_azimuth_angle_degree(1)=0.d0 !degree
+      !Note: Dimension size is n_mesh_disk_angle_bin(n_mesh_disk_radial_bin_a)
+      !Presently, n_mesh_disk_radial_bin_a=5 (see param.i for changes).
+      !Value of n_mesh_disk_radial_bin should not exceed n_mesh_disk_radial_bin_a
+      initial_azimuth_angle_degree(1)=0.d0 !degree 
       initial_azimuth_angle_degree(2)=0.d0 !degree
       initial_azimuth_angle_degree(3)=0.d0 !degree
-      
       initial_azimuth_angle_degree(4)=0.d0 !degree
       initial_azimuth_angle_degree(5)=0.d0 !degree
+      !(this is like an angular phase of rays in each radial bin on disk)
 
 !     raypatt='diskbeam'
 ! zst(1)=+4.11d+0
@@ -5846,7 +6012,7 @@ c &eccone
 ! betast(1)=-56.075d0  !Equals -(polar_angle-90.)
 ! alfast(1)=+137.84d0
 ! alpha1(1)=1.177d+00
-!      sigma_launching_disk=0.025d0 ![m] wokrs at 0<part_gauss_power<1
+!      sigma_launching_disk=0.025d0 ![m] input, when 0<part_gauss_power<1
 !      part_gauss_power=1.1d0 !in this case sigma_launching_disk
                              !will be taken from input genray.dat
                              !then the code will recalculate
@@ -6555,8 +6721,8 @@ c&ox
       theta_bot(1)=0.0d0
       theta_top(1)=180.d0
       i_ox_poloidal_max=20
-      eps_antenna=1.d-4
-      eps_xe=1.d-2
+      eps_antenna=1.d-4 ! [meters]
+      eps_xe=1.d-2 
 c&end
 
 
@@ -7152,9 +7318,9 @@ c&end
 
       
 
-      subroutine pack12S(a,nmax,k,p,b,kmax,pmax)
-c     put 1D array a(1...nmax)to 2d array b(1..k,1...p),
-c       where b is dimensioned b(kmax,pmax)     
+      subroutine pack12S(a,nmax,k,p,bpk,kmax,pmax)
+c     put 1D array a(1...nmax)to 2d array bpk(1..k,1...p),
+c       where b is dimensioned bpk(kmax,pmax)     
       implicit none
 c-----input
       integer nmax  !maximal value of the dimension a
@@ -7163,14 +7329,14 @@ c-----input
       integer kmax,pmax !dimensions of 2d array b, equal
                         !maximal values of the dimensions k,p
 c-----output
-      real*8 b(kmax,pmax)
+      real*8 bpk(kmax,pmax)
 c-----locals
       integer ik,ip,j
 
       do ip=1,p
          do ik=1,k
              j=(ip-1)*k+ik
-             b(ik,ip)=a(j)
+             bpk(ik,ip)=a(j)
          enddo
       enddo
 
@@ -7204,9 +7370,9 @@ c-----input
       return
       end
         
-      subroutine pack12S_nonregular(a,nmax,k,p,b,kmax,pmax)
-c     put 1D array a(1...nmax)to 2d array b(1..k,1...p),
-c       where b is dimensioned b(kmax,pmax)     
+      subroutine pack12S_nonregular(a,nmax,k,p,bpk,kmax,pmax)
+c     put 1D array a(1...nmax)to 2d array bpk(1..k,1...p),
+c       where b is dimensioned bpk(kmax,pmax)     
       implicit none
 c-----input
       integer nmax  !maximal value of the dimension a
@@ -7216,7 +7382,7 @@ c-----input
                         !maximal values of the dimensions k,p  
       integer k,p(kmax)       !dimensions of 2d array of b
 c-----output
-      real*8 b(kmax,pmax)
+      real*8 bpk(kmax,pmax)
 c-----locals
       integer ik,ip,j,pmax_loc
 
@@ -7234,7 +7400,7 @@ c-----locals
             if(ip.le.p(ik)) then
               j=j+1
               write(*,*)'ip,k,j',ip,k,j
-              b(ik,ip)=a(j)
+              bpk(ik,ip)=a(j)
              endif
          enddo
       enddo

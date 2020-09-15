@@ -3,7 +3,7 @@
 This is a test file for adding file to git working directory.
 
 git add README_test
-get status shows it is in staged state.
+git status shows it is in staged state.
 Modify it further (now).
 git status ==> it is in Changes to be committed list,
                and is modified. .#README_test is an untracked file.

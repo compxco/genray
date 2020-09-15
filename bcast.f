@@ -46,7 +46,7 @@
       subroutine r4bcast(a,val,n)
       !implicit integer (i-n), real*4 (a-h,o-z)
       implicit none !YuP[2020-01]
-      real*8 val,a  !YuP[2020-01]
+      real*4 val,a  !YuP[2020-01] ![2020-09-05] Corrected to real*4
       integer i,n   !YuP[2020-01]
 !..................................................................
 !     Temporary bcast routine until I can find UNICOS equivalent

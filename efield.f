@@ -17,11 +17,11 @@ c     ex,ey,ez							    !
 c     eplus, eminus, epar - wave polarization 			    !
 c     cex,cey,cez in common/cefield/
 c--------------------------------------------------------------------
-      subroutine efield (z,r,phi,cnpar,cnper,cm,ex,ey,ez,
+      subroutine efield(z,r,phi,cnpar,cnper,cm,ex,ey,ez,
      1 eplus,eminus,epar)
       implicit double precision (a-h,o-z)
       include 'param.i'
-      include'one.i'
+      include 'one.i'
       include 'cefield.i'
       double complex ci
       double complex cepsd(3,3),cp
@@ -126,18 +126,20 @@ c-----------------------------------------------------------
        dlam12=del*dlam121+dlam120
        ex=dlam33*dlam22
 c
-c  ey is image,it must be multiplide by i
+c  ey is imaginary, it must be multiplied by i
 c
        ey=dlam33*dlam12
        ez=-dlam13*dlam22
-       p=1.d00/dsqrt(ex*ex+ey*ey+ez*ez)
+       p=1.d00/dsqrt(ex*ex+ey*ey+ez*ez) != 1/|E|
+       !write(*,*)'efield/cold ex=',ex,'ey=',ey,'ez=',ez, ' p=',p
+       !Now normalize to have Ex/|E|, etc.
        ex=ex*p
        ey=ey*p
        ez=ez*p
        cex=dcmplx(ex,0.d0)
        cey=dcmplx(0.d0,ey)
        cez=dcmplx(ez,0.d0)
-c       write(*,*)'cold cex=',cex,'cey=',cey,'cez=',cez
+       !write(*,*)'efield/cold cex=',cex,'cey=',cey,'cez=',cez, ' p=',p
 c------------------------------------------------------------
 c  end cold plasma
        eplus=(ex-ey)/dsqrt(2.d0)
