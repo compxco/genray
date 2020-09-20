@@ -32,7 +32,17 @@ if netcdf==4: from netCDF4 import Dataset # YuP
 #-----------------------------------------------
 
 
-# Specify for plots:
+#matplotlib.interactive(True) # no plots on screen
+matplotlib.interactive(False) # with plots on screen
+
+#------ For Linux users: un-comment  matplotlib.rc('text', usetex = True)
+#------ This fixes mangled LateX annotations of the figures.
+print ('For Linux users: un-comment  matplotlib.rc() to fix mangled annotations'
+#Render with externally installed LateX (BH200816):
+#matplotlib.rc('text', usetex = True) # Does not work on PC version
+
+
+#-------- Specify for plots:
 fnt  = 11 #13 #9   # Font size for axis numbers (see 'param=' below) 
 linw = 1.  # LineWidth for contour plots
 Ncont= 50  # Number of contour levels for PSI (pol.flux)

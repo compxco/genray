@@ -988,7 +988,7 @@ c      alpha_freq=180.0d0
 c      beta_freq=90.0d0
 c      nsteps_freq=780
 c      n_ec_harmonics_freq=6
-c      max_plot_freq200.d0
+c      max_plot_freq=200.d0
       call plot_fcefuh(z_freq,r_freq,alpha_freq,beta_freq,dist_freq,
      +nsteps_freq,n_ec_harmonics_freq,npar_freq,max_plot_freq)
 c         stop 'genray.f after plot_fcefuh'

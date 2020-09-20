@@ -184,7 +184,7 @@ test8.1-3, giving results as follows:
 
 test	   descrptn				Comp. time		Curr(kA)
 test8      i_adj=1 ADJ-bases self adjoint,	2m52s with adj calc	25.8
-           momentum conserving.	  		4s, existing adj calc
+           momentum conserving.	  		4s, existing adj calc in adjout
 test8.1	   ieffic=4, ieffic_mom_cons=1		0.60s			25.5
 test8.2	   ieffic=4, ieffic_mom_cons=0		0.60s			13.0
 test8.3	   ieffic=3, Curba (Cohen) subroutine 	0.59s			10.1

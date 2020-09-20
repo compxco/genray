@@ -4916,25 +4916,29 @@ c     input parameter can be arbitray. It is not used inside the function.
 c-----calculate the major radius of the EC second harmonic
 c     resonance point omega_ce(r,z=0)/omega
 c
-      implicit double precision (a-h,o-z) 
+      implicit none !double precision (a-h,o-z) 
       include 'param.i'
       include 'five.i' ! gives rmax and rmin of the tokamak
 cSm050929
-      include 'three.i'! gives xma
+      include 'three.i' ! gives xma
       include 'one.i' 
+      
+      real*8 t !INPUT
 c-----output
 c     r_2nd_harm ! the major radius where w_ce(r,z=0)/w=0.5
 c-----external
-      double precision rtbis,f_y
+      double precision f_y     !,rtbis [not used]
 
       integer JMAX,J
 c     PARAMETER (JMAX=40)
       parameter(JMAX=100)      
       double precision FMID,F,X1,X2,XACC,XMID,DX
+      real*8 b,y ! external
+      real*8 phi0,y_e !local
 
       xacc=1.d-5 
-      write(*,*)'in r_2nd_harm bef rtbis rmin,rmax',rmin,rmax 
-      write(*,*)'in r_2nd_harm bef rtbis rmin,rmax',rmin,rmax
+      !write(*,*)'in r_2nd_harm bef rtbis rmin,rmax',rmin,rmax 
+      !write(*,*)'in r_2nd_harm bef rtbis rmin,rmax',rmin,rmax
 c      r_2nd_harm=rtbis(f_y,rmin+0.1d0,rmax-0.05d0,xacc)
      
       
@@ -4984,7 +4988,7 @@ c     +'(emission.f r_2nd_harm: Root must be bracketed for bisection.'
        PAUSE 'r_2nd_harm:too many bisections,increase parameter JMAX i'
 
       return
-      end
+      end function r_2nd_harm
 
 
       subroutine g_n_emis_theta(p_perp,p_par,y,nll,np,theta,n,i_fkin,

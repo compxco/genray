@@ -35,7 +35,7 @@ c-----local
 
       
 c-----externals
-      real*8 rtbis,psilim_psif_zp_rp
+      real*8 rtbis_ox,psilim_psif_zp_rp
       external psilim_psif_zp_rp
  
       pi=4.d0*datan(1.d0)
@@ -150,8 +150,8 @@ c------------------------------------------------------
                accuracy=1.d-7
                p1=0.d0
                p2=1.d0
-               write(*,*)'antenna surface before p_intersection=rtbis'
-               p_intersection=rtbis(psilim_psif_zp_rp,p1,p2,accuracy)
+              write(*,*)'antenna surface before p_intersection=rtbis_ox'
+               p_intersection=rtbis_ox(psilim_psif_zp_rp,p1,p2,accuracy)
 c               write(*,*)'antenna surface after p_intersection=',
 c     &         p_intersection
 c               write(*,*)'xma,rst(i_cone),p_intersection',
@@ -396,8 +396,8 @@ c-----output
      &beta_st !central ray poloidal angle
 
 c-----externals
-c      real*8 rtbis,f_o_antenna
-      double precision rtbis,f_o_antenna        
+c      real*8 rtbis_ox,f_o_antenna
+      !double precision rtbis_ox,f_o_antenna    ! Not used    
       external f_o_antenna
       real*8 x_bin_min,f_antenna_min
       external f_antenna_min

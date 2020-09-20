@@ -363,7 +363,7 @@ c[187]    (-b +ioxm*sqrt(b^2-4ac))/(2a) = [use a=(1-Yib)*A= -A, etc]
 c[187]  = (+B +ioxm*sqrt(B^2-4AC))/(-2A)= 
 c[187]  = (-B -ioxm*sqrt(B^2-4AC))/(+2A)
 c[187] Thus, for ioxm=+1, we are getting the branch (4.12b), 
-c[187] which is the X mode. The meaning of modes is reversed !
+c[187] which is the X mode. THE MEANING OF MODES IS REVERSED!
 c[187] To correct this problem, we simply need to further adjust 
 c[187] the a,b,c cofficients:
 c[187]    sign_delib=sign(1.d0,delib) 
@@ -927,9 +927,9 @@ c[87] Add facility to input plasma profiles at nonuniform small radius meshs.
 c[87] These profiles and radial meshes are set by line form rather than 
 c[87] column [SAP 070427].
 
-c[86] Include files *.i were devided by two groups of files: 
+c[86] Include files *.i were divided into two groups of files: 
 c[86]     *_nml.i and *_no_nml.i
-c[86] *_nml.i gropu contains declarations and common block *_nml 
+c[86] *_nml.i group contains declarations and common block *_nml 
 c[86] for input namelist\'s data, which were previously used in 
 c[86] common block *.i.   This rearrangement of namelist is for the
 c[86] SciDAC SWIM IPS (Integrated Plasma Simulator).

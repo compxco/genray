@@ -39,7 +39,7 @@ XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/trunk/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301_updtd170725/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_v10.11_170725/xgenray'
-XGENRAY='../$PWD/xgenray'
+XGENRAY='/home/bobh/cql3d/git/genray/xgenray'
 XGENRAY='/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725/xgenray_intel.edison'   #At NERSC, edison.
 
 mkdir test1

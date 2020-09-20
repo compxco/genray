@@ -17,7 +17,7 @@ c     It solves the equation x(zconv(rhoconv),rconv(rhoconv),phix,1)-xe0=0
       double precision phix,racc 
       double precision rhoconv,zconv,rconv
       double precision thetax,xe0,rholeft,rhoright,psiconv,xpp 
-      double precision rtbis,psi_rho,xe_eq 
+      double precision rtbis_ox,psi_rho,xe_eq 
       common /convers/ thetax,phix,xe0
       external xe_eq
 
@@ -37,11 +37,11 @@ c      write(*,*)'xe_eq(0)',xpp
            !depending on indexrho
            
 c      write(*,*)'xe_eq(1)',xpp
-c      write(*,*)'wconvini owconvr before rtbis xe0,thetax',xe0,thetax
-c      write(*,*)'owconvr bef rtbis rholeft,rhoright',
+c      write(*,*)'wconvini owconvr before rtbis_ox xe0,thetax',xe0,thetax
+c      write(*,*)'owconvr bef rtbis_ox rholeft,rhoright',
 c     *rholeft,rhoright
   
-      rhoconv=rtbis(xe_eq,rholeft,rhoright,racc)
+      rhoconv=rtbis_ox(xe_eq,rholeft,rhoright,racc)
 c      write(*,*)'wconvini rhoconv',rhoconv
       psiconv=psi_rho(rhoconv)
 c      write(*,*)'wconvini psiconv,thetax',psiconv,thetax
@@ -52,19 +52,67 @@ c      write(*,*)'wconvin rhoconv,zconv,rconv',rhoconv,zconv,rconv
 !=======================================================================
 !=======================================================================      
 
-      double precision FUNCTION rtbis(FUNC,X1,X2,XACC)
-c     bisection method of the solution of the equation func(rtbis)=0 
+      double precision FUNCTION rtbis_ox(FUNC,X1,X2,XACC)
+c     bisection method of the solution of the equation func(rtbis_ox)=0 
+      !YuP: called by subr. owconvr() and antenna_surface(), only.
+      !YuP[2020-09-16] This is same as func. rtbis, but it is specifically
+      ! adjusted for the purpose of searching the optimal O_X angles.
+      ! If the search of func(rtbis_ox)=0 fails, 
+      ! this function would not pause or stop, 
+      ! it will only print a warning message.
+      ! 
       implicit none
       integer JMAX,J
-c      PARAMETER (JMAX=40)
       parameter(JMAX=100)      
       double precision FUNC,FMID,F,X1,X2,XACC,XMID,DX
-c      write(*,*)'wconvini rtbis X1,X2,XACC',X1,X2,XACC  
       FMID=FUNC(X2)
-c      write(*,*)'wconvini X2,FMID',X2,FMID  
       F=FUNC(X1)
-c      write(*,*)'wconvini X1, F',X1,F  
-      IF(F*FMID.GE.0.d0) PAUSE 'Root must be bracketed for bisection.'
+      IF(F*FMID.GE.0.d0) then
+      WRITE(*,*)'rtbis_ox/WARNING: Root must be bracketed for bisection'
+      endif
+      IF(F.LT.0.d0)THEN
+        rtbis_ox=X1
+        DX=X2-X1
+      ELSE
+        rtbis_ox=X2
+        DX=X1-X2
+      ENDIF
+      DO 11 J=1,JMAX
+        DX=DX*.5d0
+        XMID=rtbis_ox+DX
+        FMID=FUNC(XMID)
+        IF(FMID.LE.0.d0)rtbis_ox=XMID
+c        IF(dabs(DX).LT.XACC .OR. FMID.EQ.0.d0) RETURN
+         IF(dabs(DX).LT.XACC .OR. dabs(FMID).LT.XACC) RETURN
+11    CONTINUE 
+      WRITE(*,*) 
+     & 'rtbis_ox: too many bisections, try increasing JMAX in rtbis_ox'
+      END FUNCTION rtbis_ox
+
+!=======================================================================
+!=======================================================================      
+
+      double precision FUNCTION rtbis(FUNC,X1,X2,XACC)
+c     bisection method of the solution of the equation func(rtbis)=0 
+      !YuP: called by    function relativistic_nperp(),
+      !                  function hotnp(),
+      !                  subroutine hot_roots_solver(),
+      !                  subroutine solvropt(),
+      !                  subroutine solvropx(),
+      !                  function psi_epsilon()
+      !                  subroutine r_min_r_max_from_psi_z()
+      !YuP[2020-09-16] This is same as the original rtbis, but now
+      ! if the search of func(rtbis)=0 fails, 
+      ! this function would stop the run. [It used to PAUSE the run]
+      implicit none
+      integer JMAX,J
+      parameter(JMAX=100)      
+      double precision FUNC,FMID,F,X1,X2,XACC,XMID,DX
+      FMID=FUNC(X2)
+      F=FUNC(X1)
+      IF(F*FMID.GE.0.d0) then
+         STOP 'rtbis: Root must be bracketed for bisection.'
+      endif
       IF(F.LT.0.d0)THEN
         rtbis=X1
         DX=X2-X1
@@ -76,13 +124,12 @@ c      write(*,*)'wconvini X1, F',X1,F
         DX=DX*.5d0
         XMID=rtbis+DX
         FMID=FUNC(XMID)
-c        write(*,*)'wconvini J,DX,XMID,FMID',J,DX,XMID,FMID  
         IF(FMID.LE.0.d0)rtbis=XMID
 c        IF(dabs(DX).LT.XACC .OR. FMID.EQ.0.d0) RETURN
          IF(dabs(DX).LT.XACC .OR. dabs(FMID).LT.XACC) RETURN
 11    CONTINUE 
-      PAUSE 'too many bisections, increase parameter JMAX in rtbis'
-      END
+      STOP 'rtbis: too many bisections, try increasing JMAX in rtbis'
+      END FUNCTION rtbis
 !=======================================================================
 !=======================================================================      
 
