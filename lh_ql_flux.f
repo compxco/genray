@@ -3222,7 +3222,7 @@ cc       n_harm_adj   number of the given resonance harmonic
 cc     output
 cc       f_power_n_harm,f_CD_n_harm  under integral functionns
 cc-------------------------------------------------------
-c      implicit none
+      !implicit none
 cc-----input        
 c      real*8 p0_perp,y,nll,n_perp,theta_temperature,p0_par,b_ratio,
 c     &y_loc,sin_trap,temp_kev,unorm,umax
@@ -4793,7 +4793,7 @@ cc       n_harm_adj   number of the given resonance harmonic
 cc     output
 cc       f_power_n_harm,f_CD_n_harm  under integral functionns
 cc-------------------------------------------------------
-c      implicit none
+      !implicit none
 cc-----input        
 c      real*8 p0_perp,y,nll,n_perp,theta_temperature,p0_par,b_ratio,
 c     &y_loc,sin_trap,temp_kev,unorm,umax
@@ -6086,7 +6086,7 @@ c     &                   dens_averaged_ar(n_psi)
 
 c         write(*,*)'fm',fm
 c        write(*,*)'before chi_2d',chi_2d 
-         write(*,*)'before current chi_2d(0,130)',chi_2d(0,130) 
+         !write(*,*)'before current chi_2d(0,nmax_chi-1)',chi_2d(0,nmax_chi-1) 
 c         currrent_E_adj=current(du,ua_loc,clight,nmax_chi,dth0,
 c     &                     th0a_loc,imax_chi,imax1,fm,chi_2d,cur) !q*dens*u_n
          currrent_E_adj=current1(du,ua_loc,clight,nmax_chi,dth0,
@@ -6172,22 +6172,22 @@ c-----locals
       write(*,*)'in fuction averaged_density nmax,imax',nmax,imax
 c      write(*,*)'ua',ua
 c      write(*,*)'th0a',th0a
-      write(*,*)'du,dth0,pi,imax',du,dth0,pi,imax  
+!      write(*,*)'du,dth0,pi,imax',du,dth0,pi,imax  
       sum_theta=0.d0
       do i= 1, imax-1
-         write(*,*)'i,lam1a(i),th0a(i),dsin(th0a(i))',
-     &               i,lam1a(i),th0a(i),dsin(th0a(i))
+!         write(*,*)'i,lam1a(i),th0a(i),dsin(th0a(i))',
+!     &               i,lam1a(i),th0a(i),dsin(th0a(i))
          sum_theta=sum_theta+lam1a(i)*dsin(th0a(i))
       enddo
       sum_theta=sum_theta*2.d0 
-      write(*,*)'sum_theta',sum_theta
-      write(*,*)'nmax',nmax
-      write(*,*)'ua',ua
-      write(*,*)'fm',fm 
+      !write(*,*)'sum_theta',sum_theta
+      !write(*,*)'nmax',nmax
+      !write(*,*)'ua',ua
+      !write(*,*)'fm',fm 
 
       sum_u = dot_product(ua(:nmax-1)**2,fm(:nmax-1))
 
-      write(*,*)'sum_u',sum_u     
+      !write(*,*)'sum_u',sum_u     
 
       averaged_density=2.d0*pi*sum_theta*sum_u*du*dth0
       write(*,*)'averaged_density', averaged_density
