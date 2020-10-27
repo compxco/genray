@@ -39,7 +39,7 @@ XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/trunk/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301_updtd170725/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_v10.11_170725/xgenray'
-XGENRAY='/home/bobh/cql3d/git/genray/xgenray'
+XGENRAY='../$PWD/xgenray'
 XGENRAY='/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725/xgenray_intel.edison'   #At NERSC, edison.
 
 mkdir test1
@@ -304,7 +304,29 @@ xdraw genr &
 xdraw delpwr_lsc &
 
 
-#rm -rf test1 test2 test3 test4 test4.1 test5 test5.1 test6 test7 test7_edge_dens_r test8 test8.1 test8.2 test8.3 test9
+mkdir test10.1
+cp genray.in_test10.1 test10.1
+cp eqdsk_MASTU test10.1/
+cd test10.1/
+time $XGENRAY > log_test10.1
+emacs ECcone_optimal.dat &
+cd ..
+emacs ECcone_optimal.dat_test10.1 &
+echo "test10.1: Compare output text files ECcone_optimal.dat"
+
+
+mkdir test10
+cp genray.in_test10 test10/genray.int
+cp eqdsk_MASTU drawgenr.in drawfreqelec.in test10/
+cd test10/
+time $XGENRAY > log_test10    #32s on compx2
+xdraw genr &
+cd ..
+echo "test10: Compare genray.bin_test10 with test4/genray.bin using xdraw"
+cp genray.bin_test10 genray.bin
+xdraw genr &
+
+#rm -rf test1 test2 test3 test4 test4.1 test5 test5.1 test6 test7 test7_edge_dens_r test8 test8.1 test8.2 test8.3 test9 test10 test10.1
 
 
 

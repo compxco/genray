@@ -6553,6 +6553,31 @@ c         call pack21(iray_status_nc,1,nrayl,1,nfreq,tem2,nrayl,nfreq)
      &    nrayl,nfreq)      
       endif
 
+cPrint out to screen the defn of iray_status_nc, for convenience:
+
+      write(*,*) \\
+     &  "iray_status_nc: Status code giving the reason each ray stops"\
+     &	"iray_status_nc:=-1 bad initial condition"\
+     &  "iray_status_nc:= 1 t.gt.poldist_mx"\
+     &  "iray_status_nc:= 2 in prep3d delpwr(is).lt.delpwrmn*delpwr(1)"\
+     &  "iray_status_nc: =3 irefl.ge.ireflm"\
+     &  "iray_status_nc: =4 ray at tor limiter bndry, max_limtrs.ge.1"\
+     &  "iray_status_nc: =5 nstep_rk.gt.maxsteps_rk"\
+     &  "iray_status_nc: =6 nmode.gt.cnmax, in output.f cnmax=10000"\
+     &  "iray_status_nc: =7 for ((id.eq.1,2).and.(uh.gt.1.d0).and."\
+     &  "      ((uh-1.d0).lt.del_uh)).and.(cnper.gt.cnper_max_ebw))."\
+     &  "      The ray is close to upper hybrid resonance.         "\
+     &  "      It can be Xmode to close to the UH resonance.       "\
+     &  "iray_status_nc: =8 if ((vgrmods.gt.1.1).and. ((id.ne.10)"\
+     &  "      .and.(id.ne.12).and.(id.ne.13))) and if (id.eq.14)  lo"\
+     &  "iray_status_nc: =9 D/(N|gradD|) > toll_hamilt"\
+     &  "iray_status_nc: =10 in prep3d.f argexp>0"\
+     &  "iray_status_nc: =11 in prep3d fluxn(is).lt.0.0 "\ 
+     &  "iray_status_nc: =12 nrayelt=nrelt "\
+     &  "iray_status_nc: =13 in RK drkgs2 small time step h.lt.1.d-11"\
+     &  "      can not get the given accuracy prmt4"\
+     &  "iray_status_nc:  =14, ray started with zero power (lt.1e-100) "
+
       do iray=1,nrayl
         do ifreq=1,nfreq
            write(*,*)'iray,ifreq,iray_status_nc(iray,ifreq)',

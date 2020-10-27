@@ -88,7 +88,7 @@ closely with results obtained in the intel compiler environment.
 
 200913
 ======
-Genray version="genray_v10.14_200831"
+Genray version="genray_v10.14_200831".
 Several new features are added, as documented in a_change.i.
 Also, introduced the file genray_help to document the namelist variables
 used in the code.  Previously, this has been done with various

@@ -204,5 +204,22 @@ linear damping in test7.  A second plot shows results of
 QL damping, for which an LH plateau reduces damping for all rays.
 
 
-Test10:
-=======
+Test10 and Test10.1:  MAST EBW O-X-B test case.
+====================
+
+Test case for CD with EBW, which is propagated into MASTU
+through O-X-B conversion.
+The rays are launched from a disk, using raypatt='diskdisk'.
+The O-X conversion occurs outside of LCFS at the omega=omega_pe layer.
+The effect of an exponential drop-off density profile outside the LCFS 
+is included using the new option istep_in_lcfs=0 in genray.in.
+istep_in_lcfs=0 means: Start ray-tracing directly from {rst,zst} even
+if it is far outside of the LCFS, until omega=omegape is encountered. 
+That is, there no stepping along the straight-line ray characteristic 
+from rst,zst until inside LCFS, as in the prior istep_in_lcfs=1 (the default) 
+model.
+
+(Ref: test_MAST_EBW/)
+A paired cql3d test case is in  cql3d/00_Cql3d_Regression_Tests/test4.
+
+
