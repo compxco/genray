@@ -6,6 +6,14 @@
 # make rebuild	- rebuild whole program
 # make clean	- remove all *.o files
 
+#This makefile_gfortran.CentOS7.1 version uses -fdefault-real-8, but
+#presently causes errors where explicit real*4 variables are required,
+#for example, for pgplot routines, and perhaps binary output files.
+#It is desireable to use this -fdefault-real-8, to increase accuracy
+#and consistency of the output.
+#Use makefile_gfortran.CentOS7 for the time being, until required 
+#adjustments are makde.   BH201122
+
 SHELL=		/bin/sh
 NAME=		xgenray
 COMPILER=	gfortran

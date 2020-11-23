@@ -39,8 +39,9 @@ XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/trunk/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301_updtd170725/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_v10.11_170725/xgenray'
-XGENRAY='../$PWD/xgenray'
 XGENRAY='/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725/xgenray_intel.edison'   #At NERSC, edison.
+#Following is for github distribution organized tests:
+XGENRAY='../../xgenray'
 
 mkdir test1
 cp genray.dat_SS_Xmode_180_emission test1/genray.dat
@@ -316,7 +317,7 @@ echo "test10.1: Compare output text files ECcone_optimal.dat"
 
 
 mkdir test10
-cp genray.in_test10 test10/genray.int
+cp genray.in_test10 test10/genray.in
 cp eqdsk_MASTU drawgenr.in drawfreqelec.in test10/
 cd test10/
 time $XGENRAY > log_test10    #32s on compx2
