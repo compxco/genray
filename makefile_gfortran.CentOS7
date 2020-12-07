@@ -10,20 +10,20 @@ SHELL=		/bin/sh
 NAME=		xgenray
 COMPILER=	gfortran
 BUILDER=	$(COMPILER)
-INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
-		emissa.i five.i fourb.i gr.i grill.i ions.i\
-		limit.i  loopb.i nperpcom.i\
+INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i \
+		emissa.i five.i fourb.i gr.i grill.i ions.i \
+		limit.i  loopb.i nperpcom.i \
 		lsc_approach.i  lsc_approach_nml.i  lsc_approach_no_nml.i \
 		name_lsc_approach_nml.i \
 		name.i name_eccone.i name_genr.i name_grill.i \
 		name_non_uniform_mesh_profiles_line.i \
 		name_tokamak.i name_uniform_mesh_profiles.i \
 		output.i one.i \
-		onetwo.i oxb.i\
+		onetwo.i oxb.i pgconst.i \
 		rho.i six.i spline_distrib.i three.i \
 		transport_prof.i \
 		write.i writencdf.i \
-		commons.i param.i  rrange.i n_parb.i rkutta.i\
+		commons.i param.i  rrange.i n_parb.i rkutta.i \
 		globcd.h globcd1.h globcd2.h
 #		netcdf.inc
 SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\

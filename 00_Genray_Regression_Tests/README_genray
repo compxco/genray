@@ -1,6 +1,6 @@
-00_TEST_SUITE/
+./00_Genray_Regression_Tests/
 
-July 17, 2007
+July 17, 2007, and later
 =============
 
 This directory is for suite of short test input
@@ -12,10 +12,19 @@ creates 7 test subdirectories and, with xdraw, plots
 results plus displays the same plots for a previous
 version of genray for comparison.
 Should take .le.10 minutes total for the 5 tests.
+This though creates a jumble of overlapping xdraw windows,
+to be compared.
+
+Generally, it is easier to simple scrape in/copy (with the mouse)
+portions of script tests for each test, one at a time.
+
+An slightly different approach is given in tests.sh which 
+enables the user to turn on/off the separate tests.
 
 
 Test 1:
 =======
+Maxwellian ECE emission in ITER  (Nonthermal capability is also available).  
 Shortened (nfreq=5) X-mode perp viewing ECE (G Taylor work).
 Inputs: genray.dat_SS_Xmode_180_emission Scen4_bn2.57_129x129
 bob5:/home/bobh/cql3d/iter_ECE_pppl_No2/SS/Xmode/180/genray_v6-0_test
@@ -32,6 +41,9 @@ These .ps files were generate from run with
 You can also .run idl_emission_spectrum_colorbar.pro to get
 specrum of emission at the plasma edge vs energy of emitting
 electrons, assuming IDL paths set up OK.
+
+The genray manual (http:/compxco.com/genray.html), Chapter 12, describes
+the output plots.
 
 Test2:
 ======
@@ -50,12 +62,12 @@ Very close results are also obtained with Stix hot plasma option (iabsorp=4).
 
 Test3:
 ======
-NSTX EBW BXO emission test case, shortened to nfreq=3.
+Multi-frequency NSTX EBW BXO emission test case, shortened to nfreq=3.
 Inputs: genray.dat_113544.00325_mod g113544.00325_mod
 bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/NSTX_BXO_emission/result_idiskf_0/tmp_051209
 
-Takes 6 minutes CPU time
-2m55s on bob8, with genray_v7-8_080801.
+Takes 6 minutes CPU time.
+2m55s on bob8, with genray_v7-8_080801, 30.2s on CompX2.
 
 View in test3:
 xdraw genr
@@ -72,7 +84,7 @@ bob5:
 /home/bobh/cql3d/nstx/genray_cql3d_BXO_051013/GTaylor_PoP_2005_ECE_case/run1/tmp_gr060421
 
 Takes 9 seconds CPU time.
-13.2s on bob8, with genray_v7-8_080801.
+13.2s on bob8, with genray_v7-8_080801. 4.53s on CompX2(2016).
 
 Compare the ./ECcone_optimal.dat and test4/ECcone_optimal.dat files.
 
@@ -103,7 +115,7 @@ Mazzucato relativistic dispersion.
 Inputs: genray.dat_id10iabsorp1 g521022.01000
 bob5:/home/bobh/cql3d/genray/genray_cvs/code/inputs/ITER_CANONICAL_EC/one_ray/tmp_id10.2/
 Takes 2m8sec.
-1m53s on bob8, with genray_v7-8_080801.
+1m53s on bob8, with genray_v7-8_080801.  17.8s on CompX2 (2016).
 
 Compare 'xdraw genr' output files, using genray.bin_id10iabsorp1
 

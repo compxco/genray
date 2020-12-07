@@ -1845,7 +1845,7 @@ c------- flux from the cold plasma
          ye=y(z,r,phi,1)
          rnpar=cnpar
          rnper=cnper
-         romega=1/ye
+         romega=1.d0/ye
          romegpe=dsqrt(xe)/ye
 cyup        write(*,*)'prep3d before grpde xe,ye',xe,ye
          nsigma=ioxm
@@ -2081,7 +2081,7 @@ cSAP081111
 cRWH140909  Stop ray immediately, if has no starting power
 cRWH160227  except for i_ox=1 calculation for rays with optimal OX 
 cRWH160227  mode converison.
-         if (abs(powini).lt.1.d-100 .and. i_ox.ne.1) then
+         if (dabs(powini).lt.1.d-100 .and. i_ox.ne.1) then
             iraystop=1
             iray_status_one_ray=14 !means: abs(powini).lt.1.d-100
          endif
@@ -2416,12 +2416,12 @@ cSAP100514
      
 c-----------------------
 cBH040816      sbtot(is)=bmod*10000.d0*b0
-      one=1d0
-      sbtot(is)=bmod*10000.d0*b0*sign(one,feqd(1))
+      one=1.d0
+      sbtot(is)=bmod*10000.d0*b0*dsign(one,feqd(1))
 cBH040915:  Magnetic field components
-      sb_z(is)=1.e4*bz
-      sb_r(is)=1.e4*br
-      sb_phi(is)=1.e4*bphi
+      sb_z(is)=1.d4*bz
+      sb_r(is)=1.d4*br
+      sb_phi(is)=1.d4*bphi
 c-----------------------------------------------------------
 c     dense - dimensionless
       sene(is)=dense(z,r,phi,1)*1.0d+13
@@ -3092,7 +3092,7 @@ cBH151018 Fig. 3.3 of http://www.compxco.com/cql3d_manual_150122.pdf .
          ! large negative values for lh, which gives INF 
          ! in other subroutines.  
          ! Adjusted to sqrt(max(0.d0, 1d0-cnpar**2))
-         lh= int( sqrt(max(0.d0,1d0-cnpar**2))/abs(ye) ) +1
+         lh= idint( dsqrt(dmax1(0.d0,1d0-cnpar**2))/dabs(ye) ) +1
       endif
 c     lh=2
 c     lh=0
@@ -3309,12 +3309,12 @@ c            by (ergs/sec) to (amps/m**2) divided by watts.
       pi=4.d0*datan(1.d0)
       ld=cvac/(2.d0*pi*frqncy*1.d9) !c/omega cm
       zlds=ld*ld
-      zfac1=zconst+log(ld)
+      zfac1=zconst+dlog(ld)
       zte=temp_kev*1.d3 !eV       
       alfa=x(z,r,phi,1) !(omega_pe/omega)**2
-      zralfa=sqrt(alfa)
+      zralfa=dsqrt(alfa)
       zfac2=(zlds /(zelchg*alfa))*zte*2.d0/511.0d3
-      zfac3=zfac1+ log (zte/zralfa)
+      zfac3=zfac1+ dlog (zte/zralfa)
       zfac_f=zconvr*zfac2/zfac3
 
       return
@@ -6174,7 +6174,7 @@ cBH151018 Fig. 3.3 of http://www.compxco.com/cql3d_manual_150122.pdf .
          ! large negative values for lh, which gives INF 
          ! in other subroutines.  
          ! Adjusted to sqrt(max(0.d0, 1d0-cnpar**2))
-         lh= int( sqrt(max(0.d0,1d0-cnpar**2))/abs(ye) ) +1
+         lh= idint( dsqrt(dmax1(0.d0,1d0-cnpar**2))/dabs(ye) ) +1
       endif
 c     lh=2
 c     lh=0

@@ -1371,12 +1371,12 @@ c      write(*,*)'ok1 rk5step'
 10    call rk51(y0,x,h,ytmp,n,func,yerr) 
       errmax=0.
       do 20 i=1,n
-        errmax=max(errmax,dabs(yerr(i)/yscal(i)))
+        errmax=dmax1(errmax,dabs(yerr(i)/yscal(i)))
 20    continue              
       errmax=errmax/eps 
       if(errmax .GT. 1.d0)then  
         htmp=safety*h*(errmax**pshrnk)
-        h=sign(max(dabs(htmp),0.1d0*dabs(h)),h)
+        h=dsign(dmax1(dabs(htmp),0.1d0*dabs(h)),h)
         xnew=x+h
         if(xnew .eq. x) pause'step=0.rk5step'
         goto 10   

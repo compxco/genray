@@ -17,30 +17,32 @@ c      name_param(n_param)     are the names of parameters
 c      param(n_param)          are the values of parameters
 
       implicit none
+      include 'pgconst.i'
 c-----input
       integer nxmax,nymax,n_contour,n_param
-      real f(nxmax,nymax),x(nxmax),y(nymax),contour(n_contour)
+      REAL*4 f(nxmax,nymax),x(nxmax),y(nymax),contour(n_contour)
       character*(*)plot_name,x_name,y_name
       character*(*)name_param(n_param)
-      real param(*)
-      real y_e,x_e,cnpar,T
+      REAL*4 param(*)
+      REAL*4 y_e,x_e,cnpar,T
 c-----external
-      real rbound !convert double to real bounded 1.e-33 and 1.e+33
+      REAL*4 rbound !convert double to real bounded 1.e-33 and 1.e+33
 c-----local
-      real tr(6),RILIN
-      real xmin,xmax
-      real ymin,ymax
-      real fmin,fmax
+      REAL*4 tr(6),RILIN
+      REAL*4 xmin,xmax
+      REAL*4 ymin,ymax
+      REAL*4 fmin,fmax
       integer i,j
       
 c      CHARACTER*7 LABEL
       CHARACTER*2 LABEL
 
       integer INTVAL,MININT
-      character*72 text    
-               
+      character*72 text 
+
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
-      common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
+      common/mpimyrank/myrank !In serial run: myrank=0; 
+                              !In MPI run: myrank=rank
 
       if(myrank.ne.0)then
          WRITE(*,*)'contour2d: TRYING TO PGPAGE at rank=',myrank
@@ -55,16 +57,16 @@ c-----Change the size and position of the viewport, specifying
 c     the viewport in normalized device coordinates.  Normalized
 c     device coordinates run from 0 to 1 in each dimension.
 c     SUBROUTINE PGSVP (XLEFT, XRIGHT, YBOT, YTOP)
-c     REAL XLEFT, XRIGHT, YBOT, YTOP
+c     REAL*4 XLEFT, XRIGHT, YBOT, YTOP
 
 c      CALL PGSVP(.2,.8,.3,.95) 
-      CALL PGSVP(.2,.8,.5,.95) 
+      CALL PGSVP(R4P2,R4P8,R4P5,R4P95) 
 
 c-----Change the window in world coordinate space that is to be mapped on
 c     to the viewport.  Usually PGSWIN is called automatically by PGENV,
 c     but it may be called directly by the user.
 c     SUBROUTINE PGSWIN (X1, X2, Y1, Y2)
-c     REAL X1, X2, Y1, Y2
+c     REAL*4 X1, X2, Y1, Y2
       call rminmx(x,1,nxmax,1,xmin,xmax)
       if (xmin .eq. xmax) xmin=.9*xmax-1.e-20
       call rminmx(y,1,nymax,1,ymin,ymax)
@@ -72,7 +74,7 @@ c     REAL X1, X2, Y1, Y2
       CALL PGSWIN (xmin,xmax,ymin,ymax)
 
 c-----PGBOX -- draw labeled frame around viewport
-      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+      CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
 
 c-----PGLAB write labels  for x,y axis and top of plot
       CALL PGLAB(x_name,y_name,plot_name)
@@ -110,7 +112,7 @@ c                      shear.
 c
 c     SUBROUTINE PGCONT (A, IDIM, JDIM, I1, I2, J1, J2, C, NC, TR)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, NC
-c     REAL A(IDIM,JDIM), C(*), TR(6)
+c     REAL*4 A(IDIM,JDIM), C(*), TR(6)
 cSm030515 these lines work for g77 fortran under linux on PC 
       fmin=1.e+30
       fmax=-1.e+30
@@ -153,7 +155,7 @@ c---------------------------------------------------------------
 c     SUBROUTINE PGCONL (A, IDIM, JDIM, I1, I2, J1, J2, C, TR,
 c    1                   LABEL, INTVAL, MININT)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, INTVAL, MININT
-c     REAL A(IDIM,JDIM), C, TR(6)
+c     REAL*4 A(IDIM,JDIM), C, TR(6)
 c     CHARACTER*(*) LABEL
 c     Label a contour map drawn with routine PGCONT. Routine PGCONT should
 c     be called first to draw the contour lines, then this routine should be
@@ -222,13 +224,13 @@ c         WRITE(*,*)'i,contour(i),LABEL',i,contour(i),LABEL
       write(text,560)plot_name
  560  format("Contour values:",A)
       RILIN=8.
-      CALL PGMTXT('B',RILIN,-0.2,0.0,text)
+      CALL PGMTXT('B',RILIN,-R4P2,R40,text)
 
  570  format(1X,A,1pe10.3)
       do i=1,n_param
         rilin=rilin+1
         write(text,570)name_param(i),param(i)
-        CALL PGMTXT('B',RILIN,-0.2,0.0,text)    
+        CALL PGMTXT('B',RILIN,-R4P2,R40,text)    
       enddo
 
       j=0
@@ -236,20 +238,20 @@ c      do i=1,n_contour,2
        do i=1,n_contour,1
          j=j+1
          write(text,150)i,contour(i)
-         CALL PGMTXT('B',rilin+j,0.,0.,text)
+         CALL PGMTXT('B',rilin+j,R40,R40,text)
       enddo
 
  150  format('i=',i3,'contour(I)=',1pe8.1)
       return
       end 
 
-      real function rbound(r8)
+      REAL*4 function rbound(r8)
 c
-c     Converts a real*8 argument to a real number,
+c     Converts a real*8 argument to a real*4 number,
 c     equal to 0. (if r8=0.) or,
 c     bounded in absolute value by 1.e-33 and 1.e+33.
 c     This can be used to convert real*8 numbers to
-c     real numbers, and to keep the resulting numbers
+c     REAL*4 numbers, and to keep the resulting numbers
 c     within the specified bounds.  This is necessary
 c     for the PGPLOT library running on a 32-bit machine.
 c     (1.e-35 was found to be too small in some cases,
@@ -286,7 +288,7 @@ c
 
 
       subroutine rminmx(x,n1,n2,n,xmin,xmax)
-      real x,xmin,xmax
+      REAL*4 x,xmin,xmax
       dimension x(n2)
 cSm030515 these lines work for g77 under linux at PC
       xmin=+1.e30
@@ -304,7 +306,8 @@ c      xmax=-1.e38
 c====================================================================
 c====================================================================
       subroutine plotinit
-c-----initialise the otput file plot.ps for pgplot
+      include 'pgconst.i'
+c-----initialise the output file plot.ps for pgplot
       character*100 line,line_
       integer PGOPEN     
 
@@ -347,6 +350,7 @@ c=====================================================================
 c=====================================================================
       subroutine plotend
 c-----close the work with pgplot    
+      include 'pgconst.i'
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -383,19 +387,21 @@ cmnt      'loglin$',  and $loglog$'
 cmnt   ymin,ymax if .ne.0., specify min and max of yaxis.
 c
       implicit double precision (a-h,o-z)
+      include 'pgconst.i'
       dimension x(*),y(*),nx(*)
       character*(*) ilabx,ilaby
       character *4 text
       character(len=*) :: ll
 
 c     Conversion to real function for PGPLOT
-      REAL RBOUND
-c     PGPLOT REAL Variables:
+      REAL*4 RBOUND
+c     PGPLOT REAL*4 Variables:
+
 c      parameter (maxref=1000)
       parameter (maxref=10000)
-      REAL RILIN
-      REAL RPG1,RPG2
-      REAL RX(maxref),RY(maxref)
+      REAL*4 RILIN
+      REAL*4 RPG1,RPG2
+      REAL*4 RX(maxref),RY(maxref)
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -475,25 +481,27 @@ c         write(*,*)'rx',(RX(I),i=1,nnx)
          if (n.eq.1) then
            
              CALL PGPAGE
-             CALL PGSLS(1) !
-             CALL PGSVP(.2,.8,.3,.95)
+             CALL PGSLS(1)
+             CALL PGSVP(R4P2,R4P8,R4P5,R4P95) 
 c              write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+c            CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx,ilaby, ' ' )          
              CALL PGLINE(nnx,RX(inx),RY(inx))
          endif
          if (n.eq.3) then
 c------------vper1
              CALL PGPAGE
-             CALL PGSVP(.2,.8,.3,.95)
+             CALL PGSVP(R4P2,R4P8,R4P3,R4P95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+c             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx,'vper1', ' ' )
 c             write(*,*)'plot1dt vper1 RY',RY
 c             write(*,*)'plot1dt vper1 RX',RX 
@@ -503,12 +511,13 @@ c             write(*,*)'plot1dt vper1 RX',RX
          if (n.eq.4) then
 c------------zeta
              CALL PGPAGE
-             CALL PGSVP(.2,.8,.3,.95)
+             CALL PGSVP(R4P2,R4P8,R4P3,R4P95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy_total),rbound(fmaxy_total))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+C             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx, 'zeta', ' ' )
              CALL PGLINE(nnx,RX(inx),RY(inx))
          endif !3
@@ -542,26 +551,28 @@ c      name_param(n_param)     are the names of parameters
 c      param(n_param)          are the values of parameters
 c--------------------------------------------------------------
       implicit double precision (a-h,o-z)
+      include 'pgconst.i'
 cSAP80709
 c      dimension x(1),y(1),nx(1)
       dimension x(*),y(*),nx(*)
       character*(*)plot_name,ilabx,ilaby
       integer  n_param                 !is the number of parameters
       character*(*)name_param(n_param) !are the names of parameters
-      real param(*)                    !are the values of parameters
+      REAL*4 param(*)                    !are the values of parameters
 
       character*72 text_param             
       character *4 text
       character(len=*) :: ll
 
 c     Conversion to real function for PGPLOT
-      REAL RBOUND
-c     PGPLOT REAL Variables:
+      REAL*4 RBOUND
+
+c     PGPLOT REAL*4 Variables:
 c      parameter (maxref=1000)
       parameter (maxref=10000)
-      REAL RILIN
-      REAL RPG1,RPG2
-      REAL RX(maxref),RY(maxref)
+      REAL*4 RILIN
+      REAL*4 RPG1,RPG2
+      REAL*4 RX(maxref),RY(maxref)
                
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -636,7 +647,7 @@ c            write(*,*)'i,ry(i),y(i)',i,ry(i),y(i)
 c         write(*,*)'rx',(RX(I),i=1,nnx)
          if (n.eq.1) then
              CALL PGPAGE
-             CALL PGSVP(.2,.8,.3,0.80) !070710 new
+             CALL PGSVP(R4P2,R4P8,R4P3,R4P8)
 c             CALL PGSVP(.2,.8,.3,.95) !070710 old
 c             CALL PGSVP(.2,.8,.5,.95)
 
@@ -644,7 +655,7 @@ c              write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST', R40, 0, 'BCNST', R40, 0)
 c             CALL PGLAB(ilabx,ilaby, ' ' ) 
              CALL PGLAB(ilabx,ilaby,plot_name)                    
              CALL PGLINE(nnx,RX(inx),RY(inx))
@@ -652,13 +663,14 @@ c             CALL PGLAB(ilabx,ilaby, ' ' )
          if (n.eq.3) then
 c------------vper1
              CALL PGPAGE
-             CALL PGSVP(.2,.8,.3,.95)
+             CALL PGSVP(R4P2,R4P8,R4P3,R4P95)
 c             CALL PGSVP(.2,.8,.5,.95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+C             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx,'vper1', ' ' )
 c             write(*,*)'plot1dt vper1 RY',RY
 c             write(*,*)'plot1dt vper1 RX',RX 
@@ -669,12 +681,13 @@ c             write(*,*)'plot1dt vper1 RX',RX
 c------------zeta
              CALL PGPAGE
 c             CALL PGSVP(.2,.8,.3,.95)
-             CALL PGSVP(.2,.8,.5,.95)
+             CALL PGSVP(R4P2,R4P8,R4P5,R4P95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy_total),rbound(fmaxy_total))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+C             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx, 'zeta', ' ' )
              CALL PGLINE(nnx,RX(inx),RY(inx))
          endif !3
@@ -691,8 +704,8 @@ c      write(*,*)'rilin',rilin
         rilin=rilin+1
 c        write(*,*)'plot1dt_param i=',i,'rilin=',rilin
         write(text_param,570)name_param(i),param(i)
-cc       CALL PGMTXT('B',RILIN,-0.2,0.0,text_param)         
-        CALL PGMTXT('B',RILIN,-0.1,0.0,text_param)    
+cc       CALL PGMTXT('B',RILIN,-R4P2,R40,text_param)         
+        CALL PGMTXT('B',RILIN,-R4P1,R40,text_param)    
       enddo
 
 c      write(*,*) 'PLOT1Dt: HERE)'
@@ -723,21 +736,24 @@ c      name_param(n_param)     are the names of parameters
 c      param(n_param)          are the values of parameters
 
       implicit none
+      include 'pgconst.i'
 c-----input
       integer nxmax,nymax,n_contour,n_param,
      &nxmax_a,nymax_a,n_contour_a
-      real f(nxmax_a,nymax_a),x(nxmax_a),y(nymax_a),contour(n_contour_a)
+      REAL*4 f(nxmax_a,nymax_a),x(nxmax_a),y(nymax_a),
+     1       contour(n_contour_a)
       character*(*)plot_name,x_name,y_name
       character*(*)name_param(n_param)
-      real param(*)
-      real y_e,x_e,cnpar,T
+
+      REAL*4 param(*)
+      REAL*4 y_e,x_e,cnpar,T
 c-----external
-      real rbound !convert double to real bounded 1.e-33 and 1.e+33
+      REAL*4 rbound !convert double to real bounded 1.e-33 and 1.e+33
 c-----local
-      real tr(6),RILIN
-      real xmin,xmax
-      real ymin,ymax
-      real fmin,fmax
+      REAL*4 tr(6),RILIN
+      REAL*4 xmin,xmax
+      REAL*4 ymin,ymax
+      REAL*4 fmin,fmax
       integer i,j
       
 c      CHARACTER*7 LABEL
@@ -789,17 +805,17 @@ c-----Change the size and position of the viewport, specifying
 c     the viewport in normalized device coordinates.  Normalized
 c     device coordinates run from 0 to 1 in each dimension.
 c     SUBROUTINE PGSVP (XLEFT, XRIGHT, YBOT, YTOP)
-c     REAL XLEFT, XRIGHT, YBOT, YTOP
+c     REAL*4 XLEFT, XRIGHT, YBOT, YTOP
 
 c      CALL PGSVP(.2,.8,.3,.95) 
 c      CALL PGSVP(.2,.8,.5,.95) !070711 old 
-      CALL PGSVP(.2,.8,.5,.80) !070711 new
+      CALL PGSVP(R4P2,R4P8,R4P5,R4P8)
 
 c-----Change the window in world coordinate space that is to be mapped on
 c     to the viewport.  Usually PGSWIN is called automatically by PGENV,
 c     but it may be called directly by the user.
 c     SUBROUTINE PGSWIN (X1, X2, Y1, Y2)
-c     REAL X1, X2, Y1, Y2
+c     REAL*4 X1, X2, Y1, Y2
       call rminmx(x,1,nxmax,1,xmin,xmax)
       if (xmin .eq. xmax) xmin=.9*xmax-1.e-20
       call rminmx(y,1,nymax,1,ymin,ymax)
@@ -807,7 +823,8 @@ c     REAL X1, X2, Y1, Y2
       CALL PGSWIN (xmin,xmax,ymin,ymax)
 
 c-----PGBOX -- draw labeled frame around viewport
-      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+C      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+      CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
 
 c-----PGLAB write labels  for x,y axis and top of plot
       CALL PGLAB(x_name,y_name,plot_name)
@@ -845,7 +862,7 @@ c                      shear.
 c
 c     SUBROUTINE PGCONT (A, IDIM, JDIM, I1, I2, J1, J2, C, NC, TR)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, NC
-c     REAL A(IDIM,JDIM), C(*), TR(6)
+c     REAL*4 A(IDIM,JDIM), C(*), TR(6)
 cSm030515 these lines work for g77 fortran under linux on PC 
       fmin=1.e+30
       fmax=-1.e+30
@@ -888,7 +905,7 @@ c---------------------------------------------------------------
 c     SUBROUTINE PGCONL (A, IDIM, JDIM, I1, I2, J1, J2, C, TR,
 c    1                   LABEL, INTVAL, MININT)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, INTVAL, MININT
-c     REAL A(IDIM,JDIM), C, TR(6)
+c     REAL*4 A(IDIM,JDIM), C, TR(6)
 c     CHARACTER*(*) LABEL
 c     Label a contour map drawn with routine PGCONT. Routine PGCONT should
 c     be called first to draw the contour lines, then this routine should be
@@ -958,13 +975,13 @@ c         WRITE(*,*)'i,contour(i),LABEL',i,contour(i),LABEL
  560  format("Contour values:",A)
 c      RILIN=8.
       RILIN=5.
-      CALL PGMTXT('B',RILIN,-0.2,0.0,text)
+      CALL PGMTXT('B',RILIN,-R4P2,R40,text)
 
  570  format(1X,A,1pe10.3)
       do i=1,n_param
         rilin=rilin+1
         write(text,570)name_param(i),param(i)
-        CALL PGMTXT('B',RILIN,-0.2,0.0,text)    
+        CALL PGMTXT('B',RILIN,-R4P2,R40,text)    
       enddo
 
       j=0
@@ -981,7 +998,8 @@ c 150  format('i=',i3,'contour(I)=',1pe8.1)
          j=j+1
          write(text,160)2*i-1,contour(2*i-1),2*i,contour(2*i)
 c         CALL PGMTXT('B',rilin+j,0.,0.,text)   !070711 old
-         CALL PGMTXT('B',rilin+j,-0.2,0.,text) !070711 new
+c         CALL PGMTXT('B',rilin+j,-0.2,0.,text) !070711 new
+         CALL PGMTXT('B',rilin+j,-R4P2,R40,text)
       enddo
 
  160  format('i=',i2,'contour(I)=',1pe8.1,'i=',i2,'contour(I)=',1pe8.1)
@@ -1023,13 +1041,14 @@ c                       mark the points.
 c                        =9 circle with a central dot 
 c--------------------------------------------------------------
       implicit double precision (a-h,o-z)
+      include 'pgconst.i'
 cSAP080709
 c      dimension x(1),y(1),nx(1)
       dimension x(*),y(*),nx(*)
       character*(*)plot_name,ilabx,ilaby
       integer  n_param                 !is the number of parameters
       character*(*)name_param(n_param) !are the names of parameters
-      real param(*)                    !are the values of parameters
+      REAL*4 param(*)                    !are the values of parameters
 
       character*72 text_param             
       character *4 text
@@ -1037,19 +1056,19 @@ c      dimension x(1),y(1),nx(1)
 
 c-----for Drawing Markers:
       integer n_marker        ! number of points to be marked,
-      real  x_marker(*),y_marker(*)
+      REAL*4  x_marker(*),y_marker(*)
       integer n_symbol_marker
 
       
 
 c     Conversion to real function for PGPLOT
-      REAL RBOUND
-c     PGPLOT REAL Variables:
+      REAL*4 RBOUND
+c     PGPLOT REAL*4 Variables:
 c      parameter (maxref=1000)
       parameter (maxref=10000)
-      REAL RILIN
-      REAL RPG1,RPG2
-      REAL RX(maxref),RY(maxref)
+      REAL*4 RILIN
+      REAL*4 RPG1,RPG2
+      REAL*4 RX(maxref),RY(maxref)
                
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -1124,13 +1143,14 @@ c         write(*,*)'rx',(RX(I),i=1,nnx)
              CALL PGPAGE
 c             CALL PGSVP(.2,.8,.3,.95)
 c             CALL PGSVP(.2,.8,.5,.95)  !070710 old
-             CALL PGSVP(.2,.8,.4,0.80) !070710 new
+             CALL PGSVP(R4P2,R4P8,R4P5,R4P8)
 
 c              write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+c             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
 c             CALL PGLAB(ilabx,ilaby, ' ' ) 
              CALL PGLAB(ilabx,ilaby,plot_name)                    
              CALL PGLINE(nnx,RX(inx),RY(inx))
@@ -1153,12 +1173,13 @@ cendtest
 c------------vper1
              CALL PGPAGE
 c             CALL PGSVP(.2,.8,.3,.95)
-             CALL PGSVP(.2,.8,.5,.95)
+             CALL PGSVP(R4P2,R4P8,R4P5,R4P95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy),rbound(fmaxy))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+c             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx,'vper1', ' ' )
 c             write(*,*)'plot1dt vper1 RY',RY
 c             write(*,*)'plot1dt vper1 RX',RX 
@@ -1169,12 +1190,13 @@ c             write(*,*)'plot1dt vper1 RX',RX
 c------------zeta
              CALL PGPAGE
 c             CALL PGSVP(.2,.8,.3,.95)
-             CALL PGSVP(.2,.8,.5,.95)
+             CALL PGSVP(R4P2,R4P8,R4P5,R4P95)
 c             write(*,*) 'PLOT1D: fminx,fmaxx,fminy,fmaxy',
 c     +                    fminx,fmaxx,fminy,fmaxy
              CALL PGSWIN(rbound(fminx),rbound(fmaxx),
      +            rbound(fminy_total),rbound(fmaxy_total))
-             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+c             CALL PGBOX('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
+             CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
              CALL PGLAB(ilabx, 'zeta', ' ' )
              CALL PGLINE(nnx,RX(inx),RY(inx))
          endif !3
@@ -1192,8 +1214,8 @@ c      write(*,*)'riline',riline
 c        write(*,*)'plot1dt_param i=',i,'rilin=',rilin
         write(text_param,570)name_param(i),param(i)
 c        write(*,*)'i,text_param',i,text_param
-c       CALL PGMTXT('B',RILIN,-0.2,0.0,text_param)         
-        CALL PGMTXT('B',RILIN,-0.1,0.0,text_param)    
+c        CALL PGMTXT('B',RILIN,-R4P2,R40,text_param)         
+        CALL PGMTXT('B',RILIN,-R4P1,R40,text_param)    
       enddo
 
 c      write(*,*) 'PLOT1Dt: HERE)'
@@ -1226,23 +1248,24 @@ c      name_param(n_param)     are the names of parameters
 c      param(n_param)          are the values of parameters
 
       implicit none
+      include 'pgconst.i'
 c-----input
       integer nxmax,nymax,nxmaxa,nymaxa,
      &n_contour,n_param
-      real f(nxmaxa,nymaxa),x(nxmaxa),y(nymaxa),
+      REAL*4 f(nxmaxa,nymaxa),x(nxmaxa),y(nymaxa),
      &contour(n_contour)
       character*(*)plot_name,x_name,y_name
       character*(*)name_param(n_param)
-      real param(*)
+      REAL*4 param(*)
 c-----external
-      real rbound !convert double to real bounded 1.e-33 and 1.e+33
+      REAL*4 rbound !convert double to real bounded 1.e-33 and 1.e+33
 c-----local
-      real tr(6),RILIN
-      real xmin,xmax
-      real ymin,ymax
-      real fmin,fmax
+      REAL*4 tr(6),RILIN
+      REAL*4 xmin,xmax
+      REAL*4 ymin,ymax
+      REAL*4 fmin,fmax
       integer i,j
-      
+     
 c      CHARACTER*7 LABEL
       CHARACTER*2 LABEL
 
@@ -1273,16 +1296,15 @@ c-----Change the size and position of the viewport, specifying
 c     the viewport in normalized device coordinates.  Normalized
 c     device coordinates run from 0 to 1 in each dimension.
 c     SUBROUTINE PGSVP (XLEFT, XRIGHT, YBOT, YTOP)
-c     REAL XLEFT, XRIGHT, YBOT, YTOP
+c     REAL*4 XLEFT, XRIGHT, YBOT, YTOP
 
 c      CALL PGSVP(.2,.8,.3,.95) 
-      CALL PGSVP(.2,.8,.5,.95) 
-
+      CALL PGSVP(R4P2,R4P8,R4P5,R4P95)
 c-----Change the window in world coordinate space that is to be mapped on
 c     to the viewport.  Usually PGSWIN is called automatically by PGENV,
 c     but it may be called directly by the user.
 c     SUBROUTINE PGSWIN (X1, X2, Y1, Y2)
-c     REAL X1, X2, Y1, Y2
+c     REAL*4 X1, X2, Y1, Y2
       call rminmx(x,1,nxmax,1,xmin,xmax)
       if (xmin .eq. xmax) xmin=.9*xmax-1.e-20
       call rminmx(y,1,nymax,1,ymin,ymax)
@@ -1290,7 +1312,9 @@ c     REAL X1, X2, Y1, Y2
       CALL PGSWIN (xmin,xmax,ymin,ymax)
 
 c-----PGBOX -- draw labeled frame around viewport
-      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+c      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+      CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
+
 
 c-----PGLAB write labels  for x,y axis and top of plot
       CALL PGLAB(x_name,y_name,plot_name)
@@ -1328,7 +1352,7 @@ c                      shear.
 c
 c     SUBROUTINE PGCONT (A, IDIM, JDIM, I1, I2, J1, J2, C, NC, TR)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, NC
-c     REAL A(IDIM,JDIM), C(*), TR(6)
+c     REAL*4 A(IDIM,JDIM), C(*), TR(6)
     
 cSm030515 these lines work for g77 fortran under linux on PC 
       fmin=1.e+30
@@ -1378,7 +1402,7 @@ c---------------------------------------------------------------
 c     SUBROUTINE PGCONL (A, IDIM, JDIM, I1, I2, J1, J2, C, TR,
 c    1                   LABEL, INTVAL, MININT)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, INTVAL, MININT
-c     REAL A(IDIM,JDIM), C, TR(6)
+c     REAL*4 A(IDIM,JDIM), C, TR(6)
 c     CHARACTER*(*) LABEL
 c     Label a contour map drawn with routine PGCONT. Routine PGCONT should
 c     be called first to draw the contour lines, then this routine should be
@@ -1447,13 +1471,13 @@ c         WRITE(*,*)'i,contour(i),LABEL',i,contour(i),LABEL
       write(text,560)plot_name
  560  format("Contour values:",A)
       RILIN=8.
-      CALL PGMTXT('B',RILIN,-0.2,0.0,text)
+      CALL PGMTXT('B',RILIN,-R4P2,R40,text)
 
  570  format(1X,A,1pe10.3)
       do i=1,n_param
         rilin=rilin+1
         write(text,570)name_param(i),param(i)
-        CALL PGMTXT('B',RILIN,-0.2,0.0,text)    
+        CALL PGMTXT('B',RILIN,-R4P2,R40,text)    
       enddo
 
       j=0
@@ -1471,11 +1495,12 @@ c      do i=1,n_contour,2
       subroutine contour2d_test_1(nxmax,nymax,nxmaxa,nymaxa,f)
       implicit none
       include 'param.i'
+      include 'pgconst.i'
         
 c-----input
       integer nxmax,nymax,nxmaxa,nymaxa
 
-      real f(nxmaxa,nymaxa)
+      REAL*4 f(nxmaxa,nymaxa)
       
       integer i,j
 
@@ -1525,20 +1550,21 @@ c      name_param(n_param)     are the names of parameters
 c      param(n_param)          are the values of parameters
 
       implicit none
+      include 'pgconst.i'
 c-----input
       integer nxmax,nymax,n_contour,n_param
-      real f(nxmax,nymax),x(nxmax),y(nymax),contour(n_contour)
+      REAL*4 f(nxmax,nymax),x(nxmax),y(nymax),contour(n_contour)
       character*(*)plot_name,x_name,y_name
       character*(*)name_param(n_param)
-      real param(*)
-      real y_e,x_e,cnpar,T
+      REAL*4 param(*)
+      REAL*4 y_e,x_e,cnpar,T
 c-----external
-      real rbound !convert double to real bounded 1.e-33 and 1.e+33
+      REAL*4 rbound !convert double to real bounded 1.e-33 and 1.e+33
 c-----local
-      real tr(6),RILIN
-      real xmin,xmax
-      real ymin,ymax
-      real fmin,fmax
+      REAL*4 tr(6),RILIN
+      REAL*4 xmin,xmax
+      REAL*4 ymin,ymax
+      REAL*4 fmin,fmax
       integer i,j
       
 c      CHARACTER*7 LABEL
@@ -1563,16 +1589,16 @@ c-----Change the size and position of the viewport, specifying
 c     the viewport in normalized device coordinates.  Normalized
 c     device coordinates run from 0 to 1 in each dimension.
 c     SUBROUTINE PGSVP (XLEFT, XRIGHT, YBOT, YTOP)
-c     REAL XLEFT, XRIGHT, YBOT, YTOP
+c     REAL*4 XLEFT, XRIGHT, YBOT, YTOP
 
 c      CALL PGSVP(.2,.8,.3,.95) 
-      CALL PGSVP(.2,.8,.5,.95) 
+      CALL PGSVP(R4P2,R4P8,R4P5,R4P95)
 
 c-----Change the window in world coordinate space that is to be mapped on
 c     to the viewport.  Usually PGSWIN is called automatically by PGENV,
 c     but it may be called directly by the user.
 c     SUBROUTINE PGSWIN (X1, X2, Y1, Y2)
-c     REAL X1, X2, Y1, Y2
+c     REAL*4 X1, X2, Y1, Y2
       call rminmx(x,1,nxmax,1,xmin,xmax)
       if (xmin .eq. xmax) xmin=.9*xmax-1.e-20
       call rminmx(y,1,nymax,1,ymin,ymax)
@@ -1580,8 +1606,8 @@ c     REAL X1, X2, Y1, Y2
       CALL PGSWIN (xmin,xmax,ymin,ymax)
 
 c-----PGBOX -- draw labeled frame around viewport
-      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
-
+c      CALL PGBOX('BCNST',0.,0,'BCNST',0.,0)
+      CALL PGBOX('BCNST',R40,0,'BCNST',R40,0)
 c-----PGLAB write labels  for x,y axis and top of plot
       CALL PGLAB(x_name,y_name,plot_name)
  
@@ -1618,7 +1644,7 @@ c                      shear.
 c
 c     SUBROUTINE PGCONT (A, IDIM, JDIM, I1, I2, J1, J2, C, NC, TR)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, NC
-c     REAL A(IDIM,JDIM), C(*), TR(6)
+c     REAL*4 A(IDIM,JDIM), C(*), TR(6)
 cSm030515 these lines work for g77 fortran under linux on PC 
       fmin=1.e+30
       fmax=-1.e+30
@@ -1661,7 +1687,7 @@ c---------------------------------------------------------------
 c     SUBROUTINE PGCONL (A, IDIM, JDIM, I1, I2, J1, J2, C, TR,
 c    1                   LABEL, INTVAL, MININT)
 c     INTEGER IDIM, JDIM, I1, J1, I2, J2, INTVAL, MININT
-c     REAL A(IDIM,JDIM), C, TR(6)
+c     REAL*4 A(IDIM,JDIM), C, TR(6)
 c     CHARACTER*(*) LABEL
 c     Label a contour map drawn with routine PGCONT. Routine PGCONT should
 c     be called first to draw the contour lines, then this routine should be
@@ -1730,13 +1756,13 @@ c         WRITE(*,*)'i,contour(i),LABEL',i,contour(i),LABEL
       write(text,560)plot_name
  560  format("Contour values:",A)
       RILIN=8.
-      CALL PGMTXT('B',RILIN,-0.2,0.0,text)
+      CALL PGMTXT('B',RILIN,-R4P2,R40,text)
 
  570  format(1X,A,1pe10.3)
       do i=1,n_param
         rilin=rilin+1
         write(text,570)name_param(i),param(i)
-        CALL PGMTXT('B',RILIN,-0.2,0.0,text)    
+        CALL PGMTXT('B',RILIN,-R4P2,R40,text)    
       enddo
 
       j=0
@@ -1744,7 +1770,8 @@ c      do i=1,n_contour,2
        do i=1,n_contour,1
          j=j+1
          write(text,150)i,contour(i)
-         CALL PGMTXT('B',rilin+j,0.,0.,text)
+c         CALL PGMTXT('B',rilin+j,0.,0.,text)
+         CALL PGMTXT('B',rilin+j,R40,R40,text)
       enddo
 
  150  format('i=',i3,'contour(I)=',1pe8.1)

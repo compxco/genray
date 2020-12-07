@@ -6,8 +6,9 @@ c        iray -number of the ray at antenna         *
 c*****************************************************
       SUBROUTINE MK_GRAP(iray)
       IMPLICIT double precision (a-h,o-z)
-      INTEGER I,J
+      include 'pgconst.i'
       include 'param.i'
+      INTEGER I,J
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -101,6 +102,7 @@ cSAP110211
 c      SUBROUTINE MK_GRAPH(iray,nray,ifreq)  
       SUBROUTINE MK_GRAPH_old_110111(iray,nray,ifreq)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
 c-----input
@@ -545,6 +547,7 @@ c        must be.le.nbulk, j=1 for the electron gyrofrequency
 c*****************************************************
       SUBROUTINE MK_GRAPc(iray,iwopen,iwj)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
       include 'param.i'
       
@@ -701,6 +704,7 @@ c INPUT: from common block  'onetwo.i'              *
 c****************************************************
       SUBROUTINE mk_gronetwo
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I
       include 'param.i'
 
@@ -753,6 +757,7 @@ c        iray -number of the ray at antenna         *
 c****************************************************
       SUBROUTINE MK_GRAPT (iray,nray)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
       integer isave
@@ -929,6 +934,7 @@ c INPUT: from common blocks: onetwo, one, 'five' *
 c************************************************
       SUBROUTINE mkgrtool
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I
       include 'param.i'
       
@@ -1162,6 +1168,7 @@ c     r_opt_o is the root of the equation
       IMPLICIT double precision (a-h,o-z)
       
       include 'param.i'
+      include 'pgconst.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -1236,6 +1243,7 @@ c     r_opt_o is the root of the equation
       IMPLICIT double precision (a-h,o-z)
       
       include 'param.i'
+      include 'pgconst.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -1308,6 +1316,7 @@ c         iray -number of the ray at antenna         *
 c*****************************************************
       SUBROUTINE MK_GR3d(iray,nray)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
       integer isave
@@ -1454,6 +1463,7 @@ c         iray -number of the ray at antenna
 c*****************************************************
       subroutine mk_gremis(iray,nray,ifreq,nfreq)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
       integer isave
@@ -1685,6 +1695,7 @@ c         iray -number of the ray at antenna
 c*****************************************************
       subroutine mk_gremfr(iray,nray)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
       integer isave
@@ -1810,6 +1821,7 @@ c     zmax,zmin are the min and max values of vertical coordinate z
 c                at the limitter
       !implicit none
       implicit double precision (a-h,o-z)
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -1836,16 +1848,16 @@ c      parameter(n_rho_a=201)! is the number of points in small radius
       parameter(n_rho_a=ndensa)! is the number of points in small radius
       parameter(n_contour_wide=30) !is the number of contours
 
-      real f2d_b(n_r_a,n_z_a), ! magnetic field
+      REAL*4 f2d_b(n_r_a,n_z_a), ! magnetic field
      . f2d_bp(n_r_a,n_z_a), ! poloidal magnetic field
      . f2d_bt(n_r_a,n_z_a),  ! toroidal magnetic field
      . f2d_psi(n_r_a,n_z_a),  !poloidal flux 
      . f2d_xe(n_r_a,n_z_a), f2d_ye(n_r_a,n_z_a) !xe,ye
-      real x_axis(n_r_a),y_axis(n_z_a) ! mesh
+      REAL*4 x_axis(n_r_a),y_axis(n_z_a) ! mesh
       
-      real contour_b(n_contour),contpur_bt(n_contour),
+      REAL*4 contour_b(n_contour),contpur_bt(n_contour),
      .contour_bp(n_contour) !the values of contours 
-      real contour_wide(n_contour_wide)
+      REAL*4 contour_wide(n_contour_wide)
       real*8 f1d_bz(n_r_a),f1d_bt(n_r_a),dx_axis(n_r_a),
      .     f1d_xe(n_r_a),f1d_ye(n_r_a)
       real*8 f1d_dens_e(n_rho_a),f1d_temp_e(n_rho_a),
@@ -2064,6 +2076,7 @@ c      stop 'mk_graph.f in map_b'
       subroutine read_emfr_bin(iray)
 c-----reads emfr.bin file        
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2071,7 +2084,7 @@ c-----reads emfr.bin file
       
       include 'one.i'
       include 'write.i'
-      real a1,a2,a3,a4,a5,a6,a7,a8,a9,a10
+      REAL*4 a1,a2,a3,a4,a5,a6,a7,a8,a9,a10
 
       OPEN(95,file='emfr.bin',form='unformatted',status='old')
       write(*,*)' in read_emfr_bin nfreq=',nfreq
@@ -2115,6 +2128,7 @@ c
 c     Plots D_cold(ReN_perp) to plot.ps file
 c----------------------------------------------------------------------------
       implicit none
+      include 'pgconst.i'
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2126,7 +2140,7 @@ c-----input:
      &npar     ! parallel refractive index
       integer n_param                    !number of input parameters
       character*(*) name_param(*)        !names  of the input parameters
-      real param(*)                      !values of the input parameters    
+      REAL*4 param(*)                      !values of the input parameters    
 c-----locals
       integer n_nperp_a !maximal number of n_nperp
 c      parameter(n_nperp_a=10000)
@@ -2187,6 +2201,7 @@ c-----calculates cold plasma dispersion function disp_func
 c     in space point (z,r,phi)
 c      with refractive index components: cnpar,cnper
       implicit none
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2222,6 +2237,7 @@ c     for cold plasma dispersion
 c     in z,r,phi point
 c     
       implicit none 
+      include 'pgconst.i'
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2252,12 +2268,12 @@ c-----local
 
       integer n_param                    !number of parameters at figure
       character*(20) name_param(4)       !names  of parameters at figure
-      real param(4)                      !values of parameters at figure 
+      REAL*4 param(4)                      !values of parameters at figure 
 
 c-----for Drawing Markers:
       integer n_marker        ! number of points to be marked,
       parameter  (n_marker=1)   
-      real  x_marker(n_marker),y_marker(n_marker)
+      REAL*4  x_marker(n_marker),y_marker(n_marker)
       integer n_symbol_marker
       real*8 gam_ray
 c-----externals
@@ -2461,6 +2477,7 @@ c     for cold plasma dispersion
 c     in z,r,phi point
 c     
       implicit none 
+      include 'pgconst.i'
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2499,12 +2516,12 @@ c-----local
 
       integer n_param                    !number of parameters at figure
       character*(22) name_param(4)       !names  of parameters at figure
-      real param(4)                      !values of parameters at figure 
+      REAL*4 param(4)                      !values of parameters at figure 
 
 c-----for Drawing Markers:
       integer n_marker        ! number of points to be marked,
       parameter  (n_marker=1)   
-      real  x_marker(n_marker),y_marker(n_marker)
+      REAL*4  x_marker(n_marker),y_marker(n_marker)
       integer n_symbol_marker
       real*8 gam_ray
 c-----externals
@@ -2726,6 +2743,7 @@ c
 c     Plots ReD_hot(ReN_perp) to plot.ps file
 c----------------------------------------------------------------------------
       implicit none
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -2742,7 +2760,7 @@ c-----input:
      &npar     ! parallel refractive index
       integer n_param                         !number of input parameters
       character*(*) name_param(n_param)        !names  of the input parameters
-      real param(n_param)                      !values of the input parameters    
+      REAL*4 param(n_param)                      !values of the input parameters    
 c-----locals
       integer n_nperp_a !maximal number of n_nperp
 c      parameter(n_nperp_a=10000)
@@ -2943,6 +2961,7 @@ C     with a path through the plasma (midplane for example)
 
       !implicit none
       implicit double precision (a-h,o-z)
+      include 'pgconst.i'
 
       include 'param.i' ! specifies code parameters 
       
@@ -2973,10 +2992,10 @@ c-----external
 
       double precision raxis,zaxis,
      &fpi,fci,flh,fx1,fx2
-      real ss(maxnstep),fuhs(maxnstep)
-      real fces(maxnstep),rs(maxnstep)
-      real fpes(maxnstep),rhos(maxnstep),den_e_s(maxnstep)
-      real xmin,xmax,ymin,ymax,newx(maxnstep),newy(maxnstep)
+      REAL*4 ss(maxnstep),fuhs(maxnstep)
+      REAL*4 fces(maxnstep),rs(maxnstep)
+      REAL*4 fpes(maxnstep),rhos(maxnstep),den_e_s(maxnstep)
+      REAL*4 xmin,xmax,ymin,ymax,newx(maxnstep),newy(maxnstep)
      
       integer xtitlelen,titlelen,PGOPEN,nchoice,j,k
       CHARACTER filename*40, line*1000, xtitle*100, titlestr*200
@@ -3102,7 +3121,7 @@ C***** Plot freq0, and dimensionless scale, and eta
         ymax=max_plot_freq
 
         CALL PGSLW(4)
-        CALL PGSCH(1.5)
+        CALL PGSCH(R41P5)
         CALL PGENV(xmin,xmax,ymin,ymax,0,1)
 c        print *,'Past PGENV '
 C*** Sets limit for plot.
@@ -3156,15 +3175,15 @@ C*** plot fundamental and up to 5th harmonic
 C***** magnetic axis
 C** Now add labels   :BEED TO ADJUST FOR .not.ARIES (BH)
         CALL PGSCI(WHITE)
-        CALL PGTEXT(4.0,31.0,'f\dce\u')
-        CALL PGTEXT(3.8,70.0,'2 f\dce\u')
-        CALL PGTEXT(3.8,110.0,'3 f\dce\u')
+        CALL PGTEXT(R44,R431,'f\dce\u')
+        CALL PGTEXT(R43P8,R470,'2 f\dce\u')
+        CALL PGTEXT(R43P8,R4110,'3 f\dce\u')
         CALL PGSCI(RED)
-        CALL PGTEXT(1.4,45.0,'f\dpe\u')
+        CALL PGTEXT(R41P4,R445,'f\dpe\u')
         CALL PGSCI(BLUE)
-        CALL PGTEXT(2.0,165.0,'f\duh\u')
+        CALL PGTEXT(R42,R4165,'f\duh\u')
         CALL PGSCI(GREEN)
-        CALL PGTEXT(4.75,10.0,'R\dm\u')
+        CALL PGTEXT(R44P75,R410,'R\dm\u')
 c        call PGEND
 
 c--------------------------------------------------------
@@ -3301,6 +3320,7 @@ c INPUT: from common block  'onetwo.i'              *
 c****************************************************
       SUBROUTINE mk_gronetwo_1
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I
       include 'param.i'
       
@@ -3363,6 +3383,7 @@ c     writes file wall.bin
 c     with chamber wall coordinates
 c----------------------------------------------------
       implicit none
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -3419,6 +3440,7 @@ c      write(*,*)'mk_graph.f n_wall_add',n_wall_add
 c     
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -3837,6 +3859,7 @@ c-----------------------------------------------------
 c-----plot old and new power along ray at one LSC power iteration
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -3923,7 +3946,7 @@ C***** Plot  dimensionless scale
 c      write(*,*)' in plot_lsc_powers 1'  
 
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
       CALL PGENV(s_pol_min,s_pol_max,delpwr_min,delpwr_max,0,1)
 
 c      write(*,*)' in plot_lsc_powers 2'
@@ -4048,6 +4071,7 @@ c-----plot old and new QL coefficient
 c      at given small radiual point irho
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -4152,7 +4176,7 @@ C***** Plot  dimensionless scale
      &          ,d_ql_lsc_lh_ar_min,d_ql_lsc_lh_ar_max
 
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
       CALL PGENV(v_par_dt_min,v_par_dt_max,
      &           d_ql_lsc_lh_ar_min,d_ql_lsc_lh_ar_max,0,1)
 
@@ -4270,6 +4294,7 @@ c-----plot old and new log_e [fe(v_par**2*sign(v_par))]
 c      at given small radiual point irho
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -4400,7 +4425,7 @@ c      write(*,*)'plot_log_fe  Lnfe_min Lnfe_max',Lnfe_min,Lnfe_max
 
     
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
 c      CALL PGENV(v_par_dt_min,v_par_dt_max,
 c    &           Lnfe_min,Lnfe_max,0,1)
       CALL PGENV(sv_par_dt_min,sv_par_dt_max,
@@ -4517,6 +4542,7 @@ c-----plot old and new log_e [fe(v_par**2*sign(v_par))]
 c      at given small radiual point irho
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -4661,7 +4687,7 @@ c     &          integral_min,integral_max
 
     
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
 c      CALL PGENV(v_par_dt_min,v_par_dt_max,
 c    &           Lnfe_min,Lnfe_max,0,1)
 c      CALL PGENV(sv_par_dt_min,sv_par_dt_max,
@@ -4788,6 +4814,7 @@ c     rho_bin_center_lsc(i) i=1,n_psi_TSC
 c
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -4928,7 +4955,7 @@ c      write(*,*)'in plot_lsc_powdens_rho y_min,y_max',y_min,y_max
 C***** Plot  dimensionless scale
    
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
       CALL PGENV(rho_min,rho_max, y_min, y_max,0,1)
 
 c      write(*,*)' in  plot_lsc_powdens_rho 2'
@@ -5039,7 +5066,7 @@ c-------------------------------------------------------------
 C***** Plot  dimensionless scale
    
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
       CALL PGENV(rho_min,rho_max, y_min, y_max,0,1)
 c     print *,'Past PGENV '
 C***  Sets limit for plot.
@@ -5126,6 +5153,7 @@ c------------------------------------------------------------
       subroutine MK_GRAPH_LSC(nray)
 c-----creates lsc.bin file
       IMPLICIT none 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -5160,6 +5188,7 @@ c-----local
 c-----prepare delp[wr.bin file for xdraw plot
       IMPLICIT double precision (a-h,o-z)
 
+      include 'pgconst.i'
       include 'param.i'
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -5185,6 +5214,7 @@ c-----prepare delp[wr.bin file for xdraw plot
 c-----plot old and new power along ray at one LSC power iteration
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -5268,7 +5298,7 @@ C***** Plot  dimensionless scale
 c      write(*,*)' in plot_lsc_powers 1'  
 
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
       CALL PGENV(s_pol_min,s_pol_max,delpwr_min,delpwr_max,0,1)
 
 c      write(*,*)' in plot_lsc_powers 2'
@@ -5374,7 +5404,7 @@ c         CALL PGLINE(2,newx,newy)
          enddo
 
          CALL PGSLW(4)
-         CALL PGSCH(1.5)
+         CALL PGSCH(R41P5)
          CALL PGENV(s_pol_min,s_pol_max,delpwr_min,delpwr_max,0,1)
 
          CALL PGLAB(xtitle(1:xtitlelen),'delpwr'
@@ -5435,6 +5465,7 @@ c     frequency_min < frequency/frqncy <frequency_max
 c     frqncy is the wave frequency given in 'one_nml.i'
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -5474,7 +5505,7 @@ c-----locals
       integer  n_param                    !number of input parameters
       parameter  (n_param=2) 
       character*(10) name_param(n_param)   !names  of the input parameters
-      real param(n_param)                 !values of the input parameters
+      REAL*4 param(n_param)                 !values of the input parameters
 
 c-----external
       real*8 b,x,y
@@ -5932,6 +5963,7 @@ cSAP090313
 c      SUBROUTINE MK_GRAPH(iray,nray,ifreq,nfreq,nbulk)
       SUBROUTINE MK_GRAPH(iray,nray,ifreq)
       IMPLICIT double precision (a-h,o-z)
+      include 'pgconst.i'
       INTEGER I,J
 
 c-----input
@@ -6377,6 +6409,7 @@ c-----plot  log_e [fe(v_par**2*sign(v_par))]
 c     at given small radiual point irho
       implicit none
 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -6435,7 +6468,7 @@ C Fill-area style:
       PARAMETER (HOLLOW=2)
 
       character*4 name_param 
-      REAL RILIN
+      REAL*4 RILIN
       character*72 text_param      
 c      write(*,*)'in subroutine plot_log_fe irho=',irho
 
@@ -6500,7 +6533,7 @@ c      write(*,*)'plot_log_fe  Lnfe_min Lnfe_max',Lnfe_min,Lnfe_max
 
     
       CALL PGSLW(4)
-      CALL PGSCH(1.5)
+      CALL PGSCH(R41P5)
 c      CALL PGENV(v_par_dt_min,v_par_dt_max,
 c    &           Lnfe_min,Lnfe_max,0,1)
       CALL PGENV(sv_par_dt_min,sv_par_dt_max,
@@ -6610,7 +6643,7 @@ c      newx(2)=v_par_dt_min
       name_param='irho'
       write(text_param,570)name_param,real(irho)
 
-      CALL PGMTXT('B',RILIN,-0.1,0.0,text_param)  
+      CALL PGMTXT('B',RILIN,-R4P1,R40,text_param)  
 
 c      write(*,*)'end plot_log_fe'
 
@@ -6620,6 +6653,7 @@ c      write(*,*)'end plot_log_fe'
       
       subroutine plot_log_fe_vpar2_param(irho)
       implicit none 
+      include 'pgconst.i'
       include 'param.i'
       
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -6637,7 +6671,7 @@ c-----locals
       parameter  (n_param=2)
       
       character*20 name_param(n_param)  !names  of parameters
-      real param(n_param)                      !values of parameters  
+      REAL*4 param(n_param)                      !values of parameters  
 
       real*8, pointer :: newx(:),newy(:) 
       real*8  zero,sign

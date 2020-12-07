@@ -2410,7 +2410,8 @@ c     INPUTS:
 c     nbulk              the total number of plasma species
 c     ibw  =0 the calculation the roots for O or X modes
 c          =1 the calculation the root for BW
-c     cnper_0 the approximation of N_perp X or X mode from the cold plasma
+c     cnper_0 the approximation of N_perp, O or X mode from the cold plasma
+!             according to ioxm parameter
 c     cnper2p,cnper2m are N_perp**2 roots of the cold plasma dispersion 
 c     the data from common block /nperpcomp/
 c     massc(nbulka)       the masses of the plasma species
@@ -2455,6 +2456,7 @@ cfor test
       double precision step,x_test,d_test
     
       integer imode,jdelta_n,j_max,jmax,imoden,irootm,irootp
+      integer icheck_d_left_good, icheck_d_right_good !local
 c-----the number to extend the interval for the determination of the 
 c     n_perpendicular root from the hot dispersion function
 c     The hot plasma (X or O mode) root will be searched at the interval
@@ -2513,14 +2515,41 @@ c         write(*,*)'in hotnp ibw=',ibw
          d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
      &                 vflowc,nllc,n_perp_r,1,K))
          write(*,*)'hotnp d_left,d_right',d_left,d_right
-         if(dabs(d_left).lt.1.d-7)then
-            nperp=n_perp_l
-            goto 30 !->root is found (got lucky)
+         
+         !YuP[2020-11-25] Adjusted logic for searching the proper root,
+         !which is problematic in near vacuum (when two roots are very close).
+         icheck_d_left_good=  0 ! to be determined/adjusted
+         icheck_d_right_good= 0 ! to be determined/adjusted
+         if(dabs(d_left).lt.1.d-7)then ! Good, within accuracy
+            icheck_d_left_good=  1
          endif
+         !But also check the other root - maybe it gives D()<1e-7, 
+         !and maybe it is even better
          if(dabs(d_right).lt.1.d-7)then
-            nperp=n_perp_r
-            goto 30 !->root is found (got lucky)
+            icheck_d_right_good= 1 
          endif
+         !Now the logic itself:
+         if(icheck_d_left_good+icheck_d_right_good.eq.2)then
+           !both roots are good. Select one that is closer 
+           !to target cold value cnper_0 
+           !(from input: O or X mode according to ioxm parameter)
+           if(dabs(n_perp_l-cnper_0).lt.dabs(n_perp_r-cnper_0))then
+             nperp=n_perp_l
+             goto 30 !->root is found (got lucky)
+           else
+             nperp=n_perp_r
+             goto 30 !->root is found (got lucky)
+           endif
+         elseif(icheck_d_left_good.eq.1)then !only this one is good
+           nperp=n_perp_l
+           goto 30 !->root is found (got lucky)
+         elseif(icheck_d_right_good.eq.1)then !only this one is good
+           nperp=n_perp_r
+           goto 30 !->root is found (got lucky)
+         else ! none is good
+           continue
+         endif
+         
 c_end_test 070730
 
          delta_n=dabs(n_perp_r - n_perp_l)
@@ -2538,14 +2567,39 @@ c_end_test 070730
                d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
      .                   vflowc,nllc,x2,1,K))
                !write(*,*)'x  D(x)=',x2,d_right 
-               if(dabs(d_left).lt.1.d-7)then
-                  nperp=x1
-                  goto 30 !->root is found (got lucky)
+               
+               icheck_d_left_good=  0 ! to be determined/adjusted
+               icheck_d_right_good= 0 ! to be determined/adjusted
+               if(dabs(d_left).lt.1.d-7)then ! Good, within accuracy
+                icheck_d_left_good=  1
                endif
+               !But also check the other root - maybe it gives D()<1e-7, 
+               !and maybe it is even better
                if(dabs(d_right).lt.1.d-7)then
-                  nperp=x2
-                  goto 30 !->root is found (got lucky)
+                icheck_d_right_good= 1 
                endif
+               !Now the logic itself:
+               if(icheck_d_left_good+icheck_d_right_good.eq.2)then
+                 !both roots are good. Select one that is closer 
+                 !to target cold value cnper_0 
+                 !(from input: O or X mode according to ioxm parameter)
+                 if(dabs(x1-cnper_0).lt.dabs(x2-cnper_0))then
+                   nperp=x1
+                   goto 30 !->root is found (got lucky)
+                 else
+                   nperp=x2
+                   goto 30 !->root is found (got lucky)
+                 endif
+               elseif(icheck_d_left_good.eq.1)then !only this one is ok
+                 nperp=x1
+                 goto 30 !->root is found (got lucky)
+               elseif(icheck_d_right_good.eq.1)then !only this one is ok
+                 nperp=x2
+                 goto 30 !->root is found (got lucky)
+               else ! none is good
+                 continue
+               endif
+
                if (d_left*d_right.le.0.d0) then
                   goto 10 !-> root is between x1 and x2; find exact root
                endif
@@ -2561,8 +2615,11 @@ c        for the n_perp solver
          
          x=dmin1(n_perp_l,n_perp_r)
         
+         icheck_d_left_good=  0 ! to be determined/adjusted
+         icheck_d_right_good= 0 ! to be determined/adjusted
+
          if (dabs(n_perp_l-cnper_0).lt.1.d-7) then
-c--------imode=1, cold plasma mode coincides with the left
+c--------imode=1, cold plasma mode (target value cnper_0) coincides with the left
 c                 boundary of cold of plasma interval
             imode=1
             d_left=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
@@ -2570,13 +2627,14 @@ c                 boundary of cold of plasma interval
             write(*,*)'hotnp: n_perp_l=cnper_0=',cnper_0,
      &                '  D(cnper_0)=',d_left 
             if (dabs(d_left).lt.1.d-7) then
-               nperp=cnper_0
+               icheck_d_left_good=  1
+               nperp=cnper_0 ! or n_perp_l ?
                goto 30 !->root is found (got lucky)
             endif
          endif
          
          if (dabs(n_perp_r-cnper_0).lt.1.d-7) then
-c--------imode=2, cold plasma mode coincides with the right
+c--------imode=2, cold plasma mode (target value cnper_0) coincides with the right
 c                 boundary of cold of plasma interval
             imode=2
             d_right=dreal(dhot_sum(nbulkc,massc,xc,yc,tec,tpopc,
@@ -2584,7 +2642,8 @@ c                 boundary of cold of plasma interval
             write(*,*)'hotnp: n_perp_r=cnper_0=',cnper_0,
      &                '  D(cnper_0)=',d_right 
             if (dabs(d_right).lt.1.d-7) then
-               nperp=cnper_0
+               icheck_d_right_good= 1
+               nperp=cnper_0 ! or n_perp_r ?
                goto 30 !->root is found (got lucky)
             endif
          endif

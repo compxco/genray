@@ -1140,7 +1140,7 @@ c-----locals
       integer 
      &i,j,jbinmin,jbinmax,nv,i_geom_optic_loc,
      &k
-    
+      integer jjkk
       logical first
               
 c-----external
@@ -1335,8 +1335,9 @@ c-----------------------------------------------------------
       endif
  100  continue
 cSAP100504----to use only one rho bin
-      hrho=1.0d0/n_psi_TSC 
-      jbinmin=aint(rhobegin/hrho)+1      ! the number of radial bin
+      hrho=1.0d0/n_psi_TSC
+cAYP aint->idint 
+      jbinmin=idint(rhobegin/hrho)+1      ! the number of radial bin
       if(jbinmin.gt.n_psi_TSC) jbinmin=n_psi_TSC 
       jbinmax=jbinmin
  
@@ -1537,6 +1538,19 @@ c
 c        ratio=[(delpwr_nc(is-1,ir)-delpwr_nc(is,ir))*del_s_pol_bin_lsc(j)/del_s_pol]
 c        /delta_pow_loc
 
+CAYP201124 added for error tracing as delta delpwr can be 0
+c         write(*,*)'delta_pow_loc/delwpr_nc',
+c     &              delta_pow_loc,delpwr_nc(is-1,ir)
+
+CAYP201124 avoid zero powers
+       jjkk=0
+       if(dabs(delpwr_nc(is-1,ir)).lt.1.d-177) jjkk=jjkk+1
+       if(dabs(delta_pow_loc).lt.1.d-177) jjkk=jjkk+1
+       if(jjkk.gt.0) then
+        ratio=1.d0
+c         write(*,*)'delta_pow_loc/delwpr_nc',
+c     &              delta_pow_loc,delpwr_nc(is-1,ir)
+       else
          if (dabs(delta_pow_loc/delpwr_nc(is-1,ir)).gt.1.d-8) then
            if(((delpwr_nc(is-1,ir)-delpwr_nc(is,ir))/
      &        delpwr_nc(is-1,ir))
@@ -1570,7 +1584,7 @@ c             write(*,*)'is,j,ratio',is,j,ratio
          endif
 c         ratio=1.d0
 c         write(*,*)'j,ratio',j,ratio
-
+        endif
 
 c--------if D_QL is too big: D_QL*ratio > D_Coulomb*1.d14 then
 c           it will be set D_QL=D_Coulomb*1.d14
@@ -1862,7 +1876,7 @@ c---------------------------------------------------------
      &      d_eps_r_d_p_dev_d_eps_r_d_omega) 
 
       hrho=1.d0/n_psi_TSC     ! radial step
-      k=aint(rho/hrho)+1      ! the number of radial bin
+      k=idint(rho/hrho)+1      ! the number of radial bin
       v_te=v_te_bin_center_lsc(k)   !(sqrt(T_e/m_e) electron thermal 
                                      !velocity [cm/sec]
       x_e=x(z,r,phi,1)                                  !for calculation K_xx_i
@@ -2322,7 +2336,7 @@ c        j is the number of the central bin radial point of TSC mesh
 
          hrho=1.0d0/n_psi_TSC 
 cSAP100504--------like in the old version
-         k=aint(rho/hrho)+1      ! the number of radial bin  
+         k=idint(rho/hrho)+1      ! the number of radial bin  
          if(k.gt.n_psi_TSC) k=n_psi_TSC
          v_res=(cvac/v_te_bin_center_lsc(k))/cnpar   
          sigma_lsc=dabs(v_res*wdnpar_nc(is,iray)/cnpar)
@@ -3015,9 +3029,9 @@ c-----local
          goto 10
       endif
 
-      k=aint(rhol/hrho)+1                       ! the number of radial bin
-      n=aint(v_par/h_v)                         ! the number of velocity 
-                                                ! mesh bin
+      k=idint(rhol/hrho)+1                    ! the number of radial bin
+      n=idint(v_par/h_v)                      ! the number of velocity 
+                                              ! mesh bin
       if(v_par.ge.0.d0) then
         n_left=n
         n_right=n+1

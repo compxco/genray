@@ -9,10 +9,10 @@ c        *                                                  *
 c        * Authors: Alexander P. Smirnov (primary)          *
 c        *          Moscow State University                 *
 c        *          (sap@ns.cnt.ru, sap@cs.msu.su)          *
-c        *          R.W. Harvey          (secondary)        *
-c        *          CompX                                   *
-c        *          (bobh@compxco.com)                      *
-c        *                                                  *
+c        *          R.W. Harvey (secondary), CompX,         *
+c        *          (bobh@compxco.com), and Yu.V. Petrov    *
+c        *          CompX, since 2009.                      *
+c        *       
 c        * Manual: GENRAY, Report CompX-01-2000 (2000)      *
 c        *                 CompX, PO Box 2672, Del Mar, CA  * 
 c        *                 www.compxco.com/Genray_manual.pdf* 
@@ -1024,9 +1024,16 @@ CWRITE       write(*,*)'genray.f before  gr_OX_optimal_direction'
 cSAP080422
          ifreq_write=1 !it is used in dinit_1ray
          call gr_OX_optimal_direction(ndim)
+         WRITE(*,*)' i_ox=1 run: Done with gr_OX_optimal_direction.'
+         WRITE(*,*)' i_ox=1 run: Normal exit.'
       endif
       endif  !On myrank=0    !----------------------------myrank=0
 
+      if (i_ox.eq.1) then
+        !YuP[2020-11-25] Moved this STOP from gr_OX_optimal_direction.
+        STOP ! stop at all MPI cores.  Normal exit for i_ox=1
+        !No need to perform other calculations.
+      endif
 
 c---------------------------------------------------------------
 CWRITE       write(*,*)'genray.f before   adj_chi_function'

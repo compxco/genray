@@ -6,9 +6,13 @@
 !  relations. 
 !  Several RF current drive efficiency formulas area available,
 !  including using the ADJ self-adjoint method of Karney, Fisch, Reiman.
-!  
-!  There is a 1D-in-velocity QL calc of lower hybrid wave absorption and current,
-!  following methods in Dave Ignat's LSC code.
+!
+!  Main code authors are A.P. Smirnov (Moscow State University), R.W. Harvey, 
+!  and Yu.V. Petrov  (CompX, Del Mar).  Other authors have contributed
+!  code, as indicated for several dispersion and current drive options below.
+!
+!  There is a 1D-in-velocity QL calc of lower hybrid wave absorption and 
+!  current, following methods in Dave Ignat's LSC code.
 !
 !  In addition, the code can be used to calculate nonthermal electron cyclotron
 !  emissions (ECE), using namelist specified non-Maxwellisan distributions, or 
@@ -19,21 +23,22 @@
 !GENRAY can read the present file as a namelist file called genray.in with inputs
 !  in the MKSA system (given that there is no genray.dat file), except 
 !  temperatures given in keV.
-!  If there is a genray.dat file, it takes precedence as the namelist input file.
-!  The file, genray.in, differs from an alternative genray.dat namelist file 
-!  in that the latter uses mixed units (the preference of some users).  
+!  If there is a genray.dat file, it takes precedence as the namelist input
+!  file. The file, genray.in, differs from an alternative genray.dat namelist
+!  file in that the latter uses mixed units (the preference of some users).  
 !  In this genray_help file we include the units to be used for genray.in and
 !  and indicate differences for the genray.dat files with !genray.dat: at the
 !  beginning of the line.
 !
 !Several use cases/regression tests are available in a subdirectory 
-!  00_Genray_Regression_tTests/,illustrating various functionalities of the code.
+!  00_Genray_Regression_Tests/,illustrating various functionalities of the code.
 !Also, there are several README* files in the distribution.
 !
 !For a general outline/manual of the GENRAY code capabilities, see 
 !  http://www.compxco.com/genray.html  and https://www.github.com/compxco/genray
 !
-!The code is open source, available at https://www.github.com/compxco .
+!The code is open source, available at https://www.github.com/compxco, under
+!   the GNU GENERAL PUBLIC LICENSE (specified for the code in genray.f).
 !
 !The primary references we use for code attribution are:
 !  A.P. Smirnov, R.W. Harvey, and K. Kupfer, A general ray tracing code GENRAY, 
@@ -439,14 +444,14 @@
          !  For istart=1 (EC cone) starting method, choose
          !  how the EC ray is launched with respect to the LCFS:
          ! istep_in_lcfs=1 means Step inside LCFS (slightly).
-         !  This is the default option, for reverse consistency with 
-         !  original coding.
+         !  This is the default option, for backwards compatibility with 
+         !  the original coding.
          ! istep_in_lcfs=0 means Start ray-tracing directly from {rst,zst} even
          !  if it is far outside  of the LCFS. That is, no stepping inside LCFS
          !  to find the starting position. This is more physical, since in 
          !  sgeneral there is ome plasma outside of LCFS (exponential drop-off
-         !   of density),and this option is required for model accracy in cases
-         !   when O-X conversion happens just outside of LCFS.
+         !  of density),and this option is required for model accuracy in cases
+         !  when O-X conversion happens just outside of LCFS.
 !-----------------------------------------------------------------------
  &wave
  frqncy=45.0d+9   !MKSA difference from genray.dat
@@ -487,8 +492,8 @@
          !  For istart=1 (EC cone) starting method, choose
          !  how the EC ray is launched with respect to the LCFS:
          ! istep_in_lcfs=1 means Step inside LCFS (slightly).
-         !  This is the default option, for reverse consistency with original 
-         !  coding.
+         !  This is the default option, for backward compatibility with 
+         !  original coding.
          ! istep_in_lcfs=0 means Start ray-tracing directly from {rst,zst} even
          !  if it is far outside  of the LCFS. That is, no stepping inside LCFS.
          !  This is more physical, because there is always some plasma
@@ -2884,7 +2889,8 @@ radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
 !------------------------------------------------------------------------
 !namelist related to calculation of EC cone vertex coordinates
 !for the optimal OX mode  conversion (details on this calculation
-!will be given in the Genray manual)
+!will be given in the Genray manual).  This is usually used for OXB
+!mode conversion heating and current drive of high density plasmas.
 !------------------------------------------------------------------------
 ! i_ox =0 /default/ do not use these calculations.
 !      =1 calculations of the optimal EC cone vertex angles for OX 
@@ -2937,7 +2943,7 @@ radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
 !         If xe < (1-eps_xe) then this subroutine will 
 !         creates the ray jump in small radius direction
 !         and find the X mode.
-!         eps_xe=1.d-2 is seted as default in dinit.f
+!         eps_xe=1.d-2 is set as default in dinit.f
 !------------------------------------------------------------------------
 &ox
 i_ox=2

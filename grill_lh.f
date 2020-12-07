@@ -53,7 +53,8 @@ c                            pwcpl(n)=power_spectrum(anzin(n))*
 c                                     delta_npar_bin(n)= 1.d0/nnkpari
 c
 c                            For  i_n_poloidal=4 it is specifying two meshes:
-c                            a) n_toroidal mesh anztorin(ntor) and             c                            b) n_poloidal mesh anzpolin(npolmesh) 
+c                            a) n_toroidal mesh anztorin(ntor) and             
+c                            b) n_poloidal mesh anzpolin(npolmesh) 
 c                            for the power spectrum
 c                            pwcpl_tp(1:nnktori,1:nnkpoli)=pwcpl_t*pwcpl_t 
 c                         =1 equispaced meshes (default)
@@ -338,8 +339,19 @@ c     Transformation of the total antenna power from MW to erg/sec
 c-----------------------------------------------------------------
       powtotlh=0.d0
       do i=1,ngrill
-         powers(i)=powers(i)*1.d13   !erg/sec
-         powtotlh=powtotlh+powers(i)
+CAYP201124 this was bug         powers(i)=powers(i)*1.d13   !erg/sec  
+
+      !Originally, it was envisioned this subroutine would be called
+      !   only once, at each execution. OXB interation (i_ox=1) of
+      !   could lead to many calls (although power not relevant
+      !   for this case).
+      !YuP[2020-11-25] Causing overflow, if many calls?
+      !YuP[2020-11-25] However, array powers() is used further 
+      !in this subroutine, in erg/sec units.
+      !If we don't rescale powers() here, 
+      ! it should be done at all those lines below.
+      !YuP adjusted all those lines below.
+         powtotlh=powtotlh+powers(i)*1.d13
       enddo
 
       write(*,*)'powtotlh',powtotlh
@@ -521,7 +533,7 @@ c-----------------------------------------------------------------------
 	   write(*,*)'nnkpari',nnkpari
 	   if(nnkpari.eq.1)then
 	     anzin(1)=an0
-	     pwcpl(1)=powers(i)
+	     pwcpl(1)=powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 c	     write(*,*)'nnkpari',nnkpari,'anzin(1),pwcpl(1)',
 c     1                                   anzin(1),pwcpl(1)
 	     goto 10
@@ -559,7 +571,7 @@ cBH020826        anzin(n)=anmin(i)+n*hnpar
 c              write(*,*)'anorm='anorm
 
 	       do n=1,nnkpari
-	         pwcpl(n)=pwcpl(n)/anorm*powers(i)
+	         pwcpl(n)=pwcpl(n)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 	         write(*,*)'n,pwcpl(n)',n,pwcpl(n)
 	       enddo !n
              endif !i_grill_npar_ntor_npol_mesh.eq.1
@@ -621,7 +633,7 @@ c               power normalization
 c               write(*,*)'anorm='anorm
 
 	        do n=1,nnkpari
-	         pwcpl(n)=pwcpl(n)/anorm*powers(i)
+	         pwcpl(n)=pwcpl(n)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 	         write(*,*)'n,pwcpl(n)',n,pwcpl(n)
 	        enddo !n
  
@@ -676,7 +688,7 @@ c-----------------------------------------------------------------------
 	   if((nnktori.eq.1).and.(nnkpoli.eq.1))then
 	     anztorin(1)=antor0
              anzpolin(1)=anpol0
- 	     pwcpl_tp(1,1)=powers(i)
+ 	     pwcpl_tp(1,1)=powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 
 	     write(*,*)'nnktori,nnkpoli',nnktori,nnkpoli
 
@@ -752,7 +764,7 @@ c              write(*,*)'anorm='anorm
 
 	       do ntor=1,nnktori
                  do npol=1,nnkpoli
-	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)
+	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 	           write(*,*)'ntor,npol,pwcpl_tp(ntor,npol)',
      &                    ntor,npol,pwcpl_tp(ntor,npol)
                   enddo !npol
@@ -871,7 +883,7 @@ c               write(*,*)'anorm='anorm
 
                 do ntor=1,nnktori
                   do npol=1,nnkpoli
-	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)
+	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
 	           write(*,*)'ntor,npol,pwcpl_tp(ntor,npol)',
      &                        ntor,npol,pwcpl_tp(ntor,npol)
                   enddo !npol
@@ -1040,7 +1052,9 @@ c      powinilh(5)=0.d0
 c--------------------------------------------------------------------
 
       return
-      end
+      end subroutine grill_lh
+
+
 
 c for test  only
       double precision

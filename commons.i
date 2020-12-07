@@ -1,5 +1,5 @@
 
-c The list of all include files  *.i, except param.i, commons.i
+c The list of all include files  *.i, except param.i, commons.i, pgconst.i
 c      include 'a_change.i'
 c      include 'bripplb.i'
       include 'cefield.i'

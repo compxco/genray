@@ -1037,7 +1037,7 @@ c          cnper_x=dsqrt(cnz_x**2+cnr_x**2+(cm_x/r_x)**2-cnpar_x**2)
              write(*,*) 'cnper_x is imaginary (dsqrt(<0)):rho_x,xbadx',
      +                  rho_x,xbadx
           end if
-          cnper_x=dsqrt(max(0.d0,xbadx))
+          cnper_x=dsqrt(dmax1(0.d0,xbadx))
 c          write(*,*)'in rho_x rho_x,cnper_x',rho_x,cnper_x
           id=id_loc
 c          write(*,*)'id=',id
@@ -1135,7 +1135,7 @@ c      theta=thgrill(1)
       thgrill(1)=theta
       !YuP[2020-07-23] added :
       rmn=1.d-5 ! Specify limits for searching O-X conversion point
-      rmx=min(xeqmax,abs(xeqmin)) 
+      rmx=dmin1(xeqmax,dabs(xeqmin)) 
       ! Specify limits for searching O-X conversion point
       !(not used, for now)
      
@@ -1433,11 +1433,12 @@ c-----input
                           ! if i_n_optimal=1 N_par_optimal=N_par_optimal
                           ! if i_n_optimal=2 N_par_optimal=-N_par_optimal
 c-----local
-      character*40 ch_zst,ch_rst,ch_phist,ch_betast,ch_alfast
-      character*40 ch_i_n_optimal   
+      character*48 ch_zst,ch_rst,ch_phist,ch_betast,ch_alfast
+      character*48 ch_i_n_optimal   
       character*3  text
      
-      character*6 format,format_i
+      character*8 format_d
+      character*4 format_i
       logical first
       data first /.true./
       save first
@@ -1452,14 +1453,17 @@ c-----local
          first=.false.
       endif
 
+c      write(*,*)first
       write(*,*)'icone',icone,'i_n_optimal',i_n_optimal
       
 cSAP0890423 It was a problem under gfortran here
 c      write(text,*)icone
 c      write(*,*)'text ',text
-      format='d21.15'
-       
+
+CAYP201124 it was error here using key word "format"
+      format_d='d21.15'      
       format_i='i2'
+
 cSAP080423
 c      ch_i_n_optimal='(1X,"i_n_optimal('//text//')=",'//format_i//')'
 c      ch_zst='(1X,"zst('//text//')=",'//format//')'
@@ -1468,49 +1472,62 @@ c      ch_phist='(1X,"phist('//text//')=",'//format//')'
 c      ch_betast='(1X,"betast('//text//')=",'//format//')'
 c      ch_alfast='(1X,"alfast('//text//')=",'//format//')'
 
+CAYP201124 corrected "format" and added printouts for error tracking
       ch_i_n_optimal=
      &'(1X,"i_n_optimal("'//format_i//'")=",'//format_i//')'
+c      write(*,*) ch_i_n_optimal
       ch_zst=
-     &'(1X,"zst("'//format_i//'")=",'//format//')'
+     &'(1X,"zst("'//format_i//'")=",'//format_d//')'
+c      write(*,*) ch_zst
       ch_rst=
-     &'(1X,"rst("'//format_i//'")=",'//format//')'
+     &'(1X,"rst("'//format_i//'")=",'//format_d//')'
+c      write(*,*) ch_rst
       ch_phist=
-     &'(1X,"phist("'//format_i//'")=",'//format//')'
+     &'(1X,"phist("'//format_i//'")=",'//format_d//')'
+c      write(*,*) ch_phist
       ch_betast=
-     &'(1X,"betast("'//format_i//'")=",'//format//')'
+     &'(1X,"betast("'//format_i//'")=",'//format_d//')'
+c      write(*,*) ch_betast
       ch_alfast=
-     &'(1X,"alfast("'//format_i//'")=",'//format//')'
-      
+     &'(1X,"alfast("'//format_i//'")=",'//format_d//')'
+c      write(*,*) ch_alfast
+
       write(*,*)z_st_ox
       write(*,*)r_st_ox
       write(*,*)phi_st_ox
       write(*,*)beta_st_ox
       write(*,*)alpha_st_ox
+
 cSAP080423
 c     write(50,fmt=ch_i_n_optimal)i_n_optimal
 c      write(50,fmt=ch_zst)z_st_ox
 c      write(50,fmt=ch_rst)r_st_ox
 c      write(50,fmt=ch_phist)phi_st_ox
 
-      write(50,fmt=ch_i_n_optimal)icone,i_n_optimal
-      write(50,fmt=ch_zst)icone,z_st_ox
-      write(50,fmt=ch_rst)icone,r_st_ox
-      write(50,fmt=ch_phist)icone,phi_st_ox
+       write(50,fmt=ch_i_n_optimal)icone,i_n_optimal
+       write(50,fmt=ch_zst)icone,z_st_ox
+       write(50,fmt=ch_rst)icone,r_st_ox
+       write(50,fmt=ch_phist)icone,phi_st_ox
 
 c      if (raypatt.eq.'genray') then
 cSAP080423
 c         write(50,fmt=ch_betast)beta_st_ox
 c         write(50,fmt=ch_alfast)alpha_st_ox
-         write(50,fmt=ch_betast)icone,beta_st_ox
-         write(50,fmt=ch_alfast)icone,alpha_st_ox
+       write(50,fmt=ch_betast)icone,beta_st_ox
+       write(50,fmt=ch_alfast)icone,alpha_st_ox
 c      endif
 
 c      if (raypatt.eq.'toray') then
 c         write(50,fmt=ch_betast)(90.d0-beta_st_ox)
 c         write(50,fmt=ch_alfast)(90.d0-alpha_st_ox)
 c      endif
-           
-      if ((i_n_optimal.eq.2).and.(icone.eq.ncone)) close(50)
+
+cAYP201124 added for tracking
+c      write(*,*)'closing:',i_n_optimal,ncone           
+      if ((i_n_optimal.eq.2).and.(icone.eq.ncone)) then
+      close(50)
+      endif
+cAYP      write(*,*)'kuku'
 
       return
       end
@@ -1627,7 +1644,8 @@ c            anmax(1)=cnparopt+0.01d0
 c--------------------------------------------------------
              !write(*,*)'genray.f oxbv'
              write(*,*)'before ox_conversion_grill_in_poloidal_point'
-             write(*,*)'theta_pol ',theta_pol
+             write(*,*)'theta_pol=',theta_pol
+             write(*,*)'i_n_optimal=',i_n_optimal
              call ox_conversion_grill_in_poloidal_point(theta_pol,
      &       i_n_optimal)
              !Among other variables computed: rhopsi0(1), saved in grill.i
@@ -1936,8 +1954,12 @@ c               f_center=r_st_ox-rst(icone)
  20      continue  
          enddo ! i_n_optimal=1,2 
       enddo   ! icone 
-      
-      stop 'oxb'                    
+
+cAYP201124 somebody put STOP here and it caused FPE error!!!
+c     I commented it.
+c      stop 'oxb'
+      !YuP[2020-11-25] Moved STOP to genray.f, 
+      !just after call of gr_OX_optimal_direction
       return
       end subroutine gr_OX_optimal_direction
 !=======================================================================

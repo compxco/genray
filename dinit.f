@@ -93,7 +93,7 @@ c-----genray input file: genray.in or genray.dat
       character*10 genray_in_dat
 
       iraystop=0
-      pi=4*datan(1.d0)
+      pi=4.d0*datan(1.d0)
       trnspi=pi/180.d0
 
 c---------------------------------------------------------------
@@ -300,7 +300,7 @@ cSm080118
             do k=1,ndens
                rho=rhom(k)
 	       dens1(k,i)=(dense0(i)-denseb(i))*
-     1	                  (1-rho**rn1de(i))**rn2de(i)+denseb(i)
+     1	            (1.d0-rho**rn1de(i))**rn2de(i)+denseb(i)
             enddo
          enddo
 
@@ -315,7 +315,7 @@ cSm080118
                 enddo
 	       else
 	          dens1(k,i)=(dense0(i)-denseb(i))*
-     1	                     (1-rho**rn1de(i))**rn2de(i)+denseb(i)
+     1	             (1.d0-rho**rn1de(i))**rn2de(i)+denseb(i)
 cSm070426
 c-----------------multiply density profiles by den_scale
                 dens1(k,i)=dens1(k,i)*den_scale(i)
@@ -339,10 +339,10 @@ c        tpop1(ndensa,nbulka), vflow1(ndensa,nbulka)
 	    do k=1,ndens
 	       rho=rhom(k)	
 	       tpop1(k,i)=(tp0(i)-tpb(i))*
-     1                    (1-rho**rn1tp(i))**rn2tp(i)+tpb(i)
+     1             (1.d0-rho**rn1tp(i))**rn2tp(i)+tpb(i)
 
                vflow1(k,i)=(vfl0(i)-vflb(i))*
-     1                    (1-rho**rn1vfl(i))**rn2vfl(i)+vflb(i)
+     1             (1.d0-rho**rn1vfl(i))**rn2vfl(i)+vflb(i)
 	    enddo
 	 enddo
 
@@ -376,7 +376,7 @@ c------- creation of array temp1(ndensa,nbulka)
 	    do k=1,ndens
 	       rho=rhom(k)
 	       temp1(k,i)=(te0(i)-teb(i))*
-     1                    (1-rho**rn1te(i))**rn2te(i)+teb(i)
+     1             (1.d0-rho**rn1te(i))**rn2te(i)+teb(i)
 cSm070426
 c--------------multiply temperature profiles by temp_scale
                temp1(k,i)=temp1(k,i)*temp_scale(i)
@@ -395,7 +395,8 @@ c-------------------------------------------
 c           the creation of array zeff1(ndens)
 	    do k=1,ndens
 	       rho=rhom(k)
-               zeff1(k)=(zeff0-zeffb)*(1-rho**rn1zeff)**rn2zeff+zeffb
+               zeff1(k)=(zeff0-zeffb)*
+     1             (1.d0-rho**rn1zeff)**rn2zeff+zeffb
 	    enddo
 	 endif
 
@@ -614,12 +615,12 @@ c     for the emission multi frequency case
 c     calculate the electron gyro-frequency freqncy0 at the plasma center
 c---------------------------------------------
       bmod=b(yma,xma,0.d0) !TL
-      freqncy0=28.0*b0*bmod !GHZ
+      freqncy0=28.d0*b0*bmod !GHZ
 
       if ((i_emission.eq.0).or.(nfreq.eq.1)) then
 c--------no emission or only one frequency in the emission calculations   
-         v0=806.2/(frqncy*frqncy)
-         w0=28.0*b0/frqncy 
+         v0=806.2d0/(frqncy*frqncy)
+         w0=28.d0*b0/frqncy 
 c-----------------------------------------------------
 c        set the arrays for v and w
          v(1)=v0
@@ -1284,6 +1285,7 @@ c------------------------------------------------------------------
       include 'grill.i'
       include 'write.i'
       include 'rkutta.i'
+      include 'cefield.i' !get cex,cey,cez (E-field polarization); for printout
 
       integer myrank !In serial run: myrank=0; In MPI run: myrank=rank
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
@@ -1306,7 +1308,7 @@ c------for  rho_ini_LHFW
 
 
       iraystop=0
-      pi=4*datan(1.d0)
+      pi=4.d0*datan(1.d0)
       trnspi=pi/180.d0
 c---------------------------------------------------------------
 c     if ray starting point is outside plasma[LCFS] (EC -case)
@@ -1488,7 +1490,7 @@ c--------------------------------------------------------------
          if(sintheta.gt.0d0) then
             theta=dacos(costheta)
          else
-            theta=2*pi-dacos(costheta)
+            theta=2.d0*pi-dacos(costheta)
          endif  
 
 c-------rho_ini_LHFW changes input arguments n_theta_pol,n_toroidal
@@ -1830,13 +1832,36 @@ c      cnr=-0.7701078676733518d0
   
       call prep3d(0.0,u,deru,iraystop)
 
-      if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
-      write(*,*)'initial data'
-      write(*,*)'z=',z,'r=',r,'phi=',phi
-      write(*,*)'cnz=',cnz,'cnr=',cnr,'cm=',cm
-      write(*,*)'rho=',rho
-      write(*,*)'x_e=',x(z,r,phi,1),'y_e=',y(z,r,phi,1)
+      if(outprint.eq.'enabled')then !YuP[2018-01-17]
+        !BH,YuP[2020-11-30] added printout of |Eplus|/E, |Eminus|/E, |Ez|/E
+        ! at ray starting point: 
+        Ex_real= dble(cex)   ! Re(Ex/E)
+        Ex_imag=dimag(cex)   ! Im(Ex/E)
+        Ey_real= dble(cey)   ! Re(Ey/E)
+        Ey_imag=dimag(cey)   ! Im(Ey/E)
+        ! Form Eplus polarization as (Ex+i*Ey)/sqrt(2)  
+        ! This normalization gives (Eplus_abs**2+Eminus_abs**2+Ez_abs**2) =1.
+        Eplus_real= (Ex_real - Ey_imag)/dsqrt(2.d0)
+        Eplus_imag= (Ex_imag + Ey_real)/dsqrt(2.d0)
+        Eplus_abs= sqrt(Eplus_real**2 + Eplus_imag**2)
+        ! Form Eminus as (Ex-i*Ey)/sqrt(2.)
+        Eminus_real= (Ex_real + Ey_imag)/dsqrt(2.d0)
+        Eminus_imag= (Ex_imag - Ey_real)/dsqrt(2.d0)
+        Eminus_abs= sqrt(Eminus_real**2 + Eminus_imag**2)
+        write(*,*)'------------------------------------------'
+        write(*,*)'--------- INITIAL DATA ------------- iray=',iray
+        write(*,*)'   z=',z,' r=',r,' phi=',phi
+        write(*,*)'   cnz=',cnz,' cnr=',cnr,' cm=',cm
+        write(*,*)'   rho=',rho
+        write(*,*)'   x_e=',x(z,r,phi,1),'y_e=',y(z,r,phi,1)
+        write(*,*)'   |Eplus|/E =', Eplus_abs
+        write(*,*)'   |Eminus|/E=', Eminus_abs
+        write(*,*)'   |Ez|/E    =', cdabs(cez)
+        !checked:  Eplus_abs**2 + Eminus_abs**2 + cdabs(cez)**2  = 1.0
+        write(*,*)'------------------------------------------'
+        write(*,*)'------------------------------------------'
       endif ! outprint
+
 c-----------------------------------------------------------
 c     check the group velocity
 c-----------------------------------------------
@@ -1908,10 +1933,9 @@ c      write(*,*)'cnper_test',cnper_test
       write(*,*)'the group velocity is directed outside the plasma.'
       write(*,*)'ksi_vg=',dacos(cos_ksi_vg)*180.d0/pi
 
-cRobtAndre140421      write(*,*)'ksi_nperp,dacos(cos_ksi_test)',
-cRobtAndre140421     &           ksi_nperp,dacos(cos_ksi_test)
-      write(*,*)'ksi_nperp,dacos(cos_ksi_test)',
-     &           ksi_nperp,dacos(min(1.d0,cos_ksi_test))
+      write(*,*)'ksi_nperp, cos_ksi',ksi_nperp,cos_ksi_test
+      write(*,*)'dacos(cos_ksi_test)',
+     &           dacos(dmax1(dmin1(1.d0,cos_ksi_test),-1.d0))
       endif ! outprint
 
 c-----safety factor calculations
@@ -2025,7 +2049,7 @@ c        electron density : dens_el
 	 if (idens.eq.0) then
 c           analytical representation of the electron density profile
 	    dens_el=(dense0(1)-denseb(1))*
-     1              (1-rho**rn1de(1))**rn2de(1)+denseb(1)
+     1        (1.d0-rho**rn1de(1))**rn2de(1)+denseb(1)
 	 else
 c           table representation of the electron density profile
 	    dens_el=dens1(j,1)
@@ -2037,7 +2061,7 @@ c---------------------------------------------------------
 	    if (idens.eq.0) then
 c              analytical representation of the ion density profiles
 	       dens_ion=(dense0(i)-denseb(i))*
-     1                  (1-rho**rn1de(i))**rn2de(i)+denseb(i)
+     1             (1.d0-rho**rn1de(i))**rn2de(i)+denseb(i)
 	    else
 c              table representation of the ion density profiles
 	       dens_ion=dens1(j,i)
@@ -2133,7 +2157,7 @@ c        electron density : dens_el
 	 if (idens.eq.0) then
 c           analytical representation of the electron density profile
 	    dens_el=(dense0(1)-denseb(1))*
-     1              (1-rho**rn1de(1))**rn2de(1)+denseb(1)
+     1           (1.d0-rho**rn1de(1))**rn2de(1)+denseb(1)
 	 else
 c           table representation of the electron density profile
 	    dens_el=dens1(j,1)
@@ -2169,7 +2193,7 @@ c                charge(i)*(charge(nbulk-1)-charge(i))
 	       if (idens.eq.0) then
 c                 analytical representation of the ion density profiles
 	          dens_ion=(dense0(i)-denseb(i))*
-     1                     (1-rho**rn1de(i))**rn2de(i)+denseb(i)
+     1              (1.d0-rho**rn1de(i))**rn2de(i)+denseb(i)
 	       else
 c                 table representation of the ion density profiles
 	          dens_ion=dens1(j,i)
@@ -2548,8 +2572,8 @@ c-----input
       if(nfreq.eq.1) goto 10
 
       frqncy=wfreq(ifreq)
-      v0=806.2/(frqncy*frqncy)
-      w0=28.0*b0/frqncy 
+      v0=806.2d0/(frqncy*frqncy)
+      w0=28.0d0*b0/frqncy 
       v(1)=v0
       w(1)=w0
 

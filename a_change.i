@@ -9,7 +9,31 @@ c
 c
 c***********************************************************************
 
+[222] version="genray_v10.15_201206"
+   Added printout of |Eplus|/E, |Eminus|/E, |Ez|/E polarizations
+   at ray starting point to screen 
+   (or log file). BH,YuP[2020-11-30]
 
+[221] Adjusted logic in searching for the proper root in function hotnp 
+   (used for id=6), which sometimes was finding a wrong root of the
+    dispersion in near vacuum (when two cold roots are very close). 
+    BH,YuP[2020-11-25] 
+
+[220] pgconst.i was added to the distribution, to make variables used
+[220] by the pgplot plot library subroutines explicitly REAL*4.
+[220] EG: PGSVP(.2,.8,.3,.95) is  converted to PGSVP(R4P2,R4P8,R4P5,R4P95).
+[220] This is prepatory to converting all REAL to explicit REAL*4, so
+[220] that -fdefault-real-8 can be applied during compilation, to 
+[220] increase accuracy and consistency of the output.  BH201124
+
+[219] Several adjustments are made in the code to avoid over-flow errors
+   AYP, YuP [2020-11-25]. 
+   In grill_lh, the renormalization powers(i)=powers(i)*1.d13 
+   is removed because in case of i_ox=1 this subroutine
+   can be called repeatedly. Instead of this renormalization,
+   the factor 1.d13 (conversion to erg/sec) 
+   is used where needed [2020-11-25].
+   
 [218] version="genray_v10.14_200831"
 [218] The file genray_help has been added to the distribution,
 [218] and will subsequently be maintained as the primary documentation
