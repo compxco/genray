@@ -15,9 +15,10 @@ c***********************************************************************
    (or log file). BH,YuP[2020-11-30]
 
 [221] Adjusted logic in searching for the proper root in function hotnp 
-   (used for id=6), which sometimes was finding a wrong root of the
-    dispersion in near vacuum (when two cold roots are very close). 
-    BH,YuP[2020-11-25] 
+    (used for id=6), which sometimes was finding a wrong root of the
+    dispersion in near vacuum (when two cold roots are very close).
+    We appreciate documentation on this issue by Edmund Simpson,
+    King\'s College, London,  BH,YuP[2020-11-25] 
 
 [220] pgconst.i was added to the distribution, to make variables used
 [220] by the pgplot plot library subroutines explicitly REAL*4.
