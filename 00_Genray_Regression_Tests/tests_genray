@@ -39,8 +39,9 @@ XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/trunk/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_170301_updtd170725/xgenray'
 XGENRAY='/home/bobh/cql3d/genray/genray_cvs/code/genray_cswim_svn/genray_v10.11_170725/xgenray'
-XGENRAY='../$PWD/xgenray'
 XGENRAY='/global/homes/u/u650/genray_cswim_svn/genray_v10.11_170725/xgenray_intel.edison'   #At NERSC, edison.
+#Following is for github distribution organized tests:
+XGENRAY='../../xgenray'
 
 mkdir test1
 cp genray.dat_SS_Xmode_180_emission test1/genray.dat
@@ -124,7 +125,7 @@ mkdir test5
 cp genray.dat_CANONICAL_2004_ITER_TEST_one_ray  test5/genray.dat
 cp  g521022.01000 drawgenr.in test5/
 cd test5/
-time $XGENRAY > log_test5    #1.6s on compx1
+time $XGENRAY > log_test5    #1.6s on compx1. 0.45s on CompX2.
 xdraw genr &
 cd ..
 echo "test5: Compare genray.bin_CANONICAL_2004_ITER_TEST_one_ray with test5/genray.bin using xdraw"
@@ -308,7 +309,7 @@ mkdir test10.1
 cp genray.in_test10.1 test10.1
 cp eqdsk_MASTU test10.1/
 cd test10.1/
-time $XGENRAY > log_test10.1
+time $XGENRAY > log_test10.1  !3s on compx2
 emacs ECcone_optimal.dat &
 cd ..
 emacs ECcone_optimal.dat_test10.1 &
@@ -316,7 +317,7 @@ echo "test10.1: Compare output text files ECcone_optimal.dat"
 
 
 mkdir test10
-cp genray.in_test10 test10/genray.int
+cp genray.in_test10 test10/genray.in
 cp eqdsk_MASTU drawgenr.in drawfreqelec.in test10/
 cd test10/
 time $XGENRAY > log_test10    #32s on compx2

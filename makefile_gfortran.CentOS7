@@ -59,14 +59,11 @@ SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
 OBJECTS=	$(SOURCES:.f=.o)
 F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90 
 F90OBJS=	$(F90SRCS:.f90=.o)
-LOCATION=	-L/usr/lib64  -L/home/bobh/pgplot/pgplot_build_140331
+#LOCATION=	-L/usr/lib64  -L/home/bobh/pgplot/pgplot_build_140331
 LOCATION  =   -L/usr/local/netcdf4.0/lib64   -L/home/bobh/pgplot/pgplot_build_140331
-#LOCATION  =  -L/usr/local/netcdf-3.5.0/lib -L/usr/X11R6/lib -L/usr/local/pgplot  -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 #LIBRARIES=	-lX11 -lnetcdf -lpgplot
 
 LIBRARIES=	-lX11 -lnetcdff -lnetcdf -lpgplot
-#LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
-#INCLUDE=/usr/local/netcdf4.0/include /usr/include 
 INCLUDE=/usr/local/netcdf4.0/include
 DEBUG=		
 #BH100214:  -ieee not working with gfortran? CSPECIAL= -ieee -frecord-marker=4	

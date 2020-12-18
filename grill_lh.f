@@ -764,7 +764,8 @@ c              write(*,*)'anorm='anorm
 
 	       do ntor=1,nnktori
                  do npol=1,nnkpoli
-	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
+	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)
+     &                               *1.d13 !YuP[2020-11-25] to erg/sec
 	           write(*,*)'ntor,npol,pwcpl_tp(ntor,npol)',
      &                    ntor,npol,pwcpl_tp(ntor,npol)
                   enddo !npol
@@ -883,7 +884,8 @@ c               write(*,*)'anorm='anorm
 
                 do ntor=1,nnktori
                   do npol=1,nnkpoli
-	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)*1.d13 !YuP[2020-11-25] to erg/sec
+	         pwcpl_tp(ntor,npol)=pwcpl_tp(ntor,npol)/anorm*powers(i)
+     &                               *1.d13 !YuP[2020-11-25] to erg/sec
 	           write(*,*)'ntor,npol,pwcpl_tp(ntor,npol)',
      &                        ntor,npol,pwcpl_tp(ntor,npol)
                   enddo !npol
