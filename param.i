@@ -3,8 +3,8 @@
 
 c************************************************************
       character version*64
-      parameter(version="genray_v10.15_201206")
-      ! previous: genray_v10.14_200831
+      parameter(version="genray_v11.0_210212")
+      ! previous: genray_v10.15_201206 genray_v10.14_200831
       ! genray_v10.13_200117 genray_v10.12_180912 
       ! genray_v10.12_180529 
 c************************************************************
@@ -36,10 +36,6 @@ c      parameter (nxeqda=136,nyeqda=257,nlimit=101)
       !Need to keep it in mind when performing auto-tests 
       !(verification against data in genray.nc)
       
-
-cSAP091211
-c      parameter (nxeqda=136,nyeqda=257,nlimit=10001)
-
       parameter (nx4a=nxeqda+4,ny4a=nyeqda+4,nrya=ny4a)
       parameter (nlim4=nlimit+4)
 c It should be nrya=max(nxeqda,nyeqda)+4
@@ -47,6 +43,7 @@ c************************************************************
 c     for common/fourb/
       integer nves
       parameter (nves=202) !YuP[2020-03] Increased nves; was (nves=62)
+      !parameter (nves=502) !YuP[2020-03] Increased nves; was (nves=62)
 c************************************************************
 c     for common gr.i
       INTEGER NL,NP,nteta,npsi,nteta1

@@ -50,6 +50,13 @@
 !     maintainer of the code.
 
 
+! !!! NOTE !!!: It is strongly recommended to look at warning messages,
+!               particularly if running in a new configuration,  printed
+!               during run of the code. They may point to undesirable 
+!               combination of settings in namelist 
+!               Search "WARNING:" .
+
+
 !Normalization constants:
 !-------------------------------------------------------------------------
 !/genr/ namelist
@@ -736,8 +743,14 @@
 ! iabsorp_collisional =0 no additional collisional absorption
 !                     =1 collisional absorption  using formula
 !                        Im(N)=dabs(nu_ei/(gr_perp))*clight/omega)
-!                     [For LH, there is separate coll absorption included,
-!                      not switched by this flag and always on.]
+!                 This flag, with value of 1, can only be used when iabsorp.ne.2.
+!                 For LH, when iabsorp=2, there is separate calculation
+!                 of coll absorption in sub.absorplh, which is always on,
+!                 and not affected by iabsorp_collisional value.
+!                 So, in case of iabsorp=2, the value of iabsorp_collisional
+!                 should be 0, to avoid double counting.
+!                 For other waves (iabsorp.ne.2) the value of 
+!                 iabsorp_collisional can be 0 or 1 as described above.
 ! coll_mult =1.d0(default), multiplies above coll absorp expression
 !--------------------------------------------------------------------------
 ! The change of the dispersion relation and absorption
@@ -2232,8 +2245,8 @@
 ! If (izeff.ne.0) and (izeff.ne.3) then we should set the electron density
 ! dens1(k,1)  and ion densities dens1(k,i) i=2:nbulk1
 !------------------------------------------------------------------------
-! prof in [1/m**3)], MKSA difference
-! genray.dat:  prof in [10**13/cm**3)=10**19/m**3]
+! prof in [1/m**3], MKSA difference
+! genray.dat:  prof in [10**13/cm**3 = 10**19/m**3]
  &dentab
  prof    =   4.2000000d19,
              4.1400000d19,

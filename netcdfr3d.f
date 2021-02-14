@@ -5037,7 +5037,7 @@ cSAP
 
 c      write(*,*)'@@@ wrtnetcdf_one_ray_point begin'
       if(is0.gt.nrayelt_nc(nray0)) then
-         write(*,*)'WARNING is0.gt.nrayelt_nc(nray0)'
+         write(*,*)'WARNING: is0.gt.nrayelt_nc(nray0)'
          write(*,*)'is0,nray0,nrayelt_nc(nray0)',
      &              is0,nray0,nrayelt_nc(nray0)
          write(*,*)'the code will not create genray_one_ray_point.nc'

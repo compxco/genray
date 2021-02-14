@@ -35,7 +35,7 @@ if netcdf==4: from netCDF4 import Dataset # YuP
 #matplotlib.interactive(True) # no plots on screen
 matplotlib.interactive(False) # with plots on screen
 #Render with externally installed LateX (BH200816):
-matplotlib.rc('text', usetex = True) # Does not work on PC version
+#matplotlib.rc('text', usetex = True) # Does not work on PC version
 
 
 #-------- Specify for plots:
@@ -73,10 +73,10 @@ mp=p_mass/e_mass
 #Rmax_plot=90 #240 # 850. # just any guess [cm] 
 #Zmin_plot=-70 #-100 #-400.
 #Zmax_plot=+70 #+100 #500. # just any guess [cm] 
-Rmin_plot=0.
-Rmax_plot=0. 
-Zmin_plot=0.
-Zmax_plot=0.
+Rmin_plot=0. #70.
+Rmax_plot=0. #430. 
+Zmin_plot=0. #-400.
+Zmax_plot=0. #400.
 
 # Additional structures (ports, coils) to be plotted in (R,Z) section
 istruct=0 # To skip, set istruct=0
@@ -112,15 +112,15 @@ c0 = time.clock() # total cpu time spent in the script so far
 #eqdsk_name='g7777.002001'  # KAERI/S.Ho Kim  LH case 2017 07/19
 #eqdsk_name='g032974.02300'  # ST QUEST 07/20 2017 f=28e9
 
-#eqdsk_name='Scen4_bn2.57_129x129' # /test1/
+eqdsk_name='Scen4_bn2.57_129x129' # /test1/
 #eqdsk_name='equilib.dat_HPRT_test_case_061219' # /test2/
 #eqdsk_name='g113544.00325_mod' # /test3/
 #eqdsk_name='g113544.00325_mod' # /test4/  (OXB, i_ox=2)
 #eqdsk_name='g521022.01000'     # /test5/  (canonical 2004 ITER 1ray)
 #eqdsk_name='g106270.02500'      # /test6/ multi-rays EC
-#eqdsk_name='g1060728011.01100'  # /test7/ (LHCD)
+#eqdsk_name='g1060728011.01100'  # /test7/ (LHCD)  (genray.in)
 #eqdsk_name='equilib.dat_EC_ITER_Central_CD' #[rename to equilib.dat] /test8/
-#eqdsk_name='g1060728011.01100'  # /test9/
+#eqdsk_name='g1060728011.01100'  # /test9/  (LHCD)  (genray.in)
 #eqdsk_name='scenario_c1_gc_irod_110_rout_146_cm' # test 10.3
 
 #eqdsk_name='eqdsk_pegasus'
@@ -152,8 +152,8 @@ c0 = time.clock() # total cpu time spent in the script so far
 #eqdsk_name='scenario_c1_gc_irod_110_rout_128_cm' 
 #eqdsk_name='scenario_c1_gc_irod_110_rout_126_cm'
 
-eqdsk_name='g_000000.00000_anv1'  # issue_OXB_high_freq
 
+#eqdsk_name='eqdsk.new' 
 
 #------------------------------------------
 # Open the genray netcdf file; specify name:
@@ -375,7 +375,8 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
         er[nn]=er[nn-1]+drr   # R-grid [cm] 
     for nn in range(1,nz,1):  # nn goes from 1 to nz-1
         ez[nn]=ez[nn-1]+dzz   # Z-grid [cm]
-    R,Z = np.meshgrid(er,ez) # 2D grids [cm]    
+    R,Z = np.meshgrid(er,ez) # 2D grids [cm]   
+    print 'min/max of er grid [cm]:', np.min(er),np.max(er)
     #........................................................
     # Form the equally spaced psi array/grid.
     # psimag < psilim;  epsi has min. at m.axis
@@ -706,12 +707,15 @@ for isp in range(0,Nsp,1):
         isp_name.append('He4')
     if (np.absolute(Zs-3.)<0.1) :
         isp_name.append('Li+3')
+    if (np.absolute(Zs-4.)<0.1) & (np.absolute(msme-9*mp)<100):
+        isp_name.append('Be+4')
     if (np.absolute(Zs-4.)<0.1) & (np.absolute(msme-12*mp)<100):
         isp_name.append('C+4')
     if (np.absolute(Zs-5.)<0.1) & (np.absolute(msme-12*mp)<100):
         isp_name.append('C+5')
     if (np.absolute(Zs-6.)<0.1) & (np.absolute(msme-12*mp)<100):
         isp_name.append('C+6')
+        
     # OTHER NAMES CAN BE ADDED HERE.
     print 'isp=',isp,' m=',mass[isp],' Z=',charge[isp],' isp_name=',isp_name[isp]
     #txt1=r"$m/m_e =$"+r"$%1.0f$" %(mass[i])
@@ -1654,7 +1658,7 @@ plt.subplot(231) #-------------------------
 plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|\omega_{ce}/\omega|$')
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1672,7 +1676,7 @@ plt.subplot(234) #-------------------------
 plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|\omega/\omega_{ce}|$')
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1696,7 +1700,7 @@ plt.subplot(233) #-------------------------
 plt.hold(True)
 plt.grid(True)
 plt.title('$(\omega_{pe}/\omega)^2$',y=1.03)
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1732,7 +1736,7 @@ if Nsp>1: # plot w_c/w along rays
     txt2=r"  $q/e=$"+r"$%1.0f$" %(charge[isp])
     plt.ylabel('$For$'+txt1+txt2)
     plt.title('$|\omega_{ci}/\omega|$',y=1.03)
-    xticks(np.arange(ws_min, ws_max, step=ws_step) )
+    #xticks(np.arange(ws_min, ws_max, step=ws_step) )
     plt.xlim( (ws_min, ws_max) )
     
 #--------------------------------------------
@@ -1757,6 +1761,8 @@ if Nsp>1:
         linwi=max(0.5,linwi)
         plt.plot(ws[i,0:Nm],f/(28e5*sbtot[i,0:Nm]*Z_s/mime),color=col,linewidth=linwi)
     plt.xlabel('$distance$ $along$ $ray$  $(cm)$')
+    #xticks(np.arange(ws_min, ws_max, step=ws_step) )
+    plt.xlim( (ws_min, ws_max) )
 else:
     plt.subplot(236) #------------------------- w_UH for electrons
     plt.hold(True)
@@ -1773,6 +1779,8 @@ else:
         wuh_w = sqrt( (28e5*sbtot[i,0:Nm]/f)**2  +  806.2e5*sene[i,0:Nm]*q2m/f**2)
         plt.plot(ws[i,0:Nm],wuh_w, color=col,linewidth=linw)
     plt.xlabel('$distance$ $along$ $ray$  $(cm)$')
+    #xticks(np.arange(ws_min, ws_max, step=ws_step) )
+    plt.xlim( (ws_min, ws_max) )
     
 plt.savefig('genray_rays_wc_wp_p.png') 
 show()
@@ -1897,7 +1905,7 @@ plt.subplot(231) #-------------------------
 # plt.hold(True)
 plt.grid(True)
 plt.title('$n_R$',y=1.03)
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1913,7 +1921,7 @@ plt.subplot(232) #-------------------------
 # plt.hold(True)
 plt.grid(True)
 plt.title('$n_Z$',y=1.03)
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1929,7 +1937,7 @@ plt.subplot(233) #-------------------------
 # plt.hold(True)
 plt.grid(True)
 plt.title(r'$n_\phi$',y=1.03)
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1945,7 +1953,7 @@ plt.subplot(234) #-------------------------
 # plt.hold(True)
 plt.grid(True)
 plt.ylabel(r'$n_{\perp}$')
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1963,7 +1971,7 @@ plt.grid(True)
 #plt.title(r'$n_{||}$'+' $along$ $ray$',verticalalignment='center',y=1.03)
 plt.title(r'$n_{||}$',verticalalignment='center',y=1.03)
 plt.xlabel('$poloidal$ $distance$ $along$ $ray$  $(cm)$')
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'
@@ -1980,7 +1988,7 @@ plt.subplot(236) #-------------------------
 plt.grid(True)
 #plt.title(r'$|n|$'+' $along$ $ray$',verticalalignment='center',y=1.03)
 plt.title(r'$|n|$',verticalalignment='center',y=1.03)
-xticks(np.arange(ws_min, ws_max, step=ws_step) )
+#xticks(np.arange(ws_min, ws_max, step=ws_step) )
 plt.xlim( (ws_min, ws_max) )
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==0: col='b'

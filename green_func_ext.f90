@@ -324,7 +324,7 @@
 !     IF (adj_appr(3) == 'b') THEN !---- with barely trapped part. -----!
 !     ENDIF      !------------------------------------------------------!
    CASE default
-     PRINT*,'GenSpitzFunc: WARNING! Spitzer function is not defined.'
+     PRINT*,'GenSpitzFunc: WARNING: Spitzer function is not defined.'
      RETURN
  END SELECT
  dHdw = gam/(q*bet)*dHdu
@@ -444,7 +444,7 @@
        CALL SpitzFunc_HighSpeedLimit(Zeff,fc,u,q,gam, K,dKdu)          !
      ENDIF                                                             !
    CASE default   !----------------------------------------------------!
-     PRINT*,'GenSpitzFunc: WARNING! Spitzer function is not defined.'
+     PRINT*,'GenSpitzFunc: WARNING: Spitzer function is not defined.'
      RETURN
  END SELECT
 !=======================================================================
@@ -561,7 +561,7 @@
      m(0,0) = 0                                                        !
    CASE ('g')         !----------- arbitrary collisionality -----------!
    CASE default       !------------------------------------------------!
-     PRINT*,'Green_Func: WARNING! Adjoint approach is not defined.'
+     PRINT*,'Green_Func: WARNING: Adjoint approach is not defined.'
      RETURN
  END SELECT
 !=======================================================================

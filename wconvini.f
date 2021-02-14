@@ -68,7 +68,7 @@ c     bisection method of the solution of the equation func(rtbis_ox)=0
       FMID=FUNC(X2)
       F=FUNC(X1)
       IF(F*FMID.GE.0.d0) then
-      WRITE(*,*)'rtbis_ox/WARNING: Root must be bracketed for bisection'
+      WRITE(*,*)'rtbis_ox WARNING: Root must be bracketed for bisection'
       endif
       IF(F.LT.0.d0)THEN
         rtbis_ox=X1

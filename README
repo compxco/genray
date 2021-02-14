@@ -98,3 +98,14 @@ These have been combined into the one file, genray_help, which will
 subsequently be maintained as the namelist variable explanations file.
 Updating github.com/compxco/genray. 
 
+210214
+======
+Commit message:
+Genray version="genray_v11.0_210212".
+Several refinements to improve root finding.
+Adjusted logic in searching for the proper root in function hotnp 
+(used for id=6), which sometimes was finding a wrong root of the
+dispersion in near vacuum (when two cold roots are very close).
+See a_change.i.
+
+git add -u [stages changed files that are tracked]

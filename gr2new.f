@@ -1084,7 +1084,7 @@ c            write(*,*)'gr2new.f psi,i,n_psi_add',psi,i,n_psi_add
             if (n_psi_add.lt.n_psi_add_max) then
                goto 20
             else
-               write(*,*)'WARNINGin gr2new.f'
+               write(*,*)'WARNING: in gr2new.f'
                write(*,*)'in subroutine calc_z_r_at_psi_at_field_line'
                write(*,*)'it was made more than n_psi_add_max=',
      &                    n_psi_add_max

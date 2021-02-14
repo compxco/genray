@@ -2143,7 +2143,7 @@ c
       character errmsg*80
       save ns,x,w,errmsg
       data ns/-1/
-      data errmsg/'warning from qgauleg:  n is set to nmax =64'/
+      data errmsg/'WARNING: from qgauleg: n is set to nmax =64'/
 c
       nn=n
       if (nn .gt. nmax) then

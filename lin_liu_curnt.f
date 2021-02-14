@@ -719,7 +719,7 @@ c      use real_mod
          nh=nmaxh
          nn=nmax
          ifail=1
-         write (stderr,'(a)')'WARNING TorGa_zgauleg: (n) set to 32 '
+         write (stderr,'(a)')'WARNING: TorGa_zgauleg: (n) set to 32 '
       endif
       if (ns .ne. nh) then
          ns=nh
@@ -1083,7 +1083,7 @@ c      use real_mod
         s(j+1)=s(j)
         h(j+1)=0.25d0*h(j)
 11    continue
-      write (6,'(a)') 'warning:   too many steps in mqromb'
+      write (6,'(a)') 'WARNING:   too many steps in mqromb'
       END
 
       SUBROUTINE TorGa_trapzd(func,a,b,s,n)
@@ -1144,7 +1144,7 @@ c      use real_mod
           w=c(i+1)-d(i)
           den=ho-hp
           if(den.eq.0.d0)then 
-             write (6,'(a)') 'warning:  failure in TorGa_polint'
+             write (6,'(a)') 'WARNING:  failure in TorGa_polint'
              return
           endif
           den=w/den

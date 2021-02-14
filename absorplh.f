@@ -165,6 +165,7 @@ c------------------------------------------
       cnprim_e=-(di_e/dddnper)
       cnprim_i=-(di_i/dddnper)
       cnprim_cl=-(di_ic/dddnper) !   *coll_mult !BH: added 191017, Needs passing?
+      !YuP: coll_mult is applied after call of this subroutine [in prep3d]
       cnprim_e=dabs(cnprim_e)
       cnprim_i=dabs(cnprim_i)
       cnprim_cl=dabs(cnprim_cl)

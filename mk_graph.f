@@ -2972,6 +2972,7 @@ c      include 'commons.i'
       include 'one.i'
       include 'three.i'
       include 'ions.i'
+      
 c-----input
       double precision
      & r_freq,z_freq, !straight line edge point [m]
@@ -3130,7 +3131,8 @@ C*** Sets limit for plot.
         titlestr=''
         titlelen=LEN_TRIM(titlestr)
 c        print *,'xtitlelen: ',xtitlelen,' titlelen: ',titlelen
-        CALL PGLAB(xtitle(1:xtitlelen),'Frequency (GHz)'
+        CALL PGLAB(xtitle(1:xtitlelen),
+     &  'Frequency (GHz)  CYAN: f  RED: fpe  BLUE: fuh'
      +  ,titlestr(1:titlelen))
         
         print *,'fces: ',fces(1),fces(nsteps_freq)
@@ -3164,20 +3166,43 @@ C*** plot fundamental and up to 5th harmonic
         CALL PGLINE(nsteps_freq,rs,fuhs)
         print *,'BLUE: fuhs'
 
-        CALL PGSLS(4)
+C***** magnetic axis
+        CALL PGSLS(4) ! Vertical dotted green line: Raxis position
         CALL PGSCI(GREEN)
         newx(1)=raxis
         newx(2)=raxis
         newy(1)=ymin
         newy(2)=ymax
         CALL PGLINE(2,newx,newy)
+        CALL PGTEXT(newx(1)+(rs(nsteps_freq)-rs(1))*0.05, 0.5*fces(1),
+     &  'R\daxis\u')
 
-C***** magnetic axis
+        CALL PGSLS(2) ! Horizontal dashed line: freqncy
+        CALL PGSLW(3) ! Thin line 
+        CALL PGSCI(CYAN)
+        newx(1)=rs(1)
+        newx(2)=rs(nsteps_freq)
+        newy(1)=frqncy !GHz
+        newy(2)=frqncy
+        !write(*,*)' frqncy=',frqncy
+        CALL PGLINE(2,newx,newy)
+        
+        CALL PGSLW(6) ! Restore bold line
+
 C** Now add labels   :BEED TO ADJUST FOR .not.ARIES (BH)
         CALL PGSCI(WHITE)
-        CALL PGTEXT(R44,R431,'f\dce\u')
-        CALL PGTEXT(R43P8,R470,'2 f\dce\u')
-        CALL PGTEXT(R43P8,R4110,'3 f\dce\u')
+        !YuP: position labels somewhere in the middle of each curve,
+        !just above the curve (give +0.1*fce, i.e. 10% lift)
+        nsteps_freq_mid= INT(0.5*nsteps_freq) !YuP: ~middle of horiz axis
+        CALL PGTEXT(rs(nsteps_freq_mid),1.1*fces(nsteps_freq_mid),
+     &  'f\dce\u')
+        CALL PGTEXT(rs(nsteps_freq_mid),2.1*fces(nsteps_freq_mid),
+     &  '2f\dce\u')
+        CALL PGTEXT(rs(nsteps_freq_mid),3.1*fces(nsteps_freq_mid),
+     &  '3f\dce\u')
+        !CALL PGTEXT(R44,R431,'f\dce\u')
+        !CALL PGTEXT(R43P8,R470,'2 f\dce\u')
+        !CALL PGTEXT(R43P8,R4110,'3 f\dce\u')
         CALL PGSCI(RED)
         CALL PGTEXT(R41P4,R445,'f\dpe\u')
         CALL PGSCI(BLUE)

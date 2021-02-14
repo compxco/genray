@@ -216,10 +216,10 @@ linear damping in test7.  A second plot shows results of
 QL damping, for which an LH plateau reduces damping for all rays.
 
 
-Test10 and Test10.1:  MAST EBW O-X-B test case.
+Test10 and Test10.1:  EBW O-X-B test case.
 ====================
 
-Test case for CD with EBW, which is propagated into MASTU
+Test case for CD with EBW, which is propagated
 through O-X-B conversion.
 The rays are launched from a disk, using raypatt='diskdisk'.
 The O-X conversion occurs outside of LCFS at the omega=omega_pe layer.

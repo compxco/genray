@@ -112,7 +112,7 @@
  indexrho=2
  ipsi=1
  ionetwo=1
- ieffic=2
+ ieffic=3 !2
  psifactr=0.99d0
  deltripl=0.00d0
  nloop=24
@@ -189,7 +189,7 @@
  ioxm=-1
  ioxm_n_npar=0
  ireflm=1
- jwave=+1
+ jwave=0 !+1
  istart=1
  delpwrmn=1.d-6
  ibw=0

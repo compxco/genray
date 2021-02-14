@@ -2050,7 +2050,7 @@ cSAP080617
       character errmsg*80
       save ns,x,w,errmsg
       data ns/-1/
-      data errmsg/'warning from qgauleg_GA:  n is set to nmax =64'/
+      data errmsg/'WARNING: from qgauleg_GA: n is set to nmax =64'/
 c
 
 c      write(*,*)'in qgauleg_GA   a, b_GA, n', a, b_GA, n

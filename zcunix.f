@@ -1949,7 +1949,7 @@ c      write(*,*)'in lookup before luf x,length',x,length
 cSAP080713BH080714
 c      write(*,*)'in lookup after luf lement',lement
       if(lement.lt.2) then 
-         write(*,*)'WARNING in lookup lement.lt.2'
+         write(*,*)'WARNING: in lookup lement.lt.2'
          write(*,*)'the code will set lement=2'       
          lement=2
          weightl=1.d0
@@ -1958,7 +1958,7 @@ c      write(*,*)'in lookup after luf lement',lement
       endif
 
       if(lement.gt.length) then 
-         write(*,*)'WARNING in lookup lement.gt.length'
+         write(*,*)'WARNING: in lookup lement.gt.length'
          write(*,*)'the code will set lement=lenthg'       
          lement=length
          weightl=0.d0

@@ -384,7 +384,7 @@ c        write(*,*)'complx2 iter,delta',iter,delta
         if(iter.eq.10) print 566
 566     format('  complx2/hot index needs more than 10 iterations')
         if(sol2.lt.0.d0) print 567
-567     format(' complx2/warning: hot refractive index is negative!!')
+567     format(' complx2/ WARNING: hot refractive index is negative!!')
         sol=cdsqrt(solu)
 cyup	write(*,*)'comlpx2 sol=',sol,'solu=',solu
       ceps(1,1)=eps(1,1)

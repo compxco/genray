@@ -285,7 +285,7 @@ c-----refractive index along grad_psi at vacuum side
       if (p.gt.0.d0)then
           n_gradpsi_vac_mod=dsqrt(p)
       else
-          write(*,*)'*****WARNING****'
+          write(*,*)'***** WARNING: ****'
           write(*,*)'oxb  edg_vac_refr_index np_psi_mod_s>1'
           write(*,*)'n_psi_mod_s',n_psi_mod_s
           n_gradpsi_vac_mod=0.d0
@@ -688,7 +688,7 @@ c      write(*,*)'before find_maximal_OX_transmission'
 
       !write(*,*)'oxb-0:', z_in,r_in,phi_in
       !z_in1=z_in
-      call find_maximal_OX_transmission(eps_xe,xe_0,
+      call find_maximal_OX_transmission(xe_0,
      & r_in,z_in,phi_in,nr_in,nz_in,m_in,
      & i_ox_conversion)
        !YuP[2020-08-20]: Note that r_in,z_in,phi_in,nr_in,nz_in,m_in 
@@ -842,13 +842,15 @@ c-----local
      &cntang2,cnrho2,cnrho,cnperp,cm,cnpar_loc,cn_loc,cnper_loc,
      &xe
 
+      integer iter ! just for diagnostics
+      
 c      save was_not_o_cutoff
       logical was_not_o_cutoff
 c      data was_not_o_cutoff /.true./
 
 
-      hstep=1.d-3
-      hstep=1.d-5
+      !hstep=1.d-3
+      hstep=1.d-5 !A step size for changing (R,Z) until X-mode is found
       pi=4.d0*datan(1.d0)
        
       rho_loc=rho !initialization
@@ -857,7 +859,10 @@ c      data was_not_o_cutoff /.true./
       was_not_o_cutoff= .true.
       id_loc=id
       ioxm_loc=ioxm 
- 10   continue
+      iter=0 ! to count iterations (just for diagnostics)---------------
+      
+ 10   continue ! handle for new iteration with new R,Z
+      iter=iter+1
       !write(*,*)'oxb.f in  find_rho_x rho_loc',rho_loc
       psi=psi_rho(rho_loc)
            
@@ -986,7 +991,7 @@ c      write(*,*)'after 30 continue id_loc,id',id_loc,id
 
 c      write(*,*)'was_not_o_cutoff',was_not_o_cutoff
 
-      if (was_not_o_cutoff) then
+      if (was_not_o_cutoff) then ! True, meaning - looking for O-mode 
 c        write(*,*)'iraystop',iraystop
         if(iraystop.eq.0) then
 c---------ioxm=1 O-mode exists in this point
@@ -995,33 +1000,49 @@ c---------ioxm=1 O-mode exists in this point
              write(*,*)'rho_x was not found the rho_loc point'
              stop
           endif
-          go to 10                   
-        else 
-         was_not_o_cutoff=.false.
-         write(*,*)'was_not_o_cutoff',was_not_o_cutoff
+          go to 10 ! next iteration, step inside until O-mode is cut-off
+        else ! iraystop.eq.1 : Reached a point where O-mode vanishes (Nper^2<0)
+         was_not_o_cutoff=.false.   ! Switch to a search of X-mode 
+         write(*,*)'was_not_o_cutoff,rho_loc',
+     &              was_not_o_cutoff,rho_loc
 
- 20      continue
+ 20      continue ! handle for stepping inside until Xe=1.0 is reached
          xe=x(z,r,phi,1)
-         if (xe.le.1) then
-           rho_loc=rho_loc-hstep
+         if (xe.le.1.d0) then
+           !step inside until Xe=1.0 is reached,
+           !then try again - go back to 10
+           rho_loc=rho_loc-hstep ! New rho
            psi=psi_rho(rho_loc)      
-           call zr_psith(psi,theta,z,r)     
+           call zr_psith(psi,theta,z,r) !New values of (R,Z)  
            bmod=b(z,r,phi)
-           goto 20
-        endif
+           !write(*,*)'   find_rho_x:goto20: rho_loc,xe=',rho_loc,xe
+           if(rho_loc.gt.hstep)then !YuP[2021-01-27] added this condition
+             goto 20  ! stepping inward until Xe=1.0 (or larger)
+           else ! rho_loc~0, but still no Xe=1.0 point
+             !It could happen when frequency is very high (or density is low) 
+             !so that there is no Xe=1 in plasma
+             WRITE(*,*)'   find_rho_x: Cannot find Xe>1.0'
+             WRITE(*,*)'   Density is too low or freqncy is too high'
+             STOP 'find_rho_x: Cannot find Xe>1.0'
+           endif
+         endif
   
-         go to 10 
-        endif
-      else
+         go to 10 ! Xe>1.0 is achieved. Now search for X-mode
+        endif ! iraystop.eq.1
+        
+      else !Here: was_not_o_cutoff=false (and Looking for X-mode) 
         if(iraystop.eq.1) then
-c---------ioxm=1 O-mode does not exist in this point
+c---------ioxm=-1 X-mode does not exist at this point
           rho_loc=rho_loc-hstep
           if (rho_loc.lt.0d0) then 
-             write(*,*)'rho_x was not found the rho_loc point'
-             stop
+             WRITE(*,*)'find_rho_x: Cannot find X-mode at any rho>0'
+             !write(*,*)'rho_x was not found the rho_loc point'
+             stop 'find_rho_x: Cannot find X-mode'
           endif
-          go to 10   
-        else
+          go to 10 ! rho_loc is still >0, go back and step inward 
+        else ! iraystop=0  X-mode exists.  Final result for X-mode:
+          WRITE(*,*)'find_rho_x: Found X-mode at rho=',rho_loc,', R=',r,
+     &              ',  Xe=',xe
           rho_x=rho_loc
           r_x=r
           z_x=z
@@ -1041,12 +1062,13 @@ c          cnper_x=dsqrt(cnz_x**2+cnr_x**2+(cm_x/r_x)**2-cnpar_x**2)
 c          write(*,*)'in rho_x rho_x,cnper_x',rho_x,cnper_x
           id=id_loc
 c          write(*,*)'id=',id
-        endif
-      endif
+          ! Finished  the search for X-mode
+        endif ! iraystop=0
+      endif ! was_not_o_cutoff = True or False
 
       !write(*,*)'phi',phi
       return
-      end
+      end subroutine find_rho_x
 
 
       subroutine ox_conversion_grill_in_poloidal_point(theta_pol,
@@ -2409,7 +2431,7 @@ c-----local
       end
 
 
-      subroutine find_maximal_OX_transmission(eps_xe,x0,
+      subroutine find_maximal_OX_transmission(x0,
      & r_in,z_in,phi_in,nr_in,nz_in,m_in,
      & i_ox_conversion)
 c-----if((xe.gt.(x0-eps_xe)).and.(xe.le.x0)) then it
@@ -2420,11 +2442,12 @@ c     Finds the point where the transmission coefficient has the maximal
 c     value and put i_ox_conversion=1
       implicit none
 c-----input
-      real*8 eps_xe,x0,r_in,z_in,phi_in,nr_in,nz_in,m_in
+      real*8 x0,r_in,z_in,phi_in,nr_in,nz_in,m_in
      
       include 'param.i'  
       include 'output.i'
       include 'oxb.i'
+      include 'one.i'
 c-----output 
 c     r_in,z_in,phi_in,nr_in,nz_in,m_in the ray coordinates at
 c             the point with the maxima transmission coefficient
@@ -2436,8 +2459,10 @@ c-----externals
       real*8 x,b
 
 c-----local
-      real*8 xe,transm_ox,u(6),u_old(6),bmod
+      real*8 xe,transm_ox,u(6),u_old(6)
       integer i
+      
+      real*8 cnpar,cnpar2,cn2 ! local
 
       save  u_old
 
@@ -2452,11 +2477,17 @@ c-----local
       xe=x(u(1),u(2),u(3),1)
       i_ox_conversion=0
 
+      cnpar=(bz*nz_in + br*nr_in + bphi*m_in/r_in)/bmod
+      cnpar2=cnpar*cnpar
+      cn2= nz_in*nz_in + nr_in*nr_in + (m_in/r_in)**2 
+      
          !write(*,*)'in  find_maximal_OX_transmission'
          !write(*,*)'eps_xe,r_in,z_in',eps_xe,r_in,z_in
       !write(*,*)'xe,x0-eps_xe', xe,x0-eps_xe
       !write(*,*)'was_in_ox_vicinity',was_in_ox_vicinity
-      if((xe.gt.(x0-eps_xe)).and.(xe.le.x0)) then
+      if( (xe.gt.(x0-eps_xe) .or. (cn2-cnpar2.le.0.01))
+     &     .and. (xe.le.x0)                            ) then
+        !YuP[2021-02-04] Added (cn2-cnpar2.le.0.01) condition
 !         write(*,*)'before transmit_coef_ox'
          was_in_ox_vicinity=.true.
 

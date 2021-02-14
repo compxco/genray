@@ -195,7 +195,7 @@ C*** Need to set up te, ompesqom, p0, f, n1
       p0(1)=0.0D0
       n1=N_parallel
       if (abs(n1).ge.1.0) then
-         print *,'WARNING!!! Magnitude of N_parallel > 1, results '
+         print *,'WARNING: Magnitude of N_parallel > 1, results '
          print *,' are probably wrong. (The Weiss method with'
          print *,' transformation is designed for N_parallel<1)'
       endif
@@ -2479,7 +2479,7 @@ C  /* if adding to sum does not change sum, terms are too small, quit */
          end if
       ENDDO
  30   if ((msg.ge.2 .and. msg.ne.3) .and. k.ge.kmax) then
-        print *,'**WARNING*** quit bess_rmseries at k>=kmax: k=',
+        print *,'** WARNING: quit bess_rmseries at k>=kmax: k=',
      + k,' oldA33=',oldA33,' A33=',A33
       end if
 C**** now multiply a few elements by extra powers of z/2

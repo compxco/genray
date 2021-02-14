@@ -469,7 +469,7 @@ c-----cln -Coulomb Ln
       arg1 = 1.d3/temp_kev*dsqrt(10.d0*dense)	!temp KeV, dense 10**13/cm**3
       cln=24.d0-dlog(arg1)
       lh_cd_efficiency=lh_cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/joule/(sec*m**3)
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
 c      write(*,*)'temp_kev,dense,cln,lh_cd_efficiency',
 c     &temp_kev,dense,cln,lh_cd_efficiency
       lh_cd_efficiency=lh_cd_efficiency*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
@@ -2222,7 +2222,7 @@ c-----cln -Coulomb Ln
       arg1 = 1.d3/temp_kev*dsqrt(10.d0*dense)	!temp KeV, dense 10**13/cm**3
       cln=24.d0-dlog(arg1)
       lh_cd_efficiency=lh_cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/joule/(sec*m**3)
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
       lh_cd_efficiency=lh_cd_efficiency*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
 
 c----------------------------------------------------
@@ -2428,7 +2428,7 @@ c      coef=1.6022d-1/(4*pi*4.8032**3*3)=3.8352d-5!     (A/cm**2)/(erg/(sec*cm**
 c      eta_0_adj=(temp_kev/(cln*dense))*coef
 
       cd_efficiency=cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(joule/(sec*m**3))
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
 c      write(*,*)'temp_kev,dense,cln,cd_efficiency',
 c     &temp_kev,dense,cln,cd_efficiency
       cd_efficiency=cd_efficiency*1.d-5  !  (A/cm**2)/(erg/(sec*cm**3))
@@ -4008,7 +4008,7 @@ c-----cln -Coulomb Ln
       arg1 = 1.d3/temp_kev*dsqrt(10.d0*dense)	!temp KeV, dense 10**13/cm**3
       cln=24.d0-dlog(arg1)
       cd_efficiency=cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/joule/(sec*m**3)
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
 c      write(*,*)'temp_kev,dense,cln,cd_efficiency',
 c     &temp_kev,dense,cln,cd_efficiency
       cd_efficiency=cd_efficiency*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
@@ -5778,7 +5778,7 @@ c-----cln -Coulomb Ln
       arg1 = 1.d3/temp_kev*dsqrt(10.d0*dense)	!temp KeV, dense 10**13/cm**3
       cln=24.d0-dlog(arg1)
       lh_cd_efficiency=lh_cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/joule/(sec*m**3)
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
 c      write(*,*)'temp_kev,dense,cln,lh_cd_efficiency',
 c     &temp_kev,dense,cln,lh_cd_efficiency
       lh_cd_efficiency=lh_cd_efficiency*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
@@ -6718,7 +6718,7 @@ c      coef=1.6022d-1/(4*pi*4.8032**3*3)=3.8352d-5!     (A/cm**2)/(erg/(sec*cm**
 c      eta_0_adj=(temp_kev/(cln*dense))*coef
 
       cd_efficiency=cd_efficiency*
-     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(joule/(sec*m**3))
+     &3.84d0*temp_kev/(cln*dense)	       !  (A/m**2)/(W/m**3)
 c      write(*,*)'temp_kev,dense,cln,cd_efficiency',
 c     &temp_kev,dense,cln,cd_efficiency
       cd_efficiency=cd_efficiency*1.d-5  !  (A/cm**2)/(erg/(sec*cm**3))

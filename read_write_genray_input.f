@@ -427,7 +427,7 @@ C        WRITE(*,*)'i_vgr_inname_uniform_mesh_profiles.i'     i=',i_vgr_ini
 C------------------------------------------------------------------------
       if (cnperp_plot_max.gt.cN_perp_root_max) then
         if(myrank.eq.0) then
-        WRITE(*,*)'================WARNING============'
+        WRITE(*,*)'================ WARNING: ============'
         WRITE(*,*)'cnperp_plot_max.gt.cN_perp_root_max'
         WRITE(*,*)'cnperp_plot_max,cN_perp_root_max',
      &             cnperp_plot_max,cN_perp_root_max
@@ -475,7 +475,7 @@ c----------------------------------------------------------
 
            if (gzone.eq.0)then
               if(myrank.eq.0) then
-              WRITE(*,*)'WARNING!!!  nray_in must be set for gzone=0'
+              WRITE(*,*)'WARNING:  nray_in must be set for gzone=0'
               WRITE(*,*)'nray_in=',nray_in
               endif
            endif
@@ -928,15 +928,15 @@ c----------------------------------------------------
 c     electron charge charge(1) should be =1
       if( charge(1).ne.1.d0) then 
         if(myrank.eq.0) then
-        WRITE(*,*)'Warning in dinit: charge(1) should be equal=1'
-        WRITE(*,*)'but charge(1)=',charge(1),'control it'
+        WRITE(*,*)'WARNING: in dinit: charge(1) should be equal=1'
+        WRITE(*,*)'but charge(1)=',charge(1),' Correct it'
         endif
         stop ! in all cores
       endif
       do i=2,nbulk
       if(charge(i).lt.charge(i-1). and. izeff.ne.2) then
       if(myrank.eq.0) then
-      WRITE(*,*)'Warning in dinit:it should be charge(i).ge.charge(i-1)'
+      WRITE(*,*)'WARNING: dinit: it should be charge(i).ge.charge(i-1)'
       WRITE(*,*)'But in i=',i,'charge(i).lt.charge(i-1)'
       WRITE(*,*)'Please correct genray.in file'
       endif
@@ -1586,6 +1586,21 @@ c      endif
          endif
          i_adj=0 ! in all cores
       endif
+      
+      if(ieffic.eq.4 .and. ieffic_mom_cons.eq.0)then
+         if(myrank.eq.0) then
+         WRITE(*,*)
+     &'WARNING: For ieffic=4 it is recommended to use ieffic_mom_cons=1'
+         endif
+      endif
+      
+      if((ieffic.eq.2) .and. (jwave.ne.-1 .and. jwave.ne.0))then
+        if(myrank.eq.0) then
+        WRITE(*,*)
+     &   'WARNING: jwave=',jwave,' is not valid for subr.efKarney'
+        WRITE(*,*)'For ieffic=2 valid values are jwave= -1 or 0'
+        endif
+      endif
 
 c---------------------------------------------------------
 cSAP090203
@@ -1711,6 +1726,11 @@ c     &   n_psi_TSC,prof2_uniform,JparTSC_1D,kode)
 c         WRITE(*,EdcTSCtab)
 c         WRITE(*,*)'Jpar_1D',JparTSC_1D
       endif   
+
+      if((iabsorp.eq.2).and.(iabsorp_collisional.eq.1))then
+        WRITE(*,*)'WARNING: For iabsorp=2, the value '
+        WRITE(*,*)'   of iabsorp_collisional should be 0'
+      endif
  
 c-------------------------------------------------------------
 c     end of reading genray.dat or genray.in file
@@ -4523,6 +4543,14 @@ c&end
 ! iabsorp_collisional =0 no additional collisional absorption
 !                     =1 collisional absorption  using formula
 !                        Im(N)=dabs(nu_ei/(gr_perp))*clight/omega)
+!                 This flag, with value of 1, can only be used when iabsorp.ne.2.
+!                 For LH, when iabsorp=2, there is separate calculation
+!                 of coll absorption in sub.absorplh, which is always on,
+!                 and not affected by iabsorp_collisional value.
+!                 So, in case of iabsorp=2, the value of iabsorp_collisional
+!                 should be 0, to avoid double counting.
+!                 For other waves (iabsorp.ne.2) the value of 
+!                 iabsorp_collisional can be 0 or 1 as described above.
 ! coll_mult =1.d0(default), multiplies above coll absorp expression
 !------------------------------------------------------------------------
 ! The change of the dispersion relation and absorption

@@ -256,7 +256,7 @@ c        write(*,*)'in prep3d new wdnpar(is)',wdnpar(is)
 c-----waves absorption and electric field calculations----
 c     Absorption if clauses end at line 1682.
       if ((iabsorp.eq.3).or.(iabsorp.eq.2)) then  !ends at line 590
-c	absorption for lh and fw
+c	absorption for LH and FW
 c------------------------------------------------------------
 c       electric field using the cold plasma dielectric tensor
         call tensrcld(u(1),u(2),u(3))
@@ -373,8 +373,8 @@ cSAP081111
 c           write(*,*)'cnprim_s(1:nbulka)',cnprim_s
             if (cnprim.lt.0.d0) then
              if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
-             write(*,*)'Warning cnprim <0 cnprim=',cnprim
-             write(*,*)'The code wil use abs(cnprim)'
+             write(*,*)'WARNING: cnprim <0 cnprim=',cnprim
+             write(*,*)'The code will use abs(cnprim)'
              endif ! outprint
              cnprim=dabs(cnprim) 
              cnprim_e=dabs(cnprim_e)
@@ -575,7 +575,7 @@ c                write(*,*)'LH maxw cnprim_e', cnprim_e
                  cnprim_cl=0.d0
               else
                 if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
-                write(*,*)'WARNING in prep3d rho>1 rho=',rho 
+                write(*,*)'WARNING: in prep3d rho>1 rho=',rho 
                 write(*,*)'in this case LH_absorption_LSC can not work'
                 write(*,*)'and the subroutine absorplh will be used'
                 write(*,*)'for absorption calculations'
@@ -1908,7 +1908,7 @@ c      endif
          ! vgroup=1.00005 (slightly larger than 1) might happen in near-vacuum
          write(*,*)
          write(*,*) '*************************************************'
-         write(*,*)'prep3d:WARNING vgroup>1, abs(vgroup)=',sqrt(vgrmods)
+       write(*,*)'prep3d: WARNING: vgroup>1, abs(vgroup)=',sqrt(vgrmods)
          write(*,*) '*************************************************'
          write(*,*)
       endif
@@ -2186,7 +2186,7 @@ cSm050225
 c-YuP-130605: changed ray-stopping criterion from argexp>0.d0 to this:
            if(argexp.gt. 1.d-30)then
               WRITE(*,*)'**********************************************'
-              WRITE(*,*)'WARNING in prep3d.f argexp>0 :' , argexp
+              WRITE(*,*)'WARNING: in prep3d.f argexp>0 :' , argexp
               WRITE(*,*)'It would give growing ray power-> stopping ray'
               WRITE(*,*)'ckvipol,ckvipold=',ckvipol,ckvipold
               WRITE(*,*)'**********************************************'
@@ -2288,7 +2288,7 @@ cSAP090603
  
 c         if(argexp.gt.0.d0)then
 c           write(*,*)'******************************************'
-c           write(*,*)'WARNING in prep3d.f argexp>0' 
+c           write(*,*)'WARNING: in prep3d.f argexp>0' 
 c           write(*,*)'It will give the growing ray power'
 c          write(*,*)'******************************************'
 c         endif
@@ -2452,7 +2452,7 @@ c     for xdraw plotter
       yarr(is)=r*dsin(phi)*r00
       rez(is)=cdabs(cez)
 c     if (istart.eq.2) then
-c        start point is inside the plasma (for lh and fw)
+c        start point is inside the plasma (for LH and FW)
 c        using cold plasma dielectric tensor
 c        rez(is)=ezcold
 c     end if
@@ -2936,7 +2936,7 @@ c        LH wave
          efficien=2.d0/(5.d0+z_eff)*
      1   (u1*u1+(7.0d0/4.0d0+9.0d0/4.0d0/(3.d0+z_eff)))
       else ! YuP[07-2017] Added: other values of jwave
-cyup         write(*,*)'WARNING func.efficien() : wrong value of jwave !!!'
+cyup         write(*,*)'WARNING: func.efficien() : wrong value of jwave !!!'
          !efficien=0.d0
          ! Or maybe set to be the same as for jwave=1?
          ! Here, same as for jwave=1:
@@ -2988,7 +2988,7 @@ c                       jwave -wave harmonic number
 c                       cnpar -parallel to magnetic field refractive
 c                              index
 c                     	ye-omega_Be/omega_wave
-c     output parameter: J/P=efficient  in (A/m**2)/(Wt/m**3)
+c     output parameter: J/P=efficient  in (A/m**2)/(W/m**3)
 c------------------------------------------------------------------
 c     these double precision parameters are to call function: 
 c        psif(z,r) and  subroutine: zr_psith(psi,theta,z,r)
@@ -4493,7 +4493,7 @@ c      write(*,*)'absdpwr',absdpwr
 
 c-----------------------------------------------------------------------
 c     this subroutine DNONETWO calculates power and current density
-c     profiles on rho. Arrays: powden(NR) (erg/(cm**3*c)
+c     profiles on rho. Arrays: powden(NR) (erg/(cm**3*sec)
 c                           and currden(NR).
 c-----------------------------------------------------------------------
       SUBROUTINE dnonetwo
@@ -5282,9 +5282,9 @@ c  A subroutine to calculate the local current density driven by RF waves
 c--Uses CD efficiency empirical formula based on numerical Fokker-
 c  Planck bounce-averaged calculations
 c  This formula is for
-c  1)Landau damping of lower hybrid (LH) slow waves resonant  at parallel
+c  1)Landau damping of lower hybrid (LH) slow waves resonant at parallel
 c    velocities	above the electron thermal velocity
-c  2)Slow frequincy fast (compressional Alfven) wave (AW) may resonant with
+c  2)Slow frequency fast (compressional Alfven) wave (AW) may resonant with
 c    low phase velocity electrons via combined Landay damping and transit
 c    time magnetic damping  
 c------------------------------------------------------------------
@@ -5292,13 +5292,13 @@ c     input parameters: z,r -coordinates of the ray point(cm!!!!!)ATTENTION
 c                       z_eff-effective charge
 c                       temp-temperature (keV)
 c                       den-density(10**13 cm**-3)
-c                       jwave (=islofa)=-1 ALfen wave , 0- Landau damp.
+c                       jwave (=islofa)=-1 Alfven wave , 0- Landau damp.
 c                       cnpar -paralell to magnetic field refractive
 c                              index
 c                       r0x character length
-c     output parameter:  J/P=efficient  in (A/m**2)/(Wt/m**3)
-c------------------------------------------------------------------
-c     output parameter: efficien  in (A/cm**2)/(erg/(c*cm**3))
+c     computed:  J/P=efficient in (A/m**2)/(W/m**3), converted to 
+c     output parameter: efficien J/P in (A/cm**2)/(erg/(sec*cm**3))
+!     Conversion is 1.0(A/m^2)/(W/m^3) = 1e-5*(A/cm**2)/(erg/(sec*cm**3))
 c------------------------------------------------------------------
 c     It uses:
 c     double precision function: psif(z,r) and
@@ -5332,13 +5332,22 @@ c      write(*,*)'in efKarney jwave,z_eff',jwave,z_eff
          STOP
       endif
 
-      if(islofa.eq.-1) then	!Alfven damping
+      if(islofa.eq.-1) then	!Alfven damping  !Note: islofa=jwave
         akcd = 11.91d0/(0.678d0+zeff)
         c0cd = 4.13d0/zeff**0.707d0
         amcd = 2.48d0
         ccd = 0.0987d0
         acd = 12.3d0
-      else			!Landau damping
+      elseif(islofa.eq.0)then !Landau damping: jwave=0 (n=0 case only)
+        !YuP[2021-02-11] Added islofa.eq.0, and warning for any other jwave
+        akcd = 3.d0/zeff
+        c0cd = 3.83d0/zeff**0.707d0
+        amcd = 1.38d0
+        ccd = 0.389d0
+        acd = 0.d0
+      else !YuP[2021-02-11] 
+        !A warning message is printed in the beginning of run.
+        !Use settings as in jwave=0 case (although not physically meaningful)
         akcd = 3.d0/zeff
         c0cd = 3.83d0/zeff**0.707d0
         amcd = 1.38d0
@@ -5440,36 +5449,35 @@ c      write(*,*)'eta,cprof,amprof,eta0,rprof ',
 c     &           eta,cprof,amprof,eta0,rprof 
 c       write(*,*)'eta0,eta',eta0,eta
 c-----------------------------------------------------------
-c     efficiency  in (A/m**2)/(joule/(c*m**3))
+c     efficiency  in (A/m**2)/(W/m**3)
 c     temperature temp in kev
 c     density     dens in 10**19 /m**3
 c-----------------------------------------------------------
 c     cln -Coulomb Ln
       arg1 = 1.d3/temp*dsqrt(10.d0*den)	!temp KeV, den 10**13/cm**3
       cln=24.d0-dlog(arg1)
-      effKarn=eta*3.84d0*temp/(cln*den)	!(a/m**2)/joule/(c*m**3)
+      effKarn=eta*3.84d0*temp/(cln*den)	!(A/m**2)/(W/m**3)
 c      write(*,*)'temp,den,cln,eta,effKarn',temp,den,cln,eta,effKarn
 
-c      write(*,*)'effKarn   (a/m**2)/joule/(c*m**3)', effKarn
 c-----------------------------------------------------------
-c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))
+c     efficiency will be converted to (A/cm**2)/(erg/(sec*cm**3))
 c     temperature temp in kev
 c     density     den in 10**19/m**3
 c-----------------------------------------------------------
 ctest beg
 c     LH wave
-      efficien=2.d0/(5.d0+z_eff)*
-     1         (u1*u1+(7.0d0/4.0d0+9.0d0/4.0d0/(3.d0+z_eff)))
-      efficien=efficien*temp/den*(17.d0/cln)*9.d0*1.d-6
+c      efficien=2.d0/(5.d0+z_eff)*
+c     1         (u1*u1+(7.0d0/4.0d0+9.0d0/4.0d0/(3.d0+z_eff)))
+c      efficien=efficien*temp/den*(17.d0/cln)*9.d0*1.d-6
 c      write(*,*)'u1',u1  
-c     write(*,*)'asimptotic efficiency A/cm/(egr(c*cm**3))',efficien
-      efficien=8.d0/(5.d0+z_eff)*u1*u1 !test
+c     write(*,*)'asimptotic efficiency (A/cm**2)/(erg/(sec*cm**3))',efficien
+c      efficien=8.d0/(5.d0+z_eff)*u1*u1 !test
 c      write(*,*)'test efficien ',efficien
-
+c
 c      efficien=efficien*temp/den*(17.d0/cln)*9.d0*1.d-6 
-c     write(*,*)'efficiency A/cm/(egr(c*cm**3))',efficien
-      efficien=efficien*3.84d0*temp/den/cln
-c      write(*,*)'asymptotic efficiency(A/m**2)/(joule/cm**3))',efficien
+c     write(*,*)'efficiency (A/cm**2)/(erg/(sec*cm**3))',efficien
+c      efficien=efficien*3.84d0*temp/den/cln !test only
+c      write(*,*)'asymptotic efficiency(A/m**2)/(W/m**3))',efficien
 ctest end    
 c-------------------------------------------------------------
 c     determination the of the current drive sign
@@ -5481,13 +5489,13 @@ c     determination the of the current drive sign
       efficien=efficien*s
 c-------------------------------------------------------------
 cSm050923
-c      effKarn=effKarn*s*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
-      effKarn=-effKarn*s*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
+c      effKarn=effKarn*s*1.d-5  !  (A/cm**2)/(erg/(sec*cm**3))
+      effKarn=-effKarn*s*1.d-5  !  (A/cm**2)/(erg/(sec*cm**3))
 c      write(*,*)'effcient A/cm**2/(egr/(sec*cm**3))',efficien
 c      write(*,*)'effKarn  A/cm**2/(erg/(sec*cm**3))',effKarn
 c     stop
       return
-      END
+      END subroutine efKarney
 
 
 
@@ -6339,7 +6347,7 @@ cSm080629
 c      efficient=-efficient 
 
       return
-      end
+      end subroutine eff_Lin_Liu
 
 
 
@@ -6425,7 +6433,7 @@ c  Planck bounce-averaged calculations
 c  This formula is for
 c  1)Landau damping of lower hybrid (LH) slow waves resonant  at parallel
 c    velocities	above the electron thermal velocity
-c  2)Slow frequincy fast (compressional Alfven) wave (AW) may resonant with
+c  2)Slow frequency fast (compressional Alfven) wave (AW) may resonant with
 c    low phase velocity electrons via combined Landay damping and transit
 c    time magnetic damping  
 c
@@ -6438,9 +6446,9 @@ c                       jwave (=islofa)=-1 ALfen wave , 0- Landau damp.
 c                       cnpar -paralell to magnetic field refractive
 c                              index
 c                       r0x character length
-c     output parameter:  J/P=efficient  in (A/m**2)/(Wt/m**3)
-c------------------------------------------------------------------
-c     output parameter: efficien  in (A/cm**2)/(erg/(c*cm**3))
+c     computed:  J/P=efficiency  in (A/m**2)/(W/m**3)
+c     converted to 
+c     output parameter: effKarn in (A/cm**2)/(erg/(sec*cm**3))
 c------------------------------------------------------------------
 c     It uses:
 c     double precision function: psif(z,r) and
@@ -6475,7 +6483,7 @@ c-----locals
       integer irfq !=jwave+2
        
 c-----outpt
-      real*8 effKarn !efficiency  in (A/cm**2)/(erg/(c*cm**3)
+      real*8 effKarn !efficiency  in (A/cm**2)/(erg/(sec*cm**3)
 
 c-----externals
       real*8 psif,b,bmax_psi,rmin_psi,rmax_psi
@@ -6521,7 +6529,7 @@ c---------------------------------------------------
       call etajrf(z_eff,eps,w,rto,eta,eta0,irfq)
       write(*,*)'Bon after etajr rta0,eta',eta0,eta
 c-------------------------------------------------- 
-c     efficiency  in (A/m**2)/(joule/(c*m**3))
+c     efficiency  in (A/m**2)/(W/m**3)
 c     temperature temp in kev
 c     density     dens in 10**19 /m**3
 c-----------------------------------------------------------
@@ -6529,7 +6537,7 @@ c     cln -Coulomb Ln
       arg1 = 1.d3/temp*dsqrt(10.d0*den)	!temp KeV, den 10**13/cm**3
       cln=24.d0-dlog(arg1)
 
-      effKarn=eta*3.84d0*temp/(cln*den)	!(a/m**2)/joule/(c*m**3)
+      effKarn=eta*3.84d0*temp/(cln*den)	!(A/m**2)/(W/m**3)
       write(*,*)'Bon temp,den,cln,eta,effKarn',temp,den,cln,eta,effKarn
 c--------------------------------------------------------------  
 c     determination the of the current drive sign
@@ -6540,10 +6548,10 @@ c------------------------------------------------------
          s=-1.d0
       endif
 c------------------------------------------------------------
-      effKarn=-effKarn*s*1.d-5  !  A/cm**2/(erg/(sec*cm**3)
+      effKarn=-effKarn*s*1.d-5  !(A/cm**2)/(erg/(sec*cm**3)) converted
 
       return
-      end
+      end subroutine efKarney_Bonoli ! Not used; for tests only
 
       subroutine plot_1_Karney
 c----------------------------------------------------
@@ -7153,7 +7161,7 @@ c-----cln -Coulomb Ln
       cln=24.d0-dlog(arg1)
       
 c---------------------------------------------------------------------------
-      cd_efficiency=cd_efficiency*1.d5         ! (A/m**2)/(joule/(sec*m**3))
+      cd_efficiency=cd_efficiency*1.d5         ! (A/m**2)/(W/m**3)
  
       cd_efficiency=cd_efficiency*(cln*dense)/(3.84d0*t_e_kev)
 

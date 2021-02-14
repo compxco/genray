@@ -621,7 +621,9 @@ c      if (dens_rho_theta.lt.dens_min_edge) then
       if (dens_rho_theta.lt.dens_min_edge*dens_ratio) then
          if (iwarn.lt.50) then
          iwarn=iwarn+1   
-         write(*,*)'WARNING[dens_rho_theta_LCFS]. rho_small=',rho_small
+         write(*,*)'WARNING: [dens_rho_theta_LCFS] rho_small=',rho_small
+         !YuP: these messages could be printed too often, 
+         !especially in LHCD runs, when rays travel at rho>1 frequently.
          write(*,*)'densedge.lt.dens_min_edge*dens_ratio'
          write(*,*)'It will be dens_rho_theta=dens_min_edge*dens_ratio'
          endif

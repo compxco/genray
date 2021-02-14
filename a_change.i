@@ -9,8 +9,36 @@ c
 c
 c***********************************************************************
 
+[226] In subr. efKarney (called for ieffic=2 setting), 
+   added islofa==jwave=0 condition 
+   for Landau damping (was: jwave.ne.-1 for Landau damping);
+   For any other jwave, except -1 and 0, print warning message
+   before starting ray tracing. Subr.efKarney is not supposed
+   to be called with jwave>0, but if it is called with jwave>0, 
+   it will be using same settings as for jwave=0 
+   (although results are not expected to be physical in this case).
+   YuP[2021-02-11] 
+
+[225] Added (cn2-cnpar2.le.0.01) condition 
+   into subr.find_maximal_OX_transmission, as in 
+      if( (xe.gt.(x0-eps_xe) .or. (cn2-cnpar2.le.0.01))
+         .and. (xe.le.x0)                ) then
+   So, the search of the O-X conversion could be triggered
+   by value of Nperp becoming too low ~0.1,
+   which helps to detect the proximity of evanescent layer.
+   YuP[2021-02-04]
+   
+[224] Improved graphics in PGplot-generated *.ps file, 
+   see subroutine plot_fcefuh. YuP[2021-01]
+
+[223] Adjusted subroutine find_rho_x, to avoid infinite loop
+   that happens at certain conditions in OXB runs,
+   particularly when condition Xe>1 is not met in plasma.
+   YuP[2021-01-27]
+
 [222] version="genray_v10.15_201206"
-   Added printout of |Eplus|/E, |Eminus|/E, |Ez|/E polarizations
+
+[222] Added printout of |Eplus|/E, |Eminus|/E, |Ez|/E polarizations
    at ray starting point to screen 
    (or log file). BH,YuP[2020-11-30]
 

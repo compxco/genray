@@ -448,10 +448,10 @@ fi
 
 if [ "$TEST_10_1" = "do" ]; then
 mkdir test10.1
-cp genray.in_test10.1 test10.1
-cp eqdsk_MASTU test10.1/
+cp genray.in_test10.1 test10.1/genray.in
+cp eqdsk_MAST-like test10.1/
 cd test10.1/
-time $XGENRAY > log_test10.1
+time $XGENRAY > log_test10.1  #3s on compx2
 emacs ECcone_optimal.dat &
 cd ..
 emacs ECcone_optimal.dat_test10.1 &
@@ -461,7 +461,7 @@ fi
 if [ "$TEST_10" = "do" ]; then
 mkdir test10
 cp genray.in_test10 test10/genray.in
-cp eqdsk_MASTU drawgenr.in drawfreqelec.in test10/
+cp eqdsk_MAST-like drawgenr.in drawfreqelec.in test10/
 cd test10/
 time $XGENRAY > log_test10    #32s on compx2
 if [ "$JXDRAW" = "yes" ]; then

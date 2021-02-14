@@ -1224,7 +1224,7 @@ c           write(*,*)'in rside1 before return'
            ! Note: although each component of Vgroup/c is limited now,
            ! the magnitude of |Vgroup/c| can still be larger than 1.0.
            if(abs(deru(1)).gt.1.d0)then ! YuP[2020-08-30]
-             write(*,*)'rside1/WARNING: deru(1)=', deru(1) ! dZ/dt
+             write(*,*)'rside1/ WARNING: deru(1)=', deru(1) ! dZ/dt
              if(deru(1).lt.0.d0)then
                 deru(1)=-1.d0
              else
@@ -1232,7 +1232,7 @@ c           write(*,*)'in rside1 before return'
              endif
            endif
            if(abs(deru(2)).gt.1.d0)then ! YuP[2020-08-30]
-             write(*,*)'rside1/WARNING: deru(2)=', deru(2) ! dR/dt
+             write(*,*)'rside1/ WARNING: deru(2)=', deru(2) ! dR/dt
              if(deru(2).lt.0.d0)then
                 deru(2)=-1.d0
              else
@@ -1240,7 +1240,7 @@ c           write(*,*)'in rside1 before return'
              endif
            endif
            if(abs(r*deru(3)).gt.1.d0)then ! YuP[2020-08-30]
-             write(*,*)'rside1/WARNING: r*deru(3)=', r*deru(3) ! R*dphi/dt
+             write(*,*)'rside1/ WARNING: r*deru(3)=', r*deru(3) ! R*dphi/dt
              if(deru(3).lt.0.d0)then
                 deru(3)=-1.d0/r
              else

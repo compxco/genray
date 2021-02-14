@@ -1739,8 +1739,8 @@ c      write(*,*)'T_perp_c,T_perp_r',T_perp_c,T_perp_r
 
       if(T_perp_r.lt.0.d0) then
         write(*,*)'*********************************************'
-        write(*,*)' WARNING : T_perp_r.lt.0.d0 in absorp_hot'
-        write(*,*)' It was used T_perp_r from the previous point'
+        write(*,*)' WARNING: T_perp_r.lt.0.d0 in absorp_hot'
+        write(*,*)' Using T_perp_r from the previous point'
         write(*,*)'*********************************************'
         T_perp_r=T_perp_old
       endif 

@@ -222,6 +222,14 @@ CMPIINSERTPOSITION INITIALIZATION
          call cpu_time(time_genray_1) ! very beginning
       endif  !On myrank.eq.0 
 
+      if (myrank.eq.0) then
+      WRITE(*,*)
+      WRITE(*,*)'***  If user is doing new type run, then         ***'
+      WRITE(*,*)'***  Recommend search of screen o/p for WARNING: ***'
+      WRITE(*,*)
+      endif
+
+
 c---------------------------------------------------
 c     Write out the version number
 c--------------------------------------------------
@@ -2096,10 +2104,24 @@ c     +              time_genray_2-time_genray_1a
  
       WRITE(*,1004)
  1004 format('genray.f: Normal end of program')
+      WRITE(*,*)
+      WRITE(*,*) "===> Check 'WARNING' messages in log file <==="
+      WRITE(*,*) 
+     & "===> Some of them can point to a wrongful setting in input"
+      WRITE(*,*)
 c-----close PGgplot 
       if(myrank.eq.0) then  ! MPI
       call plotend
       endif  !On myrank=0   ! myrank=0
+
+      if (myrank.eq.0) then
+      WRITE(*,*)
+      WRITE(*,*)'***  If user is doing new type run, then         ***'
+      WRITE(*,*)'***  Recommend search of screen dump for WARNING: ***'
+      WRITE(*,*)
+      endif
+
+
 
  100  continue ! handle to skip plotting and writing, for myrank>0
 
@@ -3052,7 +3074,13 @@ c---------------------------------------------------
       common/mpimyrank/myrank !In serial run: myrank=0; In MPI run: myrank=rank
 
       if(myrank.eq.0) then
-      WRITE(*,*)'*********** code parameteres ************' 
+      
+      WRITE(*,*) "===> Check 'WARNING' messages in log file <==="
+      WRITE(*,*) 
+     & "===> Some of them can point to a wrongful setting in input"
+      WRITE(*,*)
+
+      WRITE(*,*)'*********** code parameters ************' 
 c--------------------------------------------------------------
       WRITE(*,*)'number of rays in common/cone/ EC-cone: nraymax = ',
      +nraymax

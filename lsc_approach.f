@@ -619,15 +619,16 @@ c
 
 c     ve=(sqrt(Te/me)),    ve in (cm/sec),Te(keV)     !article p.1935
 c      ve=1.32d9*dsqrt(temp)	                      !temp keV
-c     efficiency  in (A/m**2)/(joule/(c*m**3))
+c     efficiency  in (A/m**2)/(W/m**3) 
+c       [then, converted to (A/cm**2)/(erg/(sec*cm**3))]
 c     temperature temp in kev
 c     density     dens in 10**19 /m**3
 c     cln -Coulomb Ln
 c      arg1 = 1.d3/temp*dsqrt(10.d0*den)	!temp KeV, den 10**13/cm**3
 c      cln=24.d0-dlog(arg1)
 c      eta=cprof*amprof*eta0*rprof 		      !article (13)
-c      effKarn=eta*3.84d0*temp/(cln*den)	!(a/m**2)/joule/(c*m**3)
-c      write(*,*)'effKarn   (a/m**2)/joule/(c*m**3)', effKarn
+c      effKarn=eta*3.84d0*temp/(cln*den)	!(A/m**2)/(W/m**3)
+c      write(*,*)'effKarn   (A/m**2)/(W/m**3)', effKarn
 c-----------------------------------------------------------
 c     efficiency  in (A/cm**2)/(erg/(sec*cm**3))
 c     temperature temp in kev
@@ -639,14 +640,14 @@ c      efficien=2.d0/(5.d0+z_eff)*
 c     1         (u1*u1+(7.0d0/4.0d0+9.0d0/4.0d0/(3.d0+z_eff)))
 c      efficien=efficien*temp/den*(17.d0/cln)*9.d0*1.d-6
 c      write(*,*)'u1',u1  
-c     write(*,*)'asimptotic efficiency A/cm/(egr(c*cm**3))',efficien
+c     write(*,*)'asimptotic efficiency A/cm^2/(egr/(sec*cm**3))',efficien
 c      efficien=8.d0/(5.d0+z_eff)*u1*u1 !test
 c      write(*,*)'test efficien ',efficien
 
 c      efficien=efficien*temp/den*(17.d0/cln)*9.d0*1.d-6 
-c     write(*,*)'efficiency A/cm/(egr(c*cm**3))',efficien
+c     write(*,*)'efficiency A/cm^2/(egr/(sec*cm**3))',efficien
 c      efficien=efficien*3.84d0*temp/den/cln
-c      write(*,*)'asymptotic efficiency(A/m**2)/(joule/cm**3))',efficien
+c      write(*,*)'asymptotic efficiency(A/m**2)/(W/m**3))',efficien
 ctest end         determination the of the current drive sign
 c      if (u1.ge.0.d0) then
 c         s=1.d0
@@ -1546,15 +1547,19 @@ CAYP201124 avoid zero powers
        jjkk=0
        if(dabs(delpwr_nc(is-1,ir)).lt.1.d-177) jjkk=jjkk+1
        if(dabs(delta_pow_loc).lt.1.d-177) jjkk=jjkk+1
-       if(jjkk.gt.0) then
-        ratio=1.d0
+!YuP       if(jjkk.gt.0) then
+!YuP        ratio=1.d0
 c         write(*,*)'delta_pow_loc/delwpr_nc',
 c     &              delta_pow_loc,delpwr_nc(is-1,ir)
-       else
-         if (dabs(delta_pow_loc/delpwr_nc(is-1,ir)).gt.1.d-8) then
-           if(((delpwr_nc(is-1,ir)-delpwr_nc(is,ir))/
-     &        delpwr_nc(is-1,ir))
-     &.       gt.1.d-8) then
+!YuP       else
+         if(dabs(delta_pow_loc).gt.1.d-8*dabs(delpwr_nc(is-1,ir))) then
+         !YuP[2020-11-25] rearranged if() to avoid divisions.
+!YuP         if (dabs(delta_pow_loc/delpwr_nc(is-1,ir)).gt.1.d-8) then
+!YuP           if(((delpwr_nc(is-1,ir)-delpwr_nc(is,ir))/
+!YuP     &        delpwr_nc(is-1,ir))
+!YuP     &.       gt.1.d-8) then
+           if( delpwr_nc(is-1,ir)-delpwr_nc(is,ir)
+     &         .gt. 1.d-8*delpwr_nc(is-1,ir)) then
 
 c-------------calculation delta_power like in prep3d_lsc for test                            
 c             lsc_eps_coef=d_eps_r_d_p_dev_d_eps_r_d_omega*K_zz_i 
@@ -1584,7 +1589,7 @@ c             write(*,*)'is,j,ratio',is,j,ratio
          endif
 c         ratio=1.d0
 c         write(*,*)'j,ratio',j,ratio
-        endif
+!YuP        endif !jjkk
 
 c--------if D_QL is too big: D_QL*ratio > D_Coulomb*1.d14 then
 c           it will be set D_QL=D_Coulomb*1.d14
@@ -1860,7 +1865,7 @@ c     rho is in common one.i
       bmod=b(z,r,phi)
 
       if (rho.gt.1.d0) then
-          write(*,*)'WARNING'
+          write(*,*)'WARNING:'
           write(*,*)'in LH_absorption_LSC_new rho.gt.1 rho=',rho
           write(*,*)'for rho>0 LSC approach can not work'
           write(*,*)'in this case it will be set cnprim_e=0'  
@@ -1947,7 +1952,7 @@ c      write(*,*)'-lsc_eps_coef,dsqrt(vgperps),cnprim',
 c     &           -lsc_eps_coef,dsqrt(vgperps),cnprim
 
       if(cnprim.lt.0.d0) then
-         write(*,*)'WARNING in LH_absorption_LSC cnprim <0'
+         write(*,*)'WARNING: in LH_absorption_LSC cnprim <0'
          write(*,*)'It was set cnprim=dabs(cnprim)'
          cnprim=dabs(cnprim)
       endif
@@ -2185,7 +2190,7 @@ c-----calculate the group velocity
          ! vgroup=1.00005 (slightly larger than 1) might happen in near-vacuum
          write(*,*)
          write(*,*) '*************************************************'
-         write(*,*)'prep3d_lsc:WARNING vgroup>1, vgroup=',dsqrt(vgrmods)
+       write(*,*)'prep3d_lsc WARNING: vgroup>1, vgroup=',dsqrt(vgrmods)
          write(*,*) '*************************************************'
          write(*,*)
       endif
@@ -2288,7 +2293,7 @@ c        write(*,*)'optical_depth',optical_depth
 c-YuP-130605: changed ray-stopping criterion from argexp>0.d0 to this:
            if(argexp.gt. 1.d-30)then
               WRITE(*,*)'**********************************************'
-              WRITE(*,*)'WARNING in lsc_approach: argexp>0 :' , argexp
+              WRITE(*,*)'WARNING: in lsc_approach: argexp>0 :' , argexp
               WRITE(*,*)'It would give growing ray power-> stopping ray'
               WRITE(*,*)'ckvipol,ckvipold=',ckvipol,ckvipold
               WRITE(*,*)'**********************************************'
@@ -2458,7 +2463,7 @@ c     &             -dlog(delpwr(is)/delpwr(1))
 c         if(argexp.gt.0.d0)then
 c           write(*,*)'******************************************'
 c           write(*,*)'******************************************'
-c           write(*,*)'WARNING in prep3d.f argexp>0' 
+c           write(*,*)'WARNING: in prep3d.f argexp>0' 
 c           write(*,*)'It will give the growing ray power'
 c          write(*,*)'******************************************'
 c         endif

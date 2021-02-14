@@ -691,7 +691,7 @@ c           nbulk.ge.3
 c           calculation of the tables for the radial profile
 c           dens1(ndens,nbulk) and dens1(ndens,nbulk-1)
 	    if( charge(nbulk).eq.charge(nbulk-1)) then
-	      WRITE(*,*)'Warning in dinit_mr: nbulk(.ge.3)=',nbulk
+	      WRITE(*,*)'WARNING: in dinit_mr: nbulk(.ge.3)=',nbulk
 	      WRITE(*,*)'in dinit: charge(nbulk)=charge(nbulk-1)'
 	      WRITE(*,*)'it is impossible to find the ions densities'
 	      WRITE(*,*)'change charge(nulk) or charge(nbulk-1)'
@@ -1976,7 +1976,7 @@ c---------------------------------------------------------
 c     calculation of the table for the radial profile zeff1(ndens)
 c---------------------------------------------------------
       if (nbulk.eq.1) then
-         write(*,*)'Warning dinit: nbulk=1, it will be created zeff=1'
+      write(*,*)'WARNING: zeffcalc: For nbulk=1, enforcing zeff1=1'
       endif
 
       do j=1,ndens
@@ -2137,7 +2137,7 @@ cc      write(*,*)ndens,nbulk,idens,izeff
       else
 c        nbulk.ge.3
          if( charge(nbulk).eq.charge(nbulk-1)) then
-	    write(*,*)'Warning in denscalc: nbulk(.ge.3)=',nbulk
+	    write(*,*)'WARNING: in denscalc: nbulk(.ge.3)=',nbulk
 	    write(*,*)'in denscalc: charge(nbulk)=charge(nbulk-1)'
 	    write(*,*)'it is impossible to find the ions denscalc'
 	    write(*,*)'change charge(nulk) or charge(nbulk-1)'
@@ -2291,7 +2291,7 @@ cc      write(*,*)ndens,nbulk,idens,izeff
         if (nbulk.ge.3) then
 c        nbulk.ge.3
          if( charge(nbulk).eq.charge(nbulk-1)) then
-	    write(*,*)'Warning in denscalc: nbulk(.ge.3)=',nbulk
+	    write(*,*)'WARNING: in denscalc: nbulk(.ge.3)=',nbulk
 	    write(*,*)'in denscalp: charge(nbulk)=charge(nbulk-1)'
 	    write(*,*)'it is impossible to find the ions denscalp'
 	    write(*,*)'change charge(nulk) or charge(nbulk-1)'
