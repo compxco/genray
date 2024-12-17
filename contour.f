@@ -326,7 +326,7 @@ c     the name of otput file is plot.ps,
 c     the device has /VPS tipe
 
 c      write(*,*) 'PLOTINIT before PGOPEN'
-      ier=PGOPEN('plot.ps/VCPS')   
+      ier=PGOPEN('plot.ps/PS')   
 c      ier=PGOPEN('plot.ps/VPS')   
 c      ier=PGOPEN('plot.ps/PS') 
 c      ier=PGOPEN('?')
