@@ -1972,12 +1972,12 @@ c
 c----------------------------------------------------------------------
 c     creation of arrays of the spline coefficients                  
 c     for radius and refractive vectors coordinates along the ray 	      
-c     tr_r(nrelta4),cx_r(ndens4a)                  		      
-c     tr_z(nrelta4),cx_z(ndens4a)
-c     tr_phi(nrelta4),cx_phi(ndens4a)                  		      
-c     tr_cnr(nrelta4),cx_cnr(ndens4a)
-c     tr_cnz(nrelta4),cx_cnz(ndens4a)                  		      
-c     tr_cm(nrelta4),cx_cm(ndens4a)
+c     tr_r(nrelta4),cx_r(ndens4)                  		      
+c     tr_z(nrelta4),cx_z(ndens4)
+c     tr_phi(nrelta4),cx_phi(ndens4)                  		      
+c     tr_cnr(nrelta4),cx_cnr(ndens4)
+c     tr_cnz(nrelta4),cx_cnz(ndens4)                  		      
+c     tr_cm(nrelta4),cx_cm(ndens4)
 c
 c     thise program uses the following subroutines:  		      
 c								      
@@ -2780,7 +2780,7 @@ c-----calculate cnray
          if(i.eq.1) y_ar(1)=-y_ar(1)
 	 te=tempe(z,r,phi,i) ! kev
 	 t_av_ar(i)=te*1000.d0      ! ev 
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
          vflow_ar(i)=vflowrho(rho,i)
       enddo  
 c      write(*,*)'emssion in  add_ray_point before rayrind rho',rho  
@@ -3123,7 +3123,7 @@ c       reps(3,3), and N_per=N_per(N_par) from forest solver
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
 
@@ -3182,7 +3182,7 @@ c-------Hermitian non-relativistic tensor reps
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
  
@@ -3254,7 +3254,7 @@ cSm060314
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
          

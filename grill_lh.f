@@ -556,17 +556,32 @@ cBH020826        anzin(n)=anmin(i)+n*hnpar
 
 	       anorm=0.d0
 	       do n=1,nnkpari
-                 delnpar=anzin(n)-an0
-	         x1=andwdth*delnpar
-	         xx=x1*x1
-	         if(delnpar.ne.0.d0) then
-                   if(igrillpw.eq.1) pwcpl(n)=1.d0/nnkpari
-    	           if(igrillpw.eq.2) pwcpl(n)=dsin(x1)*dsin(x1)/xx
-                  if(igrillpw.eq.3) pwcpl(n)=exp(-(delnpar/anmax(i))**2)
-	         else
-	           pwcpl(n)=1.d0
-	         endif
-	         anorm=anorm+pwcpl(n)
+                delnpar=anzin(n)-an0
+                !YuP: delnpar can become 0 when nnkpar is an odd number.
+                x1=andwdth*delnpar
+                xx=x1*x1
+                write(*,*)'n,anzin(n),delnpar',n,anzin(n),delnpar
+                !YuP[2022-03] Took this line out of if(delpar.ne.0) block:
+                if(igrillpw.eq.1) pwcpl(n)=1.d0/nnkpari !YuP
+                !YuP[2022-03] Inclusion of this line into if(delpar.ne.0)
+                !was resulting in a different "drop" of pwcpl(n) in spectrum
+                !comparing to other points, when nnkpar is an odd value.
+                  !pwcpl(n)=1.d0 !YuP: Should NOT be applied to igrillpw=1 option
+                if(igrillpw.eq.2) then
+                  if(delnpar.ne.0.d0) then
+                    pwcpl(n)=dsin(x1)*dsin(x1)/xx
+                  else !delnpar=0, which means x1=0 and xx=0
+                    pwcpl(n)=1.d0
+                  endif
+                endif
+                if(igrillpw.eq.3) then
+                  if(delnpar.ne.0.d0) then
+                    pwcpl(n)=exp(-(delnpar/anmax(i))**2)
+                  else !delnpar=0, but:
+                    pwcpl(n)=1.d0 !The above line is exp(0.0)=1.0 anyway
+                  endif
+                endif
+                anorm=anorm+pwcpl(n)
 	       enddo !n
 c              write(*,*)'anorm='anorm
 
@@ -575,6 +590,7 @@ c              write(*,*)'anorm='anorm
 	         write(*,*)'n,pwcpl(n)',n,pwcpl(n)
 	       enddo !n
              endif !i_grill_npar_ntor_npol_mesh.eq.1
+             
             
              if(i_grill_npar_ntor_npol_mesh.eq.2) then
 c--------------------------------------------------------------------
@@ -980,7 +996,7 @@ c-----------------------------------------------------
 c calculation of the initial values of the n_parallel width
 	        if (nnkpari.eq.1) then
                    write(*,*)'grill_lh nnkpari.eq.1'
-        	   wdnpar0(iray)=dabs(anzin(n))*0.05d0
+        	   wdnpar0(iray)=dabs(anzin(n))*0.05d0 !One point in spectrum --> 5%
 c        	   wdnpar0(iray)=dabs(anzin(n))*0.1d0
 	        else
         	  wdnpar0(iray)=dabs(difrnpar)/dfloat(nnkpari)

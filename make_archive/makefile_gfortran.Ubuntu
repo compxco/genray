@@ -1,35 +1,31 @@
-# makefile for GENRAY using gfortran
+# makefile for GENRAY using gnu 64-bit fortran 95 compiler.
 # N.Ershov 
 # 24 Jan, 2003
 # USAGE: 
 # make 		- as usual make
 # make rebuild	- rebuild whole program
 # make clean	- remove all *.o files
-# This debug version uses compiler options:
-# NO, DOES NOT PRESENTLY WORK (BH2020): still need to adjust real*4 binary writes.
-# CSPECIAL  =  -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflow
 
 SHELL=		/bin/sh
-NAME=		xgenray_debug_BOUND_CHECK
+NAME=		xgenray
 COMPILER=	gfortran
 BUILDER=	$(COMPILER)
-INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
-		emissa.i five.i fourb.i gr.i grill.i ions.i\
-		limit.i  loopb.i nperpcom.i\
+INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i \
+		emissa.i five.i fourb.i gr.i grill.i ions.i \
+		limit.i  loopb.i nperpcom.i \
 		lsc_approach.i  lsc_approach_nml.i  lsc_approach_no_nml.i \
 		name_lsc_approach_nml.i \
 		name.i name_eccone.i name_genr.i name_grill.i \
 		name_non_uniform_mesh_profiles_line.i \
 		name_tokamak.i name_uniform_mesh_profiles.i \
 		output.i one.i \
-		onetwo.i oxb.i\
+		onetwo.i oxb.i pgconst.i \
 		rho.i six.i spline_distrib.i three.i \
 		transport_prof.i \
 		write.i writencdf.i \
-		commons.i param.i  rrange.i n_parb.i rkutta.i\
+		commons.i param.i  rrange.i n_parb.i rkutta.i \
 		globcd.h globcd1.h globcd2.h
 #		netcdf.inc
-
 SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
 		abhay_disp.f\
 		adj_sub.f adj_vmlibpr.f adj_orbit.f adj_control.f \
@@ -63,26 +59,23 @@ SOURCES=	genray.f  abc.f   absorpfw.f absorplh.f   arrays.f\
 OBJECTS=	$(SOURCES:.f=.o)
 F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90 
 F90OBJS=	$(F90SRCS:.f90=.o)
-LOCATION=	-L/usr/lib64  -L/home/bobh/pgplot/pgplot_build_140331
-LOCATION  =   -L/usr/local/netcdf4.0/lib64   -L/home/bobh/pgplot/pgplot_build_140331
-#LOCATION  =  -L/usr/local/netcdf-3.5.0/lib -L/usr/X11R6/lib -L/usr/local/pgplot  -L/usr/X11R6/lib -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
+#LOCATION=	-L/usr/lib64  -L/home/bobh/pgplot/pgplot_build_140331
+#LOCATION  =   -L/usr/local/netcdf4.0/lib64   -L/home/bobh/pgplot/pgplot_build_140331
+LOCATION  =   -L/usr/lib/x86_64-linux-gnu/   -L/home/bobh/pgplot/pgplot_build_240304
 #LIBRARIES=	-lX11 -lnetcdf -lpgplot
 
 LIBRARIES=	-lX11 -lnetcdff -lnetcdf -lpgplot
-#LIBRARIES=	-lX11 -lnetcdf -lpgplotlf95
-#LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
-#INCLUDE=/usr/local/netcdf4.0/include /usr/include 
 INCLUDE=/usr/local/netcdf4.0/include
 INCLUDE=/usr/include
-DEBUG= -g
-#Need to fix writes to binary files before can use the following line.		
-#CSPECIAL= -O0 -frecord-marker=4 -fno-align-common -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflows
-CSPECIAL= -O0 -frecord-marker=4 -fno-align-common -ffpe-trap=invalid,zero,overflows -fbounds-check
+DEBUG=		
+#BH100214:  -ieee not working with gfortran? CSPECIAL= -ieee -frecord-marker=4	
+CSPECIAL= -O2 -frecord-marker=4  -fno-align-commons -fallow-argument-mismatch	
+BSPECIAL= -Wl,-noinhibit-exec 	
 
-BSPECIAL=	
-
-COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE)
-BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL) $(DEBUG)
+#COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE)
+COMPILE=	$(COMPILER) -c $(CSPECIAL) -I $(INCLUDE)
+#BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL) $(DEBUG)
+BUILD=		$(BUILDER) -o $(NAME) $(BSPECIAL)
 PROTECT=	chmod 755
 DELETE=		rm -f
 

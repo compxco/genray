@@ -362,7 +362,23 @@ CWRITE      +d_sigma_edge_n_d_theta_pol
 CWRITE       write(*,*)'d2_sigma_edge_n_d2_theta_pol',
 CWRITE      +d2_sigma_edge_n_d2_theta_pol
       enddo
+c---------------------------------------------------------------
       endif
+c     read the density(z,r,phi,isp) and T(z,r,phi,isp) profiles from data files:
+      if(model_rho_dens.eq.7)then !YuP[2024-08-14] added
+         if(dens_read.eq.'enabled')then ![2024-08-14] added flag/condition
+           call density_zrp_profile_read(nbulk,dendsk)
+         endif
+         if(temp_read.eq.'enabled')then ![2024-08-14] added flag/condition
+           call temperature_zrp_profile_read(nbulk,tempdsk) ![2024-08-14]
+         endif
+         if(tpop_read.eq.'enabled')then ![2024-08-14] added Tpop
+           call tpop_zrp_profile_read(nbulk,tpopdsk) ![2024-08-14]
+         endif
+         write(*,*)' genray.f after call density_zrp_profile_read'
+         write(*,*)' model_rho_dens=7  rdenmin,rdenmax=',rdenmin,rdenmax
+      endif
+c---------------------------------------------------------------
 
 c-----If input file is genray.in, then it will change
 c     input data to genray.dat file format 
@@ -370,7 +386,7 @@ c     input data to genray.dat file format
 CWRITE       write(*,*)'genray.f before transform_genray_in_to_dat'
       call transform_genray_in_to_dat 
       endif
-CWRITE       write(*,*)'genray.f after tramnsform_genray ',prmt
+CWRITE       write(*,*)'genray.f after transform_genray ',prmt
 c---------------------------------------------------------------
 c     reading the eqdsk data
 c     and creation of the coefficients for spline approximation
@@ -442,7 +458,7 @@ CWRITE       write(*,*)'genray.f after dinit_mr freqncy0',freqncy0
 CWRITE       write(*,*)'1 iray,arzu0(iray),arru0(iray),arphiu0(iray)',
 CWRITE      +iray,arzu0(iray),arru0(iray),arphiu0(iray)
       enddo
-CWRITE       write(*,*)'genray.f before n_wall.eq.1  n_wall',n_wall 
+       write(*,*)'genray.f before n_wall.eq.1  n_wall',n_wall 
 
       if (n_wall.gt.1)then
 c------------------------------------------------------------------
@@ -633,45 +649,46 @@ CWRITE       write(*,*)'d_dens_rho_r,d_dens_rho_z',
 CWRITE      +d_dens_rho_r,d_dens_rho_z
 
       goto 15
-c---------------numerical derivative d_dens_rho_theta_d_rho
-      step_rz=1.d-4
-      step_rz=1.d-6
-      call dens_rho_theta_LCFS(rho+step_rz,thetapol_l,k,
-     +x_p,d_dens_rho_theta_d_rho,
-     +d_dens_rho_theta_d_theta)
-      call dens_rho_theta_LCFS(rho-step_rz,thetapol_l,k,
-     +x_m,d_dens_rho_theta_d_rho,
-     +d_dens_rho_theta_d_theta)
-      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_dens_drho numerical
-CWRITE       write(*,*)'d_dens_rho_theta_d_rho,dxdz_d',
-CWRITE      +d_dens_rho_theta_d_rho,dxdz_d
-c---------------numerical derivative d_dens_rho_theta_d_theta
-      call dens_rho_theta_LCFS(rho,thetapol_l+step_rz,k,
-     +x_p,d_dens_rho_theta_d_rho,
-     +d_dens_rho_theta_d_theta)
-      call dens_rho_theta_LCFS(rho,thetapol_l-step_rz,k,
-     +x_m,d_dens_rho_theta_d_rho,
-     +d_dens_rho_theta_d_theta)
-      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_dens_drho numerical
-CWRITE       write(*,*)'d_dens_rho_theta_d_theta,dxdz_d',
-CWRITE      +d_dens_rho_theta_d_theta,dxdz_d
-c---------------numerical derivatives drhodr(z,r,0.d0)-----------------
-      bmod=b(z,r+step_rz,k) 
-      x_p=rho
-      bmod=b(z,r-step_rz,k)
-      x_m=rho
-      dxdr_d=(x_p-x_m)/(2.d0*step_rz) !d_rho/d_r numerical
-CWRITE       write(*,*)'drhodr(z,r,phi),dxdr_d',
-CWRITE      +drhodr(z,r,phi),dxdr_d
-c---------------numerical derivatives drhodz(z,r,0.d0)-----------------
-      bmod=b(z+step_rz,r,k) 
-      x_p=rho
-      bmod=b(z-step_rz,r,k)
-      x_m=rho
-      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_rho/d_z numerical 
-CWRITE       write(*,*)'drhodz(z,r,phi),dxdz_d',
-CWRITE      +drhodz(z,r,phi),dxdz_d
-c----------------------------------------------------------------
+![2026-01-14] Commenting this part; it is by-passed with goto 15 anyway:
+!c---------------numerical derivative d_dens_rho_theta_d_rho
+!      step_rz=1.d-4
+!      step_rz=1.d-6
+!      call dens_rho_theta_LCFS(rho+step_rz,thetapol_l,k,
+!     +x_p,d_dens_rho_theta_d_rho,
+!     +d_dens_rho_theta_d_theta)
+!      call dens_rho_theta_LCFS(rho-step_rz,thetapol_l,k,
+!     +x_m,d_dens_rho_theta_d_rho,
+!     +d_dens_rho_theta_d_theta)
+!      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_dens_drho numerical
+!CWRITE       write(*,*)'d_dens_rho_theta_d_rho,dxdz_d',
+!CWRITE      +d_dens_rho_theta_d_rho,dxdz_d
+!c---------------numerical derivative d_dens_rho_theta_d_theta
+!      call dens_rho_theta_LCFS(rho,thetapol_l+step_rz,k,
+!     +x_p,d_dens_rho_theta_d_rho,
+!     +d_dens_rho_theta_d_theta)
+!      call dens_rho_theta_LCFS(rho,thetapol_l-step_rz,k,
+!     +x_m,d_dens_rho_theta_d_rho,
+!     +d_dens_rho_theta_d_theta)
+!      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_dens_drho numerical
+!CWRITE       write(*,*)'d_dens_rho_theta_d_theta,dxdz_d',
+!CWRITE      +d_dens_rho_theta_d_theta,dxdz_d
+!c---------------numerical derivatives drhodr(z,r,0.d0)-----------------
+!      bmod=b(z,r+step_rz,k) 
+!      x_p=rho
+!      bmod=b(z,r-step_rz,k)
+!      x_m=rho
+!      dxdr_d=(x_p-x_m)/(2.d0*step_rz) !d_rho/d_r numerical
+!CWRITE       write(*,*)'drhodr(z,r,phi),dxdr_d',
+!CWRITE      +drhodr(z,r,phi),dxdr_d
+!c---------------numerical derivatives drhodz(z,r,0.d0)-----------------
+!      bmod=b(z+step_rz,r,k) !YuP: wrong arg.list; But this part is by-passed anyway
+!      x_p=rho
+!      bmod=b(z-step_rz,r,k) !YuP: wrong arg.list; But this part is by-passed anyway
+!      x_m=rho
+!      dxdz_d=(x_p-x_m)/(2.d0*step_rz) !d_rho/d_z numerical 
+!CWRITE       write(*,*)'drhodz(z,r,phi),dxdz_d',
+!CWRITE      +drhodz(z,r,phi),dxdz_d
+!c----------------------------------------------------------------
       else
       psi_loc=psif(z,r)
       dro_dpsi=drhopsi(psi_loc)
@@ -679,7 +696,7 @@ c----------------------------------------------------------------
       d_dens_rho_r=dn_drho*dro_dpsi*dpdrd
       d_dens_rho_z=dn_drho*dro_dpsi*dpdzd
       endif
-c------------density derivatives using spline
+!c------------density derivatives using spline
  15   continue
 cSAP090409
 c             write(*,*)'genray.f before d_density_r_z_i_d_r k,m',k,m
@@ -708,9 +725,9 @@ CWRITE      +x_p,r+step_rz,x_m,r-step_rz,dxdr_d
 CWRITE       write(*,*)'num der spl dxdz_d,dxdr_d',dxdz_d,dxdr_d
 
 c-------------numerical d_dens_d_z from function dense             
-      bmod=b(z+step_rz,r,k) 
+      bmod=b(z+step_rz,r,phi) !YuP: was wrong arg.list; But this part is by-passed anyway
       x_p=dense(z+step_rz,r,phi,k)
-      bmod=b(z-step_rz,r,k) 
+      bmod=b(z-step_rz,r,phi) !YuP: was wrong arg.list; But this part is by-passed anyway
       x_m=dense(z-step_rz,r,phi,k)
       dxdz_d=(x_p-x_m)/(2.d0*step_rz)
 
@@ -718,10 +735,10 @@ CWRITE       write(*,*)'numer der z dense'
 CWRITE       write(*,*)'x_p,z+step_rz,x_m,z-step_rz,dxdz_d',
 CWRITE      +x_p,z+step_rz,x_m,z-step_rz,dxdz_d
 
-      bmod=b(z,r+step_rz,k) 
+      bmod=b(z,r+step_rz,phi) !YuP: was wrong arg.list; But this part is by-passed anyway
       x_p=dense(z,r+step_rz,phi,k)
-      bmod=b(z,r-step_rz,k) 
-      x_m=dense(z,r-step_rz,phi,k)
+      bmod=b(z,r-step_rz,phi) !YuP: was wrong arg.list; But this part is by-passed anyway
+      x_m=dense(z,r-step_rz,phi,k) 
       dxdr_d=(x_p-x_m)/(2.d0*step_rz)
 
 CWRITE       write(*,*)'numer der r dense'
@@ -769,6 +786,40 @@ CWRITE      +dif_d_dens_dz,i0z,j0z
 c------end test
  17   continue
 c       stop 'genray.f after compare splcoef_density_r_z'
+
+
+      !For test only, to write data on density into a file:
+      write(*,*)model_rho_dens,nzden
+      !if(model_rho_dens.ne.7)then !YuP[2024-08-14] added
+      if(model_rho_dens.eq.-1)then ! "-1" means - never happens
+         !Set basic grids here (C-mod/test7, just for for a test):
+         nzden=100 !200 !grid size in Z !300x300x200x3 --> 778MB file
+         nrden=100 !300 !grid size in R
+         nphiden=1 !160 !300 !grid size in phi (tor.angle)
+         zdenmin=-0.5 ![m] !Grid limits in Z
+         zdenmax=+0.5 ![m]
+         rdenmin=+0.4 ![m] !Grid limits in R
+         rdenmax=+0.95 ![m]
+         phidenmin=0.d0  ![rad] !Grid limits in phi
+         phidenmax=2*pi ![rad]
+         !The following subroutine scans the ranges in (Z,R,phi) grids
+         !and evaluates density at each grid point, for each species,
+         !then saves data into dengrid_zrp(nzden,nrden,nphiden,nbulk)
+         !together with the grid data:
+         call density_zrp_profile_write(nbulk,dendsk)
+         !Similarly - for temperature. The grids are same as for density.
+         !The values are saved into tempgrid_zrp(nzden,nrden,nphiden,nbulk)
+         call temperature_zrp_profile_write(nbulk,tempdsk)
+         call tpop_zrp_profile_write(nbulk,tpopdsk)
+         write(*,*)' genray.f after call density_zrp_profile_write'
+         write(*,*)' n() are saved into dendsk=', trim(dendsk)
+         write(*,*)' T() are saved into tempdsk=',trim(tempdsk)
+         write(*,*)' Tpar/Tperp() are saved into tpopdsk=',trim(tpopdsk)
+         write(*,*)' '
+         !These data files can be used 
+         !in a subsequent run with model_rho_dens.eq.7
+      endif !For test only, to write data on n() and T() into data files
+      
 
 c-------------------------------------------------
 c     compare two different splines for b calculations
@@ -1364,7 +1415,7 @@ c--------------------------------------------------------------
            endif
            !-------------------------------------------------
            call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
-     +     i_output)
+     +     i_output,nbulk,nharm_refined_step)
            !-------------------------------------------------
            if(myrank.eq.0)then
             call cpu_time(time_drkgs2_2)
@@ -1383,7 +1434,8 @@ c--------------------------------------------------------------
            ! is not larger than dL_step, and also
            ! the change in refr. index |N| is not larger than dN_step
            call drkgs_auto(prmt, u, deru, ndim, ihlf,
-     &                     rside1, outpt, aux, dL_step,dN_step)
+     &                     rside1, outpt, aux, dL_step,dN_step,
+     &                     nbulk,nharm_refined_step)
         endif
       
       endif ! isolv.eq.1
@@ -1882,8 +1934,14 @@ CWRITE       write(*,*)'genray.f before netcdf_wall_lim_data filenc',
 CWRITE      +filenc 
           call wrtnetcdf_wall_limiter_data(trim(filenc))
         endif
+         
+         !YuP[2024-08-14] Added (adapted from GENRAY-C):
+         !NEEDS DEBUGGING: call wrtnetcdf_plasma_prof(trim(filenc)) 
+         ! plasma profiles, dispersion roots
+         write(*,*)'after wrtnetcdf_plasma_prof'
       
-        endif ! rayop=
+        endif ! rayop.eq."netcdf" 
+        
 CWRITE       write(*,*)'genray: powtot_e,powtot_i',powtot_e,powtot_i
   
         if ((istart.eq.2).or.(istart.eq.3)) then
@@ -3190,7 +3248,7 @@ c     for common/six/
       WRITE(*,*)'max number of points in arrays with '// 
      +'plasma density, temperature, zeff. tpop, and vflow: '//
      +' ndensa = ',ndensa
-      WRITE(*,*)'ndens4a=ndensa+4 = ',ndens4a
+      !YuP/not used: WRITE(*,*)'ndens4a=ndensa+4 = ',ndens4a
 
 c************************************************************
 c     for common/write/

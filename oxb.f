@@ -1723,7 +1723,7 @@ c--------------------------------------------------------------
               ! time step can be reduce or enlarge
                write(*,*)'prmt',prmt
                call drkgs2(prmt,u,deru,ndim,ihlf,rside1,outpt,aux,
-     &                     i_output)
+     &                     i_output,nbulk,nharm_refined_step)
              endif
              if(irkmeth.eq.3) then ! YuP[2020-08-25] added
               ! 4th order Runge-Kutta with variable time step,
@@ -1735,7 +1735,8 @@ c--------------------------------------------------------------
               ! is not larger than dL_step, and also
               ! the change in refr. index |N| is not larger than dN_step
                call drkgs_auto(prmt, u, deru, ndim, ihlf,
-     &                     rside1, outpt, aux, dL_step,dN_step)
+     &                     rside1, outpt, aux, dL_step,dN_step,
+     &                     nbulk,nharm_refined_step)
              endif
            endif ! isolv.eq.1
 c-------------------------------------------------------------------end2

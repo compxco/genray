@@ -2153,6 +2153,8 @@ c      write(*,*)'prep3d_lsc LH_LSC  cnprim_e', cnprim_e
       if (ion_absorption.eq.'enabled') then
          cnprim=cnprim_e+cnprim_i
       else
+         cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+         !if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
          cnprim=cnprim_e
       endif
          

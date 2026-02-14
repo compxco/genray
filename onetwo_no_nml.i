@@ -46,6 +46,7 @@ c-----real*8
      & 	       densprof(:,:),         !(NR,nbulk) ! netcdfr3d
      &         temprof(:,:),          !(NR,nbulk) ! netcdfr3d
      &         zefprof(:),            !(NR)       ! netcdfr3d
+     &         rhoprof(:), ![2024-01-24] rho corresponding to densprof (just for nc file)
      &         rho_bin(:),            !(NR)       ! netcdfr3d
      &         rho_bin_center(:),     !(NR-1)     ! netcdfr3d    
      &         binvol(:),             !(NR-1)  ! dnonetwo and p_c_prof
@@ -92,6 +93,7 @@ c-----pointers
      8	       densprof,
      &         temprof,
      &         zefprof,
+     &         rhoprof, ![2024-01-24] rho corresponding to densprof (just for nc file)
      &         rho_bin,
      &         rho_bin_center,
      &         binvol,
@@ -116,7 +118,7 @@ c    power_s is the absorbed power due to coll'less ion damping on each ion
 c    power_cl is the absorbed power due to collisional damping
 c    spower_e summed absorbed power due to coll'less electron damping
 c    spower_i summed absorbed power due to collisionless ion damping
-c    spower_i summed absorbed power due to coll'less ion damping on each ion
+c    spower_s summed absorbed power due to coll'less ion damping on each ion
 c    spower_cl summed absorbed power due to collisional damping
 c    allcur     total current
 c    densprof,temprof,zefprof   for output of radial profiles to .nc file

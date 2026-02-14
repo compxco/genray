@@ -147,7 +147,8 @@ c-----locals
 c-----externals
       real*8 temperho,y,x,b,gamma1,tempe,cn,tpoprho,vflowrho,
      &hamilt1
-
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
 c      save id_initial !to change Ono dispersion
 c      logical first
@@ -487,7 +488,7 @@ c        Now it is for id=4,5,6,7
 cSm000324
           if(j.eq.1) yc(1)=-yc(1)
           tec(j)=tempe(z1,r1,phi1,j)*1.d+3 !(eV) averaged temperature
-          tpopc(j)=tpoprho(rho,j)
+          tpopc(j)=tpop_zrp(z1,r1,phi1,j) !YuP[2024-08-14] was tpoprho(rho,j)
           vflowc(j)=vflowrho(rho,j)         
         enddo
  
@@ -2828,6 +2829,8 @@ c     external
 c-------------------------------------------------------------------
       real*8 b,gamma1,cn,tempe,x,y,tpoprho,vflowrho
       complex*16 dhot_sum
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
 c      write(*,*)'output.f output_map_disp_nperp'
 c      write(*,*)'ratio_min_r_nperp,ratio_max_r_nperp,cnper',
@@ -2871,7 +2874,7 @@ c      min_r_nperp=cnper*0.5d0
          if(i.eq.1) y_ar(1)=-y_ar(1)
 	 te=tempe(z,r,phi,i) ! kev
 	 t_av_ar(i)=te*1000.d0      ! ev 
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
          vflow_ar(i)=vflowrho(rho,i)
       enddo
 
@@ -3592,6 +3595,8 @@ c-----------------------------------------------------------------
 c     external
 c-------------------------------------------------------------------
       real*8 b,tempe,x,y,tpoprho,vflowrho
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
       
 c      m_r_nperp=number_map_points_real_nperp 
 c      m_i_nperp=number_map_points_image_nperp 
@@ -3611,7 +3616,7 @@ c      min_i_nperp=10.d0
          if(i.eq.1) y_ar(1)=-y_ar(1)
 	 te=tempe(z,r,phi,i) ! kev
 	 t_av_ar(i)=te*1000.d0      ! ev 
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
          vflow_ar(i)=vflowrho(rho,i)
         write(*,*)'i,x_ar(i),y_ar(i),t_av_ar(i),tpop_ar(i),vflow_ar(i)'
      &            ,i,x_ar(i),y_ar(i),t_av_ar(i),tpop_ar(i),vflow_ar(i)
@@ -3689,6 +3694,8 @@ c-----locals
       complex*16 :: d
 c-----externals
       real*8 b,tempe,x,y,tpoprho,vflowrho
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
       write(*,*)'in subroutine map_d_Ono z,r,phi',z,r,phi
       write(*,*)'npar,nperp_min,nperp_max',
@@ -3704,7 +3711,7 @@ c-----externals
          if(i.eq.1) y_ar(1)=-y_ar(1)
 	 te=tempe(z,r,phi,i) ! kev
 	 t_av_ar(i)=te*1000.d0      ! ev 
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
          vflow_ar(i)=vflowrho(rho,i)
          mass_ar(i)=dmas(i)
         write(*,*)'i,x_ar(i),y_ar(i),t_av_ar(i),tpop_ar(i),vflow_ar(i)'

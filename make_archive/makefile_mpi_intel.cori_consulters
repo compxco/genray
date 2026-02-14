@@ -45,28 +45,6 @@
 
 #BH190925: Changed suffix in NAME from edison to cori, and recompiled.
 
-# Per 2020-01-16 - Johannes Blaschke (NERSC):  -----------------------------------
-# 1. Add `-lX11` to the LIBS variable (Note that the LIBRARIES variable is no longer
-# used. Instead the make file uses LIBS). So LIBS should read:
-# ```
-# LIBS = $(LOCATION) -lpgplot -lX11
-# ```
-# (note the `-lnetcdf` `-lnetcdff` flags are
-# also no longer needed, cf. point 2 below)
-# 2. You should rely on the compiler wrappers to find all loaded module libraries
-# (such as NetCDF). So you don't need to manually include `$(NETCDF_DIR)` and
-# `-lnetcdf`, etc. The compiler wrapper already does that if the `cray-netcdf` module
-# has been loaded. You can find out what the compiler wrapper already contains by
-# running `cc -v` or `ftn -v`.
-# 3. The location of your `pgplot` library now needs to be included in `LOCATION`.
-# ```
-# LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.intel
-# (or whatever the path is)
-# ```
-# Also add into your cori_batchscript_mpi  file, just before srun line:
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/CompX/pgplot.intel
-# --------------------------------------------------------
-
 SHELL=		/bin/sh
 NAME=		xgenray_mpi_intel.cori
 COMPILER=	ftn -g
@@ -122,11 +100,27 @@ MPIOBJS=	$(SOURCES:.f=.mpio)
 F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90
 F90OBJS=	$(F90SRCS:.f90=.o)
 
-#LOCATION= -L../pgplot.intel  # Local, at my home directory
-LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.intel
+#LOCATION=	-L/usr/lib64  -L/usr/local/pgplot
+#LOCATION=	-L/usr/lib64 -L/global/homes/u/u650/pgplot.edison/5.2/cnl2.0_ifort/lib
+#LIBRARIES=	-lX11 -lnetcdf -lpgplot
 
+#LOCATION=	 -L$(NETCDF_DIR)/lib -L$(HDF5_DIR)/lib -L/global/homes/u/u650/pgplot.edison/5.2/cnl2.0_ifort/lib
+# LOCATION= -L$(NETCDF_DIR)/lib -L$(HDF5_DIR)/lib -L../pgplot.intel/pgplot
+LOCATION= -L../pgplot.intel/pgplot
+
+# LIBS = \
+#  $(LOCATION) -lpgplot -lnetcdff -lnetcdf -lX11
+# 
+# 
+# LIBRARIES=	$(LOCATION) 	-lX11 -lnetcdff -lnetcdf -lpgplot -lmpichf90
 LIBS = $(LOCATION) -lpgplot -lX11
 
+
+
+#Location of netcdf.inc:
+#INCLUDE=/usr/include
+#INCLUDE= /usr/include $(NETCDF_DIR)
+# INCLUDE= $(NETCDF_DIR)/include
 DEBUG=		
 #CSPECIAL= -ieee	
 OPTIMIZE  = -fast

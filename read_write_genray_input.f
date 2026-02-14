@@ -741,7 +741,7 @@ c--------------------------------------------------------------------
            WRITE(*,*)'Please change ion_absorption'
            WRITE(*,*)'in input genray.in or genray.dat file'
            endif
-           stop 'reaf_write_genray_input.f ion_absorption problem'
+           stop 'read_write_genray_input.f ion_absorption problem'
        endif
 c----------------------------------------------------------------------
       rewind(unit=i_unit)
@@ -1203,11 +1203,12 @@ c------------------------------------------------------------------
 cSAP090315
          if(myrank.eq.0) WRITE(*,*)'at temperature reading kode=',kode
          if(kode.eq.0) then
-c----------temperature data reading has complited succefully
+c----------temperature data reading has completed succefully
            do i=1,nbulk
-	    do k=1,ndens
+           do k=1,ndens
                temp1(k,i)=prof2_uniform(k,i)
-            enddo
+           enddo
+           !if(myrank.eq.0) WRITE(*,*)'species,temp1(k)',i,temp1(:,i)
            enddo
          else
            if (kode.lt.0) then       
@@ -1368,8 +1369,13 @@ c------------------------------------------------------------------
      &     'zeftab_nonuniform_line',nbulk,ndens,
      &     prof2_uniform,
      &     zeff1_nonuniform,radii_nonuniform_zeff1,nj_tab_zeff1,kode)
+           ![2022-03-22]Impose a lower limit of 1.0 for Zeff.
+           !Reason: spline-related "oscillations" in Zeff
+           !when tabulated values have a sudden change from one radial
+           !point to next point.
            do k=1,ndens
              zeff1(k)=prof2_uniform(k,1)
+             zeff1(k)=max(1.d0,zeff1(k)) ![2022-03-22] Added. See above
              if(myrank.eq.0) WRITE(*,*)'k,zeff1(k)',k,zeff1(k)
            enddo
          endif
@@ -2129,7 +2135,8 @@ c$$$           endif
 
            call write_uniform_column_profile(i_unit,
      &     'temtab',nbulk,
-     &     ndens,temp1,zeff1)
+!     &     ndens,temp1,zeff1) !YuP: BUG?
+     &     ndens,temp1,prof1_uniform) !YuP: ok?
 
            call write_uniform_column_profile(i_unit,
      &     'tpoptab',nbulk,
@@ -3005,7 +3012,8 @@ c-----------------------------------------------------------
 
       if (nametab.eq.'temtab_nonuniform_line') then
          read(i_unit,temtab_nonuniform_line,iostat=kode)
-         call check_read(kode,'temtab_nonuniform_lined')
+         call check_read(kode,'temtab_nonuniform_line')
+         ![2022-03-23]was 'temtab_nonuniform_lined'
          write(*,temtab_nonuniform_line)
          write(*,*)'after temtab_nonuniform_line kode',kode
       endif
@@ -4860,6 +4868,7 @@ c&numercl
       maxsteps_rk=10000
       i_output=1
       i_uh_switch=0
+      nharm_refined_step=0 ![2025-12-16]
       uh_switch=1.5d0 
       prmt6_uh_switch=1.d-5
       toll_hamilt=1.d-3
@@ -5285,6 +5294,95 @@ c&plasma
       enddo
       ndens=ndensa
       nonuniform_profile_mesh='disabled'
+      
+      !YuP[2024-08-14] For model_rho_dens.eq.7 
+      model_rho_dens=0  !New namelist var, for logic
+      dendsk=  'dens_zr.dat' !Data file (in case dens_read.eq.'enabled')
+      tempdsk= 'temp_zr.dat' !Data file (in case temp_read.eq.'enabled')
+      tpopdsk= 'tpop_zr.dat' !Data file (in case tpop_read.eq.'enabled')
+      dens_read='enabled' !YuP[2024-08-14] added
+      temp_read='enabled' !YuP[2024-08-14] added
+      tpop_read='enabled' !YuP[2024-08-14] added
+      
+! model_rho_dens=7
+!  Use 3D profiles for density, Temperature and Tpop==Tpar/Tperp 
+!  by reading data from files produced by other codes.
+!  The profiles are set over uniform (Z,R,phi) grids.
+!  This coord. system is convenient for cases
+!  that have a small or no variation
+!  in the phi direction (phi= toroidal or azimuthal angle).
+!  In case of exact symmetry of profiles in phi angle -
+!  the size of phi grid should be set to nphiden=1
+!  (set nphiden=1 in the auxiliary code, such as CQL3D,
+!  which saves the data on density, T and Tpar/Tperp profiles).
+!  GENRAY will be reading data files as specified with
+!  dendsk=  (e.g. = 'dens_zr.dat')
+!  tempdsk= (e.g. = 'temp_zr.dat')
+!  tpopdsk= (e.g. = 'tpop_zr.dat')
+!  See subroutine density_zrp_profile_read(nbulk,dendsk)
+!  and subroutine temperature_zrp_profile_read(nbulk,tempdsk)
+!  and subroutine tpop_zrp_profile_read(nbulk,tpopdsk)
+!  for details. These subroutines read dmas() values 
+!  (mass of species/m_e) from each data file
+!  and identify them with a species in genray.in input list.
+!  Also - a basic check is performed that nbulk_in from the data
+!  matches nbulk from genray.in namelist.
+!  The sequence of species in the data files can be different from 
+!  the sequence in the genray.in list (e.g., CQL3D may have 
+!  'D','e' species in the run, while GENRAY may have 'e','D').
+!  If dmas(isp_in) does not match any species in the GENRAY list
+!  the run will be stopped with error message. 
+!  Adjust genray.in accordingly. 
+!  Example of use:
+!  -- Step0. Make a GENRAY run using namelist profiles for n and T 
+!     (and tpop, if needed)
+!     (see idens=0 or 1). Use model_rho_dens=0 (not 7).
+!  -- Step1. Make a run with CQL3D that uses genray.nc
+!     (or your-renamed *.nc file) output file produced in Step0.
+!     (In general, use some other code that can produce 3D profiles)
+!     In cqlinput, specify:
+!     write_dens_temp_for_genray='enabled' !May create huge ASCII files (at n=nstop)
+!     Also specify the names of output data files (example):
+!     dendsk= "dens_zr.dat"  !To save density (all 1:nbulk species in one file)
+!     tempdsk="temp_zr.dat"  !To save temperature (all 1:nbulk species in one file)
+!     tpopdsk="tpop_zr.dat"  !To save Tpar/Tperp (all 1:nbulk species in one file)
+!     Specify number of species, for which profiles are saved:
+!     nbulk=2 !Number of species to be saved [should match Genray input]
+!             !nbulk should not exceed ngen 
+!             !(the procedure uses densz() and energyz() arrays, 
+!             !which are only computed for 1:ngen species)
+!     Also specify grid sizes (example):
+!     nzden=100 !Z grid covers the whole range of device
+!     nrden=60  !For R-range
+!     nphiden=1 !For 2D profiles (Z,R) use nphiden=1 
+!               !which means symmetry in tor.angle
+!     Also specify MIN/MAX range for each of the grids:
+!     zdenmin=-100. !cm  Z grid covers the whole range of device
+!     zdenmax=+100. !cm 
+!     rdenmin=0.  !cm  For R grid
+!     rdenmax=15. !cm
+!     phidenmin=0. !rad  For tor.angle grid
+!     phidenmax=0. !rad
+!  -- Step2. Make GENRAY run with model_rho_dens=7,
+!     specify the data files to read, which were produced in Step1, e.g.
+!     dendsk= "dens_zr.dat"
+!     tempdsk="temp_zr.dat"
+!     tpopdsk="tpop_zr.dat"
+!     (these files should be copied into GENRAY work directory).
+!     Also, check these namelist inputs (they are enabled by default): 
+!  dens_read='enabled' !for reading 3D (2D) density profiles
+!  temp_read='enabled' !for reading temperature profiles
+!  tpop_read='enabled' !for reading profiles of tpop=Tpar/Tperp
+!     They are enabled by default, which means - read data from files
+!     specified with corresponding filenames for dendsk,tempdsk,tpopdsk.
+!  Alternatively, if (e.g.) temp_read is 'disabled', then T(x,y,z) is determined
+!  from namelist settings (analytic or tabulated, based on rho)
+!  rather than by reading the data file. It means that 
+!  model_rho_dens=7 allows mixing of data_file and rho-based profiles,
+!  depending on combination of settings for dens_read, temp_read and tpop_read.
+!
+!  For details on model_rho_dens=7, see YuP[2024-08-14]
+
 c&end
 
 !/species/
@@ -6193,7 +6291,7 @@ c         2.360000000E+00,  2.360000000E+00,  0.,
 c         1.340000000E+00,  1.340000000E+00,  0.,  
 c         2.000000000E-01,  2.000000000E-01,  0.,      
 c&end
-      do i=1,nbulka
+      do i=1,nbulk ![2024-02-01] was nbulka
          do k=1,ndens
             rho=1.d0*(k-1)/dfloat(ndens-1)
             dens1(k,i)=(dense0(i)-denseb(i))*(1-rho**rn1de(i))**rn2de(i)
@@ -6368,7 +6466,7 @@ c&end
 !radii_2d(1,2)=0.d0,0.2d0,0.3.d0,0.5d0,0.7d0,0.9.d0,1.d0
 !---------------------------------------------------------------------------
 c &dentab_nonuniform_line
-      do i=1,nbulka
+      do i=1,nbulk ![2024-02-01] was nbulka
          nj_tab_dens1(i)=ndens
          do k=1,ndens 
             rho=1.d0*(k-1)/dfloat(ndens-1)
@@ -6463,7 +6561,7 @@ c&tpoptab_nonuniform_line
             rho=1.d0*(k-1)/dfloat(ndens-1)
             tpop1(k,i)=(tp0(i)-tpb(i))*(1-rho**rn1tp(i))**rn2tp(i)
      .                 +tpb(i)
-            write(*,*)'default_in k,i,tpop1(k,i)',k,i,tpop1(k,i)
+            !write(*,*)'default_in k,i,tpop1(k,i)',k,i,tpop1(k,i)
          enddo
       enddo
       write(*,*)'nj_tab_tpop1',nj_tab_tpop1

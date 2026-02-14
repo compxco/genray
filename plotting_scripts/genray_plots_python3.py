@@ -1,16 +1,17 @@
-# genray_plots.py'
+# genray_plots.py
 # Plots genray.nc (output data file produced by GENRAY)
 
-# Yuri Petrov, Bob Harvey   CompX   2013
+# Yuri Petrov, Bob Harvey    CompX    2013
+# Updated by Matt Poulos for Python 3    CompX   2025
 
-# Needed in working directory: genray.nc and eqdsk (if available)
+# Needed in working directory: genray.nc and eqdsk
 # Rename your particular equilibrium-B file to eqdsk.
 
 from numpy import *
 from mpl_toolkits.mplot3d import Axes3D
 
 from pylab import *
-from matplotlib import rc 
+from matplotlib import rc
 from matplotlib.pyplot import cm,figure,axes,plot,xlabel,ylabel,title,savefig,show
 
 import os
@@ -21,6 +22,8 @@ import numpy as np
 import time
 import pylab as pylab
 import scipy.io.netcdf as nc
+
+
 
 #-----------------------------------------------
 # NetCDF issues: machine-dependent
@@ -39,7 +42,7 @@ matplotlib.interactive(False) # with plots on screen
 
 
 #-------- Specify for plots:
-fnt  = 11 #13 #9   # Font size for axis numbers (see 'param=' below) 
+fnt  = 11 #13 #9    # Font size for axis numbers (see 'param=' below)
 linw = 1.  # LineWidth for contour plots
 Ncont= 50  # Number of contour levels for PSI (pol.flux)
 # For plots of omega/omega_c in (R,Z) plane ("genray_wwc_inRZ.png"),
@@ -49,7 +52,7 @@ level_mx= 11 #45 # Highest level of omega/omega_c to be plotted
 arr_len=5. # Specify arrow length for plots of (Nr,Nz) at start point (disabled)
 nskip=1  # How many end-points to skip, for plotting (to avoid end-point jumps)
 rays_style=0 # 0 Rays in (R,Z) are plotted with constant line thickness.
-             # 1 Rays in (R,Z) are plotted with variable width proportional to 
+             # 1 Rays in (R,Z) are plotted with variable width proportional to
              #    remaining power in ray channel (may become too thin/invisible)
              # 2 Rays are plotted with markers which size corresponds to
              #    absorbed power.
@@ -58,23 +61,23 @@ isp_wc=2  #  Species number for which you want to plot omega/omega_c res.layers
              
 # Constants
 pi=3.14159265358979
-clight= 2.99792458e10   # speed of light [cm/s]
-e     = 4.8032e-10      # e-charge [cgs]
-e_mass= 9.10938291e-28  # e-mass   [gram]
+clight= 2.99792458e10    # speed of light [cm/s]
+e      = 4.8032e-10      # e-charge [cgs]
+e_mass= 9.10938291e-28  # e-mass    [gram]
 p_mass= 1.67262158e-24  # proton mass    [gram]
 ergtkev=1.6022e-09
 mp=p_mass/e_mass
 
-# Make a guess about Min/Max of plasma; 
+# Make a guess about Min/Max of plasma;
 # Set to 0 for automatic setting
 # (In this case Rmin,Rmax,Zmin,Zmax will be found from eqdsk, if present
 #  and will be used for plots)
 #Rmin_plot=5 #120 # 400.
-#Rmax_plot=90 #240 # 850. # just any guess [cm] 
+#Rmax_plot=90 #240 # 850. # just any guess [cm]
 #Zmin_plot=-70 #-100 #-400.
-#Zmax_plot=+70 #+100 #500. # just any guess [cm] 
-Rmin_plot=100. #70.
-Rmax_plot=0. #430. 
+#Zmax_plot=+70 #+100 #500. # just any guess [cm]
+Rmin_plot=20. #70.
+Rmax_plot=0. #430.
 Zmin_plot=0. #-400.
 Zmax_plot=0. #400.
 
@@ -91,108 +94,25 @@ Rstruct4= np.array([184.,184.,195.,195.,184.])
 Zstruct4= np.array([-25.,25.,25.,-25.,-25.])
 #should be 4 structures only; some will be plotted with mirror image,too
 
-e0 = time.time()  # elapsed time since the epoch
-c0 = time.clock() # total cpu time spent in the script so far
+
+#e0 = time.time()  # elapsed time since the epoch
+#c0 = time.clock() # total cpu time spent in the script so far
 
 #------------------------------------------
 #eqdsk_name='eqdsk'
 #eqdsk_name='g1100901026.01060'  # LHCD_Sugiyama  test
 #eqdsk_name='eqdsk_NSTX'
-eqdsk_name='eqdsk_ITER_sym'
-#eqdsk_name='eqdsk_H24'
-
-#eqdsk_name='140358R01_350ms'  # for PPPL/IPS/Poli test
-#eqdsk_name='12028Z33_ps.geqdsk' # PPPL Jin Chen
-
-#eqdsk_name='g010004.01020_21t' # see /GENRAY_wk/test_ysbae_problem/
-
-#eqdsk_name='G_STEADY_EC1F_ITER_LR_01000.TXT'
-#eqdsk_name='G_HYBRID_LH03_ITER_LR_00400.TXT'
-
-#eqdsk_name='g7777.002001'  # KAERI/S.Ho Kim  LH case 2017 07/19
-#eqdsk_name='g032974.02300'  # ST QUEST 07/20 2017 f=28e9
-
-#eqdsk_name='Scen4_bn2.57_129x129' # /test1/
-#eqdsk_name='equilib.dat_HPRT_test_case_061219' # /test2/
-#eqdsk_name='g113544.00325_mod' # /test3/
-#eqdsk_name='g113544.00325_mod' # /test4/  (OXB, i_ox=2)
-#eqdsk_name='g521022.01000'     # /test5/  (canonical 2004 ITER 1ray)
-#eqdsk_name='g106270.02500'      # /test6/ multi-rays EC
-#eqdsk_name='g1060728011.01100'  # /test7/ (LHCD)  (genray.in)
-#eqdsk_name='equilib.dat_EC_ITER_Central_CD' #[rename to equilib.dat] /test8/
-#eqdsk_name='g1060728011.01100'  # /test9/  (LHCD)  (genray.in)
-#eqdsk_name='scenario_c1_gc_irod_110_rout_146_cm' # test 10.3
-
-#eqdsk_name='eqdsk_pegasus'
-#eqdsk_name='equilib_diiid.dat' # for Lohr/fast-run-test
-#eqdsk_name='g130608.00352.LRDFIT04.mds.corrected.qscale_1.00000' #test_NSTX_HHFW
-#eqdsk_name='eqdsk_240rays'
-
-#eqdsk_name='eqdsk_EAST'
-#eqdsk_name='Equilibriumfile_3e19_B_1.5T_Te_1.7keV.dat' #see /issue_ADITYA/
-#eqdsk_name='Equilibriumfile_7e19_B_1.5T_Te_3.4keV.dat'
-
-#eqdsk_name='Pegasus_eqdsk2' #'Pegasus_eqdsk'
-
-#----- UKAEA MAST runs --------------------------------
-#eqdsk_name='C1a.geqdsk'   # 2020-07-22   case 110_110 (unscaled B field)
-# Rescaled Btor and Bpol (see /EQDSK/) 
-#eqdsk_name='C1a.geqdsk_80_110' # Both are rescaled by 80/110.
-#eqdsk_name='C1a.geqdsk_120_110' # Both are rescaled by 120/110.
-#  2020-09-04  sensitivity scans 
-#  Use files like scenario_c1_gc_irod_110_rout_146_cm (no extension)
-#  which are adjusted from scenario_c1_gc_irod_110_rout_146_cm.eqdsk
-#eqdsk_name='scenario_c1_gc_irod_110_rout_146_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_143_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_140_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_137_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_134_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_132_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_130_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_128_cm' 
-#eqdsk_name='scenario_c1_gc_irod_110_rout_126_cm'
-
-
-#eqdsk_name='eqdsk.new' 
-#eqdsk_name='g004135.03300' # 2021-02 Debu runs
-#eqdsk_name='equilib.dat'
-#eqdsk_name='90328W28_ps.geqdsk' # for "PPPL issue 2021-10-26"
-#eqdsk_name='g147634.04525' # For MIT issue 2022-02-02
-#eqdsk_name='SCENE_SPR_16MA_flattop_strawhighq0_v1-0-0.geqdsk' #/issue_MAST_Speirs/
-
-eqdsk_name='g144476.03765'
-
+eqdsk_name='g1060728011.01100'
 
 #------------------------------------------
 # Open the genray netcdf file; specify name:
-filenm='genray.nc' # This is a common name of the file generated by GENRAY 
+filenm='genray.nc' # This is a common name of the file generated by GENRAY
 #filenm='genray_iter5_060828.1.nc' # LHCD in ITER (also used for alpha heating)
 #filenm='iter5_060828.nc'  # LH
 
-#filenm='iter_ec1f_helicon.nc'           # 500MHz z=Zax
-####filenm='iter_ec1f_helicon500shift1m.nc' # 500MHz shifted 1m down
-#filenm='iter_ec1f_helicon800.nc'        # 800MHz z=Zax
-#filenm='iter_ec1f_helicon800shift1m.nc' # 800MHz shifted 1m down
-
-#filenm='iter_lh60s_helicon500.nc'        # 500MHz no shift
-#filenm='iter_lh60s_helicon500shift1m.nc' #500MHz with antenna vert. shift 1m down
-#filenm='iter_lh60s_helicon800.nc'        # 800MHz no shift
-#filenm='iter_lh60s_helicon800shift1m.nc' #800MHz with antenna vert. shift 1m down
-
-#filenm='genray_kstar_lhsw.nc'  # KAERI/S.Ho Kim  LH case 2017 07/19  
-
-#filenm='Pegasus_rayech.nc'
-#filenm='Pegasus_genray.nc'
-
-#filenm='exl50.nc'
-#filenm='EXL50_GENRAY.nc'
-
-
-
-
 #==================================================================
 def read_vector(flnm,ndim,nums_per_line):
-#     global nlines  #Can be used to return number of lines.
+#      global nlines  #Can be used to return number of lines.
     """
     Reads delimited items from an open file, flnm.
     Returns them in a vector of input length ndim.
@@ -203,16 +123,16 @@ def read_vector(flnm,ndim,nums_per_line):
     a=np.ones(ndim)
     nlines=int(ndim/nums_per_line)
     if nlines*nums_per_line != ndim: nlines=nlines+1
-    #print nlines
+    #print(nlines)
     for i in range(nlines):
         ibegin=i*nums_per_line
         iend=min(ibegin+nums_per_line,ndim)
-        #print ibegin,iend
+        #print(ibegin,iend)
         a[ibegin:iend]=np.array(flnm.readline().split(),float)
     return a
 #==================================================================
 # From https://stackoverflow.com/questions/19390895/
-#              matplotlib-plot-with-variable-line-width
+#          matplotlib-plot-with-variable-line-width
 def plot_widths(xs, ys, widths, ax=None, color='b', xlim=None, ylim=None,
                 **kwargs):
     if not (len(xs) == len(ys) == len(widths)):
@@ -243,11 +163,11 @@ def plot_widths(xs, ys, widths, ax=None, color='b', xlim=None, ylim=None,
 #******************************************************************
 #******************************************************************
 i_eqdsk=0  # it will be set to 1 if eqdsk is found
-nlimiter=0 # it will be reset to other value, if data on limiter is avail. 
+nlimiter=0 # it will be reset to other value, if data on limiter is avail.
 # Min/Max of plasma:
 Rmin= 0.0 #initialize [cm]
 Rmax= 0.0 #initialize [cm]
-Zmin= 0.0 #initialize [cm] 
+Zmin= 0.0 #initialize [cm]
 Zmax= 0.0 #initialize [cm]
 
 try:# Try reading eqdsk file, hoping it exists in the working directory.
@@ -260,13 +180,13 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
     nr=int(nr); nz=int(nz)
     try:
         nv=int(lines[0][60:64])
-    except:   #line[60:64] not characters representing integers
+    except:    #line[60:64] not characters representing integers
         nv=nr
     #A difficulty making reading of eqdsk files difficult is that
     #when a number is procedded by a "-" sign, then there is no
     #blank space separating adjacent numbers.
     #For remaining lines after 1st down to possible occurance of
-    #an "&", fortran format is format(5e16.9) [Except possible 
+    #an "&", fortran format is format(5e16.9) [Except possible
     #sequence of integers extending less that 1st 16 columns.
     #Therefore, Add blanks in columns 17,33,49,65, and use
     #above read_vector() function.
@@ -289,7 +209,7 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
         for j in range(4):
             lines[i]=lines[i][0:cols[j]]+b+lines[i][cols[j]:]
 
-    # Open tmp file, put adjusted lines in it, 
+    # Open tmp file, put adjusted lines in it,
     # then read using previously constructed read_vector.
     tmp=open('tmpfile','w')
     tmp.writelines(lines)
@@ -316,20 +236,20 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
     #---
     # raxis,zaxis      are the major and vertical height of magnetic axis.
     # psimag,psilim    are the poloidal flux function values at the
-    #                  magnetic axis and the last closed flux surface
-    #                   (touching the limiter or the separatrix).
+    #                    magnetic axis and the last closed flux surface
+    #                     (touching the limiter or the separatrix).
     # btor             is the vacuum toroidal magnetic field at radmaj.
     # toteqd           is the toroidal current.
     #
     # feqd(nnr),pres(nnr), usually, although dimension is
     #                      specified by nnv if it is present.
     # fpsiar = r * B_phi  at nnr equispaced points in psi
-    #          from psimag to psilim.
+    #             from psimag to psilim.
     # prar   = are the pressure values at the same points.
     # ffpar  = fpsiar_prime, [i.e., d f/d (psi)] at the same points.
     # ppeqd  =  p_prime [i.e., d prar/d (psi)] at the same points.
     # epsi(nnr,nnz) are the psi values on the nnr * nnzprint 'nv=',nv
-    #               equispaced grid.
+    #                       equispaced grid.
     # qar(nnr)  gives safety factor q on the equispaced psi grid.
     #
     # The following quantities are given in some eqdsks, but are not
@@ -338,9 +258,9 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
     #              vacuum vessel wall.
     # rlimit(nlimit),zlimit(nlimit):
     # rlimit,zlimit      is the r,z location of the limiters wall.
-    #       rves(nves),zves(nves):
+    #           rves(nves),zves(nves):
     # rves,zves          is the r,z location of the limiters
-    #                    vacuum vessel wall.
+    #                      vacuum vessel wall.
     print('========================================')
     print('nr=',nr)
     print('nz=',nz)
@@ -358,23 +278,23 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
     print('read_eqdsk done')
     print('========================================')
     # convert to cgs:
-    rbox=rbox*1.e+2 
+    rbox=rbox*1.e+2
     zbox=zbox*1.e+2
     rboxdst=rboxdst*1.e+2
     radmaj=radmaj*1.e+2
-    toteqd=toteqd*3.e+9       
+    toteqd=toteqd*3.e+9
     R_axis  = raxis*1.e+2 # cgs
     Z_axis  = zaxis*1.e+2 # cgs
-    fpsiar=fpsiar*1.e+6   # r * B_phi  [cgs now]
-    epsi=  epsi*1.e+8     # cgs now
-    psilim= psilim*1.e8  
-    psimag= psimag*1.e8  
+    fpsiar=fpsiar*1.e+6    # r * B_phi  [cgs now]
+    epsi=  epsi*1.e+8      # cgs now
+    psilim= psilim*1.e8
+    psimag= psimag*1.e8
     btor=btor*1e4 # vacuum toroidal magnetic field at radmaj [Gauss]
     # Min/Max of plasma:
     #Rmin= rboxdst
     #Rmax= Rmin + rbox
     #Zmin=(zaxis -zbox*.5) # in [cm]
-    #Zmax= Zmin + zbox     # in [cm]
+    #Zmax= Zmin + zbox      # in [cm]
     # Form R,Z grids
     dzz=zbox/(nz-1) # cgs
     drr=rbox/(nr-1) # cgs
@@ -383,15 +303,15 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
     er[0]=rboxdst    # cgs
     ez[0]= zaxis -zbox*.5
     for nn in range(1,nr,1):  # nn goes from 1 to nr-1
-        er[nn]=er[nn-1]+drr   # R-grid [cm] 
+        er[nn]=er[nn-1]+drr    # R-grid [cm]
     for nn in range(1,nz,1):  # nn goes from 1 to nz-1
-        ez[nn]=ez[nn-1]+dzz   # Z-grid [cm]
-    R,Z = np.meshgrid(er,ez) # 2D grids [cm]   
-    print 'min/max of er grid [cm]:', np.min(er),np.max(er)
+        ez[nn]=ez[nn-1]+dzz    # Z-grid [cm]
+    R,Z = np.meshgrid(er,ez) # 2D grids [cm]
+    print('min/max of er grid [cm]:', np.min(er),np.max(er))
     #........................................................
     # Form the equally spaced psi array/grid.
     # psimag < psilim;  epsi has min. at m.axis
-    delpsi= (psilim-psimag)/(nv-1)  
+    delpsi= (psilim-psimag)/(nv-1)
     psiar=np.zeros(nv)
     for ix in range(0,nv,1):  # ix goes from 0 to nv-1
         psiar[ix]= psimag + ix*delpsi # [psimag; psilim]
@@ -410,7 +330,7 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
             if psilim>psimag:
                 if epsi[iz,ir]<psilim:
                     iv= int((epsi[iz,ir]-psimag)/delpsi)
-                    #if iz==64: print epsi[iz,ir], iv, psiar[iv],psiar[iv+1]
+                    #if iz==64: print(epsi[iz,ir], iv, psiar[iv],psiar[iv+1])
                     Btor[iz,ir]=fpsiar[iv]/er[ir]
                     Bpmn=min(Bpol[iz,ir],Bpmn)
                     Bpmx=max(Bpol[iz,ir],Bpmx)
@@ -419,21 +339,21 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
             else: # psilim<psimag
                 if epsi[iz,ir]>psilim:
                     iv= int((epsi[iz,ir]-psimag)/delpsi)
-                    #if iz==64: print epsi[iz,ir], iv, psiar[iv],psiar[iv+1]
+                    #if iz==64: print(epsi[iz,ir], iv, psiar[iv],psiar[iv+1])
                     Btor[iz,ir]=fpsiar[iv]/er[ir]
                     Bpmn=min(Bpol[iz,ir],Bpmn)
                     Bpmx=max(Bpol[iz,ir],Bpmx)
                 else:
-                    Btor[iz,ir]=btor*radmaj/er[ir]            
+                    Btor[iz,ir]=btor*radmaj/er[ir]          
     B=sqrt(Btor*Btor + Bpol*Bpol) # Total B as a function of (ir,iz)
-    #print"shape(B)=" , shape(B)
+    #print("shape(B)=", shape(B))
     if ncontr>4:
         rzcontr=read_vector(tmp,2*ncontr,5)
         rzcontr.resize((ncontr,2))
         rcontr=rzcontr[:,0]
         zcontr=rzcontr[:,1]
-        print 'min/max of rcontr=',np.min(rcontr),np.max(rcontr)
-        print 'min/max of zcontr=',np.min(zcontr),np.max(zcontr)        
+        print('min/max of rcontr=',np.min(rcontr),np.max(rcontr))
+        print('min/max of zcontr=',np.min(zcontr),np.max(zcontr))        
     if nlimiter>4:
         try:
             rzlimiter=read_vector(tmp,2*nlimiter,5)
@@ -441,9 +361,9 @@ try:# Try reading eqdsk file, hoping it exists in the working directory.
             rzlimiter.resize((nlimiter,2))
             rlimiter=rzlimiter[:,0]
             zlimiter=rzlimiter[:,1]
-            print 'min/max of rlimiter=',np.min(rlimiter),np.max(rlimiter)
-            print 'min/max of zlimiter=',np.min(zlimiter),np.max(zlimiter)        
-        except:  
+            print('min/max of rlimiter=',np.min(rlimiter),np.max(rlimiter))
+            print('min/max of zlimiter=',np.min(zlimiter),np.max(zlimiter))        
+        except:    
             print('possibly corrupted data on limiter')
             nlimiter=0
         
@@ -471,11 +391,11 @@ if i_eqdsk==0: # eqdsk file is not readable
 
 
 #Input netcdf file into a structure:
-if netcdf==2: 
+if netcdf==2:  
     dat=nc.netcdf_file(filenm,'r')
- 
+  
 #------------YuP:
-if netcdf==4: 
+if netcdf==4:  
     dat= Dataset(filenm, 'r', format='NETCDF4')
 
 print(dat.file_format) # print which format was used for the genray.nc file
@@ -484,8 +404,8 @@ print(dat.file_format) # print which format was used for the genray.nc file
 
 print('The genray file, ',filenm,', contains:')
 print('========================================')
-print("The global attributes: ",dat.dimensions.keys())    
-print("File contains variables: ",dat.variables.keys())
+print("The global attributes: ",list(dat.dimensions.keys()))       
+print("File contains variables: ",list(dat.variables.keys()))
 print('========================================')
 
 # The name of eqdsk file used for equilibrium B-field:
@@ -493,7 +413,7 @@ print('========================================')
 #print("eqdskin=",eqdskin[:])
 
 n_eqdsk=0 # initialize
-if i_eqdsk==0: # no data was read from eqdsk 
+if i_eqdsk==0: # no data was read from eqdsk  
     # some eqdsk data:
     # Note: this data did not exist in early genray.nc:
     try:
@@ -561,18 +481,18 @@ try:
     else:
         i_ox=2
         i_ox_conversion=dat.variables['i_ox_conversion'] #
-        print 'i_ox_conversion is:',i_ox_conversion.long_name
+        print('i_ox_conversion is:',i_ox_conversion.long_name)
         transm_ox=dat.variables['transm_ox'] #
-        print 'transm_ox is: ', transm_ox.long_name, transm_ox.shape
+        print('transm_ox is: ', transm_ox.long_name, transm_ox.shape)
         cnpar_ox=dat.variables['cnpar_ox'] #
-        print 'cnpar_ox is: ', cnpar_ox.long_name, cnpar_ox.shape
+        print('cnpar_ox is: ', cnpar_ox.long_name, cnpar_ox.shape)
         cn_b_gradpsi=dat.variables['cn_b_gradpsi'] #
-        print 'cn_b_gradpsi is: ', cn_b_gradpsi.long_name, cn_b_gradpsi.shape
+        print('cn_b_gradpsi is: ', cn_b_gradpsi.long_name, cn_b_gradpsi.shape)
         cn_par_optimal=dat.variables['cn_par_optimal'] #
-        print 'cn_par_optimal is: ', cn_par_optimal.long_name
-        print cn_par_optimal[:]
+        print('cn_par_optimal is: ', cn_par_optimal.long_name)
+        print(cn_par_optimal[:])
 finally:
-    print '----------------------------------------'
+    print('----------------------------------------')
 
 
 # Define min/max for major radius range:
@@ -635,12 +555,12 @@ if Rmax_plot==0:
             Rmin=np.amin(eqdsk_r)*100 # meters -> cm
             Zmax=np.amax(eqdsk_z)*100
             Zmin=np.amin(eqdsk_z)*100 # meters -> cm
-            print 'getting limits from eqdsk_r; Rmin,Rmax[cm]=',Rmin,Rmax
-        else: 
+            print('getting limits from eqdsk_r; Rmin,Rmax[cm]=',Rmin,Rmax)
+        else:
             Rmin= 50.
-            Rmax= 300. # just any guess [cm] 
+            Rmax= 300. # just any guess [cm]
             Zmin=-200.
-            Zmax= 200. # just any guess [cm] 
+            Zmax= 200. # just any guess [cm]
 
     
 print('----------------------------------------')
@@ -648,16 +568,16 @@ if Rmin_plot==0:
     xmin=Rmin  # Limits for plots
 else:
     xmin=Rmin_plot
-if Rmax_plot==0:            
-    xmax=Rmax  # 
+if Rmax_plot==0:                
+    xmax=Rmax  #
 else:
     xmax=Rmax_plot
 if Zmin_plot==0:
     zmin=Zmin  # Limits for plots
 else:
     zmin=Zmin_plot
-if Zmax_plot==0:            
-    zmax=Zmax  # 
+if Zmax_plot==0:                
+    zmax=Zmax  #
 else:
     zmax=Zmax_plot
 
@@ -670,7 +590,7 @@ print('Zmin_plot,Zmax_plot=', Zmin_plot,Zmax_plot)
 print('----------------------------------------')
 
 freqcy=dat.variables['freqcy']
-#BH  print 'freqcy =',freqcy.long_name, freqcy[:], freqcy.units
+#BH  print('freqcy =',freqcy.long_name, freqcy[:], freqcy.units)
 print('freqcy =',freqcy.long_name, freqcy.getValue(), freqcy.units)
 #BH f=freqcy[0]
 f=freqcy.getValue()
@@ -700,13 +620,13 @@ print('Number of species: Nsp=',Nsp)
 # Identify species:
 isp_name=[]
 for isp in range(0,Nsp,1):
-    msme= np.asscalar(mass[isp]/mass[0])      # ms/me ratio
-    Zs= np.asscalar(charge[isp]/charge[0])    # Zs/e
+    msme= (mass[isp]/mass[0]).item()     # ms/me ratio
+    Zs= (charge[isp]/charge[0]).item()     # Zs/e
     #isp_name[i]='0' # initialize
-    #print 'isp=',isp,' mass=',mass[isp],' Z=',charge[isp],' isp_name=',isp_name
+    #print('isp=',isp,' mass=',mass[isp],' Z=',charge[isp],' isp_name=',isp_name)
     if (np.absolute(Zs-1.)<0.1) & (np.absolute(msme-1.)<0.1):
         isp_name.append('e')
-    if (np.absolute(Zs-1.)<0.1) & (np.absolute(msme-mp)<10):  # mp is 1836 
+    if (np.absolute(Zs-1.)<0.1) & (np.absolute(msme-mp)<10):  # mp is 1836
         isp_name.append('H')
     if (np.absolute(Zs-1.)<0.1) & (np.absolute(msme-2*mp)<20):
         isp_name.append('D')
@@ -728,16 +648,15 @@ for isp in range(0,Nsp,1):
         isp_name.append('C+6')
         
     # OTHER NAMES CAN BE ADDED HERE.
-    print 'isp=',isp,' m=',mass[isp],' Z=',charge[isp],' isp_name=',isp_name[isp]
+    print('isp=',isp,' m=',mass[isp],' Z=',charge[isp],' isp_name=',isp_name[isp])
     #txt1=r"$m/m_e =$"+r"$%1.0f$" %(mass[i])
     #txt2=r"$q/e =$"+r"$%1.0f$" %(charge[i])
-print isp_name
+print(isp_name)
     
 
-
 istart=dat.variables['istart']
-istart=np.asscalar(istart.getValue())
-print 'istart=',istart
+istart=(istart.getValue()).item()
+print('istart=',istart)
 
 iray_status_nc= dat.variables['iray_status_nc']
 print('iray_status_nc.shape', iray_status_nc.shape)
@@ -787,7 +706,7 @@ print('powden_i is: ', powden_i.units, powden_i.shape)
 
 # For iabsorp.eq.3 only:
 #powden_s=dat.variables['powden_s']
-#print 'powden_s is: ', powden_s.long_name, powden_s.shape
+#print('powden_s is: ', powden_s.long_name, powden_s.shape)
 
 # Total power [erg/sec]
 power_total=dat.variables['power_total']
@@ -802,13 +721,13 @@ powtot_cl=dat.variables['powtot_cl']
 print('powtot_cl is: ', powtot_cl.long_name, powtot_cl.shape)
 # For iabsorp.eq.3 only:
 #powtot_s=dat.variables['powtot_s']
-#print 'powtot_s is: ', powtot_s.long_name, powtot_s.shape
+#print('powtot_s is: ', powtot_s.long_name, powtot_s.shape)
 
-ws=dat.variables['ws'] #   pol.distance along ray [cm]
+ws=dat.variables['ws'] #    pol.distance along ray [cm]
 ws_min=np.min(ws)
 ws_max=np.max(ws)
 ws_step= np.ceil((ws_max*1.1-ws_min)/4)  # step for xticks() labeling ;
-                     #    ()/4 means 4 labels only
+                               #     ()/4 means 4 labels only
 print('ws is: ', ws.long_name, ws.shape)
 print('min/max of ws [cm]', ws_min,ws_max)
 
@@ -871,47 +790,47 @@ print('vgr_phi is: ', vgr_phi.long_name, vgr_phi.shape)
 
 sb_z=dat.variables['sb_z']
 sb_phi=dat.variables['sb_phi']
-print 'sb_z[0,0]=  ', sb_z[0,0], ' Gauss'
-print 'sb_phi[0,0]=', sb_phi[0,0], ' Gauss'
+print('sb_z[0,0]=   ', sb_z[0,0], ' Gauss')
+print('sb_phi[0,0]=', sb_phi[0,0], ' Gauss')
 
 z_starting=dat.variables['z_starting'] #starting Z[m], each ray
 print('z_starting is: ', z_starting.long_name, z_starting.shape)
 z_starting=np.asarray(z_starting)
-print 'z_starting[m]=',z_starting
+print('z_starting[m]=',z_starting)
 
 r_starting=dat.variables['r_starting'] #starting R[m], each ray
 print('r_starting is: ', r_starting.long_name, r_starting.shape)
 r_starting=np.asarray(r_starting)
-print 'r_starting[m]=',r_starting
+print('r_starting[m]=',r_starting)
 
 phi_starting=dat.variables['phi_starting'] #starting phi[degree], each ray
 print('phi_starting is: ', phi_starting.long_name, phi_starting.shape)
 phi_starting=np.asarray(phi_starting)
-print 'phi_starting[degree]=',phi_starting
+print('phi_starting[degree]=',phi_starting)
 
 if istart==1:
-    alphast=dat.variables['alphast'] #aiming toroidal angle[degree] measured from 
+    alphast=dat.variables['alphast'] #aiming toroidal angle[degree] measured from
     # R-vector through source;  each ray
     print('alphast is: ', alphast.long_name, alphast.shape)
     alphast=np.asarray(alphast)
-    print 'alphast[degree]=',alphast
+    print('alphast[degree]=',alphast)
 
-    betast=dat.variables['betast'] #aiming poloidal angle[degree] measured from 
+    betast=dat.variables['betast'] #aiming poloidal angle[degree] measured from
     # z=constant plane, pos above plane, neg below;  each ray
     print('betast is: ', betast.long_name, betast.shape)
     betast=np.asarray(betast)
-    print 'betast[degree]=',betast
+    print('betast[degree]=',betast)
 
 # Number of rays
 Nrays=wz[:,0].size  
 print('Number of rays: Nrays=',Nrays)
     
 print('----------------------------------------')
-#BH print power_inj_total.long_name, power_inj_total[0], power_inj_total.units
-#BH print power_total.long_name, power_total[0], power_total.units
-#BH print powtot_e.long_name,  powtot_e[0],  powtot_e.units
-#BH print powtot_i.long_name,  powtot_i[0],  powtot_i.units
-#BH print powtot_cl.long_name, powtot_cl[0], powtot_cl.units
+#BH print(power_inj_total.long_name, power_inj_total[0], power_inj_total.units)
+#BH print(power_total.long_name, power_total[0], power_total.units)
+#BH print(powtot_e.long_name,  powtot_e[0],  powtot_e.units)
+#BH print(powtot_i.long_name,  powtot_i[0],  powtot_i.units)
+#BH print(powtot_cl.long_name, powtot_cl[0], powtot_cl.units)
 print(power_inj_total.long_name, power_inj_total.getValue(), power_inj_total.units)
 print(power_total.long_name, power_total.getValue(), power_total.units)
 print(powtot_e.long_name,  powtot_e.getValue(),  powtot_e.units)
@@ -920,11 +839,12 @@ print(powtot_cl.long_name, powtot_cl.getValue(), powtot_cl.units)
 print('----------------------------------------')
 
 # Convert erg/sec to kW
-power_total=     np.asscalar(power_total[:])/1.e10    
-power_inj_total= np.asscalar(power_inj_total[:])/1.e10
-powtot_e=        np.asscalar(powtot_e[:])/1.e10
-powtot_i=        np.asscalar(powtot_i[:])/1.e10
-powtot_cl=       np.asscalar(powtot_cl[:])/1.e10
+power_total=      (power_total[:]).item()/1.e10  
+power_inj_total= (power_inj_total[:]).item()/1.e10
+powtot_e=        (powtot_e[:]).item()/1.e10
+powtot_i=        (powtot_i[:]).item()/1.e10
+powtot_cl=      (powtot_cl[:]).item()/1.e10
+
 
 
 #===================  PLOTS =============================================
@@ -938,14 +858,11 @@ mpl.rcParams['font.size']=fnt+4
 mpl.rcParams['legend.fontsize']=fnt
 mpl.rcParams['xtick.labelsize']=fnt
 mpl.rcParams['ytick.labelsize']=fnt
-#mpl.rcParams['xtick.linewidth']=linw
-#mpl.rcParams['ytick.linewidth']=linw
 mpl.rcParams['font.weight']='regular'
-#mpl.rcParams['format']='%1.1e'
 mpl.rcParams['font.size']=fnt+2  # set font size for text in mesh-plots
 
 
-
+#%
 #----------------------------------------------------------------T(rho), n(rho)
 fig0=plt.figure()
 # Plot with different thickness of lines, depending on species number
@@ -981,10 +898,10 @@ for i in range(0,Nsp,1):
     txt3=r"$T_0[keV] =$"+r"$%1.3f$" %(temprof[i,0])
     txt4=r"$n_0[cm^{-3}] =$"+r"$%1.5e$" %(densprof[i,0])
     plt.plot(0.01, 0.7-dx*i, 'o', color=col)
-    plt.text(0.04, 0.7-dx*i, txt1 , va='center',fontsize=fnt+4)
-    plt.text(0.61, 0.7-dx*i, txt2 , va='center',fontsize=fnt+4) 
-    plt.text(0.93, 0.7-dx*i, txt3 , va='center',fontsize=fnt+4) 
-    plt.text(1.55, 0.7-dx*i, txt4 , va='center',fontsize=fnt+4) 
+    plt.text(0.04, 0.7-dx*i, txt1 , va='center',fontsize=fnt)
+    plt.text(0.61, 0.7-dx*i, txt2 , va='center',fontsize=fnt) 
+    plt.text(0.93, 0.7-dx*i, txt3 , va='center',fontsize=fnt) 
+    plt.text(1.55, 0.7-dx*i, txt4 , va='center',fontsize=fnt) 
     plt.axis([0., 1., 0., 1.])
     plt.axis('off')
 
@@ -1008,7 +925,7 @@ show()
 #stop
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig4=plt.figure()  # RAYS in top-view (R-phi or X-Y)
 ax = plt.subplot(1, 1, 1)
@@ -1027,7 +944,7 @@ bndry_in_X= Rmin_plot*cos(phi)
 bndry_in_Y= Rmin_plot*sin(phi)
 bndry_out_X= Rmax_plot*cos(phi)
 bndry_out_Y= Rmax_plot*sin(phi)
-print 'Rmax_plot=',Rmax_plot
+print('Rmax_plot=',Rmax_plot)
 
 if n_wall>4:  # plot walls, if any:
     plt.plot(np.max(r_wall)*100*cos(phi),np.max(r_wall)*100*sin(phi),'k',linewidth=linw*2)
@@ -1047,7 +964,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     print(i,Nm)
     if Nm>0:
         X=multiply(cos(wphi[i,0:Nm]),wr[i,0:Nm])
@@ -1075,7 +992,7 @@ if (sb_phi[0,0]>0):
 plt.savefig('genray_rays_in_R-phi.png') 
 show()
 
-
+#%
 #--------------------------------------------------------------------------
 fig3=plt.figure()  # w/wc resonances and Pol.Flux in cross-section view R-Z
 ax = plt.subplot(1, 1, 1)
@@ -1141,8 +1058,7 @@ if i_eqdsk==1: # Plot resonance layers for electrons or ions
 plt.savefig('genray_wwc_inRZ.png') 
 show()
 
-
-
+#%
 #--------------------------------------------------------------------------
 fig0=plt.figure() # RAYS in cross-sectional view R-Z
 ax = plt.subplot(111)
@@ -1188,7 +1104,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     #print i,Nm
     if Nm>0:
         if rays_style==0:
@@ -1244,7 +1160,7 @@ show()
 if i_ox==2:  # only for O-X transmission case
     fig8=plt.figure()
     plt.subplot(321) #-------------------------
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     #plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
     plt.ylabel('$1-converted;$ $0-not$')
@@ -1260,7 +1176,7 @@ if i_ox==2:  # only for O-X transmission case
         plt.plot(wnpar[i,0],i_ox_conversion[i],'o',color=col)
         
     plt.subplot(322) #-------------------------
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     #plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
     #text(wnpar[0,0],1.02,'   $pwr(Xmode)/pwr(Omode)$')
@@ -1276,7 +1192,7 @@ if i_ox==2:  # only for O-X transmission case
         plt.plot(wnpar[i,0],transm_ox[i],'o',color=col)
 
     plt.subplot(323) #-------------------------
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     #plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
     plt.title('$N_{\perp,tang}$ $at$ $OX$ $tran.$',y=0.8)
@@ -1294,7 +1210,7 @@ if i_ox==2:  # only for O-X transmission case
         plt.plot(wnpar[i,0],cn_b_gradpsi[i],'o',color=col)
 
     plt.subplot(324) #-------------------------
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     #plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
     plt.title('$N_{||}$ $and$ $N_{||opt}$ $at$ $OX$ $tran.$',y=0.8)
@@ -1319,7 +1235,7 @@ if i_ox==2:  # only for O-X transmission case
                 
     if istart==1:    
         plt.subplot(325) #-------------------------
-        plt.hold(True)
+        #plt.hold(True)
         plt.grid(True)
         plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
         plt.title('$alphast$ $[degree]$',horizontalalignment='center',y=0.8)
@@ -1337,7 +1253,7 @@ if i_ox==2:  # only for O-X transmission case
             plt.plot(wnpar[i,0],alphast[i],'o',color=col)
         
         plt.subplot(326) #-------------------------
-        plt.hold(True)
+        #plt.hold(True)
         plt.grid(True)
         plt.xlabel('$N_{||}$ $at$ $starting$ $point$')
         plt.title('$betast$ $[degree]$',horizontalalignment='center',y=0.8)
@@ -1358,6 +1274,7 @@ if i_ox==2:  # only for O-X transmission case
     show()
 #stop
 
+#%
 #--------------------------------------------------------------------------
 fig80=plt.figure()  # E-wave-field along RAYS vs pol.distance(t)
 plt.subplot(231) #-------------------------
@@ -1374,7 +1291,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         ereal=cwexde[0,i,0:Nm].copy()
         eimag=cwexde[1,i,0:Nm].copy()
@@ -1394,7 +1311,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         ereal=cweyde[0,i,0:Nm].copy()
         eimag=cweyde[1,i,0:Nm].copy()
@@ -1414,7 +1331,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         ereal=cwezde[0,i,0:Nm].copy()
         eimag=cwezde[1,i,0:Nm].copy()
@@ -1433,7 +1350,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],fluxn[i,0:Nm],color=col,linewidth=linw)
 plt.xlabel('$poloidal$ $distance$ $along$ $ray$  $(cm)$')
@@ -1450,17 +1367,17 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],salphal[i,0:Nm],color=col,linewidth=linw)
 plt.xlabel('$poloidal$ $distance$ $along$ $ray$  $(cm)$')
 plt.savefig('genray_rays_Ewave_p.png') 
 show()
 
-
+#%
 fig8=plt.figure()  # E+ and E- wave-field along RAYS vs distance(t)
 plt.subplot(611) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|E_{+}/E|$')
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1470,7 +1387,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     one_ov_root2=1./sqrt(2.)
     if Nm>0:
         Ex_real=cwexde[0,i,0:Nm].copy()
@@ -1485,7 +1402,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
         Eplus_abs= sqrt(Eplus_real**2 + Eplus_imag**2)
         plt.plot(ws[i,0:Nm],Eplus_abs,color=col,linewidth=linw)  
 plt.subplot(612) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|E_{-}/E|$')
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1495,7 +1412,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         Ex_real=cwexde[0,i,0:Nm].copy()
         Ex_imag=cwexde[1,i,0:Nm].copy()
@@ -1508,7 +1425,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
         Eminus_abs= sqrt(Eminus_real**2 + Eminus_imag**2)
         plt.plot(ws[i,0:Nm],Eminus_abs,color=col,linewidth=linw)  
 plt.subplot(613) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|E_Z/E|$')
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1518,7 +1435,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         ereal=cwezde[0,i,0:Nm].copy()
         eimag=cwezde[1,i,0:Nm].copy()
@@ -1527,16 +1444,16 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
 plt.subplot(614) #-------------------------
 #To check sum =1. (Yes):
 #print 'sum polorizations**2=', Eplus_abs**2+Eminus_abs**2+ea**2
-plt.hold(True)
+#plt.hold(True)
 isp=0 # electrons, by default
-if Nsp>0:
+if Nsp>1:
     isp=isp_wc-1 # ion (isp_wc is the genray index; isp is the python index)
     msme= mass[isp]/mass[0]        # m_s/m_e ratio
     Z_s= charge[isp]/charge[0]    # Z_s/e
-    print 'm_s/m_e=', msme, '  Z_s=',Z_s
-    print 'isp_name=',isp_name
+    print('m_s/m_e=', msme, '  Z_s=',Z_s)
+    print('isp_name=',isp_name)
     plt.subplot(614) #------------------------- for 1st ion species
-    plt.hold(True)
+   #plt.hold(True)
     plt.grid(True)
     plt.ylabel('$\omega/\omega_{c}$['+isp_name[isp]+']')
     for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1546,11 +1463,11 @@ if Nsp>0:
         if remainder(i,6)==3: col='c'    
         if remainder(i,6)==4: col='m' 
         if remainder(i,6)==5: col='k'  
-        Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+        Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
         if Nm>0:
             plt.plot(ws[i,0:Nm],f/(28e5*sbtot[i,0:Nm]*Z_s/msme),color=col,linewidth=linw)
 plt.subplot(615) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$K_i$'+' $(cm^{-1})$')
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1560,11 +1477,11 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],salphal[i,0:Nm],color=col,linewidth=linw)  
 plt.subplot(616) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel(r'$N_{\perp}$')
 for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1574,7 +1491,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wnper[i,0:Nm],color=col,linewidth=linw)
       
@@ -1583,7 +1500,7 @@ plt.savefig('genray_rays_Ewave_plus-min_p.png')
 show()    
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig81=plt.figure()  # Vgroup/c along RAYS vs pol.distance(t)
 plt.subplot(231) #-------------------------
@@ -1599,7 +1516,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],vgr_r[i,0:Nm],color=col,linewidth=linw)  
 plt.subplot(232) #-------------------------
@@ -1615,7 +1532,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],vgr_phi[i,0:Nm],color=col,linewidth=linw)  
 plt.subplot(233) #-------------------------
@@ -1631,7 +1548,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],vgr_z[i,0:Nm],color=col,linewidth=linw)
 plt.subplot(235) #-------------------------
@@ -1647,7 +1564,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         vgrr=vgr_r[i,0:Nm]
         vgrphi=vgr_phi[i,0:Nm]
@@ -1659,14 +1576,14 @@ plt.savefig('genray_rays_Vgroup_p.png')
 show()
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig5=plt.figure()  # wce/w and (wpe/w)^2 along RAYS vs distance
 qm=  charge[0]/mass[0]  # First species is electrons
 q2m= charge[0]**2/mass[0]
 
 plt.subplot(231) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|\omega_{ce}/\omega|$')
 #xticks(np.arange(ws_min, ws_max, step=ws_step) )
@@ -1678,13 +1595,13 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         wce_w= abs(28e5*qm*sbtot[i,0:Nm])/f
         plt.plot(ws[i,0:Nm],wce_w,color=col,linewidth=linw)
         
 plt.subplot(234) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.ylabel('$|\omega/\omega_{ce}|$')
 #xticks(np.arange(ws_min, ws_max, step=ws_step) )
@@ -1696,7 +1613,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         w_wce= f/abs(28e5*qm*sbtot[i,0:Nm])
         plt.plot(ws[i,0:Nm],w_wce,color=col,linewidth=linw)
@@ -1708,7 +1625,7 @@ plt.title(txt,y=1.03)   #
 plt.axis('off')
 
 plt.subplot(233) #-------------------------
-plt.hold(True)
+#plt.hold(True)
 plt.grid(True)
 plt.title('$(\omega_{pe}/\omega)^2$',y=1.03)
 #xticks(np.arange(ws_min, ws_max, step=ws_step) )
@@ -1720,7 +1637,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         #print 806.2e5*sene[0,0]*q2m/f**2, sene[0,0], q2m
         plt.plot(ws[i,0:Nm],806.2e5*sene[i,0:Nm]*q2m/f**2,color=col,linewidth=linw)    
@@ -1739,7 +1656,7 @@ if Nsp>1: # plot w_c/w along rays
         if remainder(i,6)==3: col='c'    
         if remainder(i,6)==4: col='m' 
         if remainder(i,6)==5: col='k'  
-        Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+        Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
         if Nm>0:
             plt.plot(ws[i,0:Nm],abs(28e5*qm*sbtot[i,0:Nm]/f),color=col,linewidth=linw)
     plt.xlabel('$pol.distance$ $along$ $ray$  $(cm)$')
@@ -1755,9 +1672,9 @@ if Nsp>1:
     isp=isp_wc-1 # ion (isp_wc is the genray index; isp is the python index)
     mime= mass[isp]/mass[0]        # m_s/m_e ratio
     Z_s= charge[isp]/charge[0]    # Z_s/e
-    print 'm_s/m_e=', mime, '  Z_s=',Z_s
+    print('m_s/m_e=', mime, '  Z_s=',Z_s)
     plt.subplot(236) #------------------------- for 1st ion species
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     plt.title('$\omega/\omega_{c}$ ['+isp_name[isp]+']')
     for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1767,7 +1684,7 @@ if Nsp>1:
         if remainder(i,6)==3: col='c'    
         if remainder(i,6)==4: col='m' 
         if remainder(i,6)==5: col='k'  
-        Nm= np.asscalar(nrayelt[i])-1 # max number of points along a ray
+        Nm= (nrayelt[i]).item()-1 # max number of points along a ray
         linwi=2*linw-0.5*i
         linwi=max(0.5,linwi)
         plt.plot(ws[i,0:Nm],f/(28e5*sbtot[i,0:Nm]*Z_s/mime),color=col,linewidth=linwi)
@@ -1776,7 +1693,7 @@ if Nsp>1:
     plt.xlim( (ws_min, ws_max) )
 else:
     plt.subplot(236) #------------------------- w_UH for electrons
-    plt.hold(True)
+    #plt.hold(True)
     plt.grid(True)
     plt.title('$\omega_{UHe}/\omega$' )
     for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
@@ -1786,7 +1703,7 @@ else:
         if remainder(i,6)==3: col='c'    
         if remainder(i,6)==4: col='m' 
         if remainder(i,6)==5: col='k'  
-        Nm= np.asscalar(nrayelt[i])-1 # max number of points along a ray
+        Nm= (nrayelt[i]).item()-1 # max number of points along a ray
         wuh_w = sqrt( (28e5*sbtot[i,0:Nm]/f)**2  +  806.2e5*sene[i,0:Nm]*q2m/f**2)
         plt.plot(ws[i,0:Nm],wuh_w, color=col,linewidth=linw)
     plt.xlabel('$distance$ $along$ $ray$  $(cm)$')
@@ -1797,7 +1714,7 @@ plt.savefig('genray_rays_wc_wp_p.png')
 show()
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig5=plt.figure()  # Refractive indices along RAYS vs R(t)
 ax=plt.subplot(231) #-------------------------
@@ -1813,7 +1730,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm-1],wn_r[i,0:Nm-1],color=col,linewidth=linw) 
         plt.plot(wr[i,0],wn_r[i,0],'k.') # dot at t=0        
@@ -1830,7 +1747,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm],wn_z[i,0:Nm],color=col,linewidth=linw)  
         plt.plot(wr[i,0],wn_z[i,0],'k.') # dot at t=0
@@ -1847,7 +1764,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm],wn_phi[i,0:Nm],color=col,linewidth=linw)
         plt.plot(wr[i,0],wn_phi[i,0],'k.') # dot at t=0
@@ -1865,7 +1782,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm],wnper[i,0:Nm],color=col,linewidth=linw)
         plt.plot(wr[i,0],wnper[i,0],'k.') # dot at t=0
@@ -1883,7 +1800,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm],wnpar[i,0:Nm],color=col,linewidth=linw)
         plt.plot(wr[i,0],wnpar[i,0],'k.') # dot at t=0
@@ -1901,7 +1818,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(wr[i,0:Nm],salphal[i,0:Nm],color=col,linewidth=linw)
         plt.plot(wr[i,0],salphal[i,0],'k.') # dot at t=0
@@ -1909,7 +1826,7 @@ plt.savefig('genray_rays_refr-index_R.png')
 show()
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig6=plt.figure()  # Refractive indices along RAYS vs pol.distance(t)
 plt.subplot(231) #-------------------------
@@ -1925,7 +1842,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wn_r[i,0:Nm],color=col,linewidth=linw)  
 plt.subplot(232) #-------------------------
@@ -1941,7 +1858,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wn_z[i,0:Nm],color=col,linewidth=linw)  
 plt.subplot(233) #-------------------------
@@ -1957,7 +1874,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wn_phi[i,0:Nm],color=col,linewidth=linw)
 plt.subplot(234) #-------------------------
@@ -1973,7 +1890,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wnper[i,0:Nm],color=col,linewidth=linw)
 plt.subplot(235) #-------------------------
@@ -1991,7 +1908,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],wnpar[i,0:Nm],color=col,linewidth=linw)
 plt.subplot(236) #-------------------------
@@ -2008,7 +1925,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i])-nskip # max number of points along a ray
+    Nm= (nrayelt[i]).item()-nskip # max number of points along a ray
     if Nm>0:
         plt.plot(ws[i,0:Nm],sqrt(wnpar[i,0:Nm]**2+wnper[i,0:Nm]**2),color=col,linewidth=linw)
 plt.savefig('genray_rays_refr-index_p.png') 
@@ -2046,7 +1963,7 @@ rhomax=1.05*np.amax(rho_bin_center)
 
 #------------
 
-
+#%
 #--------------------------------------------------------------------------
 fig7=plt.figure()   # Power profiles
 plt.subplot(221) #-------------------------
@@ -2094,7 +2011,7 @@ show()
 
 
 
-
+#%
 #--------------------------------------------------------------------------
 fig1=plt.figure()   # Current profiles
 plt.subplot(221) #-------------------------
@@ -2129,6 +2046,7 @@ savefig('genray_profiles_J.png')
 show() 
 
 
+#%
 fig7=plt.figure()   # Pe and J|| profiles
 #----------------
 plt.subplot(221) #------------------------- Pe
@@ -2143,22 +2061,22 @@ axis([0.,rhomax,0.,1.05*np.amax(powden_e)+1.e-2])
 #'parallel_cur_total' [A]
 parallel_cur_total=dat.variables['parallel_cur_total']
 print(parallel_cur_total.long_name,  parallel_cur_total.getValue(),  parallel_cur_total.units)
-parallel_cur_total=np.asscalar(parallel_cur_total[:])/1e3  # kA
+parallel_cur_total=(parallel_cur_total[:]).item()/1e3  # kA
 print('parallel_cur_total[kA]= ', parallel_cur_total)
 #'toroidal_cur_total' [A]
 toroidal_cur_total=dat.variables['toroidal_cur_total']
 print(toroidal_cur_total.long_name,  toroidal_cur_total.getValue(),  toroidal_cur_total.units)
-toroidal_cur_total=np.asscalar(toroidal_cur_total[:])/1e3  # kA
+toroidal_cur_total=(toroidal_cur_total[:]).item()/1e3  # kA
 print('toroidal_cur_total[kA]= ', toroidal_cur_total)
 #'poloidal_cur_total' [A]
 poloidal_cur_total=dat.variables['poloidal_cur_total']
 print(poloidal_cur_total.long_name,  poloidal_cur_total.getValue(),  poloidal_cur_total.units)
-poloidal_cur_total=np.asscalar(poloidal_cur_total[:])/1e3  # kA
+poloidal_cur_total=(poloidal_cur_total[:]).item()/1e3  # kA
 print('poloidal_cur_total[kA]= ', poloidal_cur_total)
 #'GA_tor_cur_total'   [A]
 GA_tor_cur_total=dat.variables['GA_tor_cur_total']
 print(GA_tor_cur_total.long_name,  GA_tor_cur_total.getValue(),  GA_tor_cur_total.units)
-GA_tor_cur_total=np.asscalar(GA_tor_cur_total[:])/1e3  # kA
+GA_tor_cur_total=(GA_tor_cur_total[:]).item()/1e3  # kA
 print('GA_tor_cur_total[kA]= ', GA_tor_cur_total)
 plt.subplot(223) #------------------------- J||
 txt="$I_{CD}$"+"$=$%3.6f" %(parallel_cur_total/1e3) +" $MA$"
@@ -2182,7 +2100,7 @@ savefig('genray_Pe_JII.png')
 show()
 
 
-
+#%
 fig2=plt.figure()
 wpe_w_2= 806.2e5*sene[:,:]*q2m/f**2
 
@@ -2231,7 +2149,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i]) # max number of points along a ray
+    Nm= (nrayelt[i]).item() # max number of points along a ray
     if Nm>0:
         #print 806.2e5*sene[0,0]*q2m/f**2, sene[0,0], q2m
         plt.plot(ws[i,0:Nm],806.2e5*sene[i,0:Nm]*q2m/f**2,color=col,linewidth=linw_mx-i*dlinw)
@@ -2242,6 +2160,7 @@ plt.savefig('genray_rays_delpwr_lin.png')
 show()
 
 
+#%
 fig2=plt.figure() # Same as above, but log10 scale for delpwr
 plt.subplot(211) #-------------------------
 # plt.hold(True)
@@ -2285,7 +2204,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i]) # max number of points along a ray
+    Nm= (nrayelt[i]).item() # max number of points along a ray
     if Nm>0:
         #print 806.2e5*sene[0,0]*q2m/f**2, sene[0,0], q2m
         plt.plot(ws[i,0:Nm],806.2e5*sene[i,0:Nm]*q2m/f**2,color=col,linewidth=linw_mx-i*dlinw)
@@ -2296,6 +2215,7 @@ plt.savefig('genray_rays_delpwr_log.png')
 show()
 
 
+#%%
 fig2=plt.figure() # Same as above, but delpwr vs rho(along ray)
 plt.subplot(211) #-------------------------
 # plt.hold(True)
@@ -2345,7 +2265,7 @@ for i in range(0,Nrays,1):  # i goes from 0 to Nrays-1
     if remainder(i,6)==3: col='c'    
     if remainder(i,6)==4: col='m' 
     if remainder(i,6)==5: col='k'  
-    Nm= np.asscalar(nrayelt[i]) # max number of points along a ray
+    Nm= (nrayelt[i]).item() # max number of points along a ray
     if Nm>0:
         #print 806.2e5*sene[0,0]*q2m/f**2, sene[0,0], q2m
         plt.plot(spsi[i,0:Nm],806.2e5*sene[i,0:Nm]*q2m/f**2,color=col,linewidth=linw_mx-i*dlinw)
@@ -2360,7 +2280,8 @@ show()
 
 dat.close() # close genray.nc
          
-elapsed_time = time.time() - e0
-cpu_time = time.clock() - c0
-print('elapsed and cpu time since start (sec.) =', elapsed_time, cpu_time)
+#elapsed_time = time.time() - e0
+#cpu_time = time.clock() - c0
+#print('elapsed and cpu time since start (sec.) =', elapsed_time, cpu_time)
+
 print('FINISHED')

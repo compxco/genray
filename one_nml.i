@@ -100,6 +100,7 @@ c-----from namelist /numercl/
      &            ndim1,
      &            irkmeth,isolv,idif,nrelt,icorrect,i_output,
      &            maxsteps_rk,i_uh_switch,
+     &            nharm_refined_step, ![2025-12-16]
      &            i_power_switch_resonance,
      &            n_power_switch_resonance,
      &            i_resonance_curve_integration_method,
@@ -107,7 +108,7 @@ c-----from namelist /output/
      &            iwcntr,iwopen,iwj,itools,i_plot_b,i_plot_d,
      &            i_plot_disp_cold,i_plot_wave_normal_cold, 
 c-----from namelist /plasma/
-     &            nbulk,izeff,idens,ndens,
+     &            nbulk,izeff,idens,model_rho_dens,ndens,
 c-----namelist /species/
 c-----namelist /varden/
 c-----namelist /denprof/
@@ -142,7 +143,11 @@ c-----from namelist /tokamak/
 c-----from namelist /dispers/
      &ion_absorption*8, 
 c-----from namelist /plasma/
-     &nonuniform_profile_mesh*8,    
+     &nonuniform_profile_mesh*8, 
+     
+     & dendsk*512, tempdsk*512, tpopdsk*512,  !YuP[2024-08-14] added
+     & dens_read*8, temp_read*8, tpop_read*8, !YuP[2024-08-14] added
+     
 c-----from namelist /read_diskf/
      &netcdfnm*128
 
@@ -239,6 +244,7 @@ c-----from namelist /numercl/
      &            ndim1,
      &            irkmeth,isolv,idif,nrelt,icorrect,i_output,
      &            maxsteps_rk,i_uh_switch,
+     &            nharm_refined_step, ![2025-12-16]
      &            i_power_switch_resonance,
      &            n_power_switch_resonance,
      &            i_resonance_curve_integration_method,
@@ -247,7 +253,7 @@ c-----from namelist /output/
      &            iwcntr,iwopen,iwj,itools,i_plot_b,i_plot_d,
      &            i_plot_disp_cold,i_plot_wave_normal_cold, 
 c-----from namelist /plasma/
-     &            nbulk,izeff,idens,ndens,
+     &            nbulk,izeff,idens,model_rho_dens,ndens,
 c-----namelist /species/
 c-----namelist /varden/
 c-----namelist /denprof/
@@ -282,7 +288,11 @@ c-----from namelist /tokamak/
 c-----from namelist /dispers/
      &ion_absorption,
 c-----from namelist /plasma/
-     &nonuniform_profile_mesh,    
+     &nonuniform_profile_mesh, 
+     
+     & dendsk, tempdsk, tpopdsk,  !YuP[2024-08-14] added
+     & dens_read, temp_read, tpop_read, !YuP[2024-08-14] added
+
 c-----from namelist /read_diskf/
      &netcdfnm
 

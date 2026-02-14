@@ -98,8 +98,9 @@ c-----external
 
 cBH090202:  After pathscale compiler error:
       external ddwrap_relativistic
-
       external b,x,y,tempe,tpoprho,vflowrho
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
  
 c-----local  
      
@@ -179,7 +180,7 @@ c       write(*,*)'hotnperp before loop j nbulk=',nbuklk
           if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_ce/omega)
                                   ! for electrons
           tec(j)=tempe(z,r,phi,j)*1.d+3 !(eV) averaged temperature
-          tpopc(j)=tpoprho(rho,j)
+          tpopc(j)=tpop_zrp(z,r,phi,j) !YuP[2024-08-14] wastpoprho(rho,j)
           vflowc(j)=vflowrho(rho,j)         
         enddo
 

@@ -1,4 +1,4 @@
-# makefile for GENRAY, MPI
+# makefile for GENRAY, MPI    GNU (gfortran) version
 
 # N.Ershov 
 # 24 Jan, 2003,   BH updates.
@@ -7,12 +7,11 @@
 # make rebuild	- rebuild whole program
 # make clean	- remove all *.o files
 
-#Make sure have intel environment:
-#module list
-#Else switch environment:
-#For example: module swap PrgEnv-pgi PrgEnv-intel
+#Make sure have GNU environment:
+#Switch environment:
+#For example: module swap PrgEnv-intel PrgEnv-gnu
 
-#make sure have netcdf libraries and includes:
+#make sure have netcdf libraries and includes (not needed at Perlmutter):
 #module load netcdf
 
 #Invoke the executable with a batch script, using aprun.
@@ -43,7 +42,6 @@
 #BH180125: Updated the makefile, based on what recently worked for cql3d.
 #          module unload darshan; module load cray-netcdf
 
-#BH190925: Changed suffix in NAME from edison to cori, and recompiled.
 
 # Per 2020-01-16 - Johannes Blaschke (NERSC):  -----------------------------------
 # 1. Add `-lX11` to the LIBS variable (Note that the LIBRARIES variable is no longer
@@ -60,15 +58,15 @@
 # running `cc -v` or `ftn -v`.
 # 3. The location of your `pgplot` library now needs to be included in `LOCATION`.
 # ```
-# LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.intel
+# LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.gnu
 # (or whatever the path is)
 # ```
 # Also add into your cori_batchscript_mpi  file, just before srun line:
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/CompX/pgplot.intel
+#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/CompX/pgplot.gnu
 # --------------------------------------------------------
 
 SHELL=		/bin/sh
-NAME=		xgenray_mpi_intel.cori
+NAME=		xgenray_mpi_gnu.perl
 COMPILER=	ftn -g
 BUILDER=	$(COMPILER)
 INCLUDES=	antenna.i adj.i bripplb.i cefield.i cone.i dskin.i eps.i\
@@ -122,14 +120,15 @@ MPIOBJS=	$(SOURCES:.f=.mpio)
 F90SRCS=	kind_spec.f90 const_and_precisions.f90 quanc8.f90 config_ext.f90 green_func_ext.f90
 F90OBJS=	$(F90SRCS:.f90=.o)
 
-#LOCATION= -L../pgplot.intel  # Local, at my home directory
-LOCATION= -L/global/cfs/cdirs/m77/CompX/pgplot.intel
 
-LIBS = $(LOCATION) -lpgplot -lX11
+LOCATION= -L/global/homes/s/sfrnk/perlmutter_builds/pgplot/pgplotlib
 
-DEBUG=		
+LIBS = $(LOCATION) -lpgplot -L/usr/lib64 -lX11
+
+# -g is full debug;   -gopt allows optimization
+DEBUG     = # -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero
 #CSPECIAL= -ieee	
-OPTIMIZE  = -fast
+OPTIMIZE  = -Ofast
 CSPECIAL= -O1 -check bounds -check pointers
 BSPECIAL=	
 

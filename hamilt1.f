@@ -160,7 +160,7 @@ c         write(*,*)'z,r,phi',z,r,phi
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
          enddo
 

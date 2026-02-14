@@ -5059,7 +5059,7 @@ c     output
 c-----------------------------------------------------------------
       real*8 fcn(k_max) !array of under integral fuctions values
 c-----------------------------------------------------------------
-      integer n_harm_adj_l,n_radial0_l
+      integer n_harm_adj_l,n_radial0_l,i_calculate_CD_l ![2026-01-14] added i_calculate_CD_l
 
       real*8 y_l,n_parallel_l,n_perp_l,theta_temperature_l,b_ratio_l,
      &temp_kev_l,unorm_l,sin_trap_l
@@ -5070,7 +5070,7 @@ c-----------------------------------------------------------------
      &y_l,n_parallel_l,n_perp_l,theta_temperature_l,
      &temp_kev_l,unorm_l,sin_trap_l,b_ratio_l,
      &e_x_l,e_y_l,e_z_l,
-     &n_harm_adj_l,n_radial0_l
+     &n_harm_adj_l,n_radial0_l,i_calculate_CD_l ![2026-01-14] added i_calculate_CD_l
 
      
 c-----------------------------------------------------------------
@@ -5165,7 +5165,7 @@ c       PARAMETER (IST=17,IFS=200048)!070723-old
       integer lvmax,iflag,i
       real*8 fcn(k_max)
     
-      integer n_harm_adj_l,n_radial0_l
+      integer n_harm_adj_l,n_radial0_l,i_calculate_CD_l ![2026-01-14] added i_calculate_CD_l
 
       real*8 y_l,n_parallel_l,n_perp_l,theta_temperature_l,b_ratio_l,
      &temp_kev_l,unorm_l,sin_trap_l
@@ -5176,7 +5176,7 @@ c       PARAMETER (IST=17,IFS=200048)!070723-old
      &y_l,n_parallel_l,n_perp_l,theta_temperature_l,
      &temp_kev_l,unorm_l,sin_trap_l,b_ratio_l,
      &e_x_l,e_y_l,e_z_l,
-     &n_harm_adj_l,n_radial0_l
+     &n_harm_adj_l,n_radial0_l,i_calculate_CD_l ![2026-01-14] added i_calculate_CD_l
  
       EXTERNAL FCN_adj_vector
 c      DATA EPSI/5.0d-5/, LVMAX/4/

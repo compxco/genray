@@ -877,6 +877,9 @@ c-----uses
      .temperho,
      .dxdz,dxdr,dxdphi,dydz,dydr,dydphi,
      .dtempdz,dtempdr
+      
+      real*8 dtempdphi 
+      external dtempdphi
 
 c-----locals
       integer ncomp_l
@@ -1167,7 +1170,7 @@ cendtest
       
         dtempdze=dtempdz(z,r,phi,i)
         dtempdre=dtempdr(z,r,phi,i)
-        dtempdpe=0.d0			      !d(T_average)/d(phi)
+        dtempdpe=dtempdphi(z,r,phi,i) !YuP[2024-08-14] was 0.d0 !dT/d(phi)
 
         dddz = dddz+
      &  dd_ono(1,i)*dxdze+dd_ono(2,i)*dydze+dd_ono(3,i)*dtempdze*1.d3

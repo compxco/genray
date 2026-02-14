@@ -280,6 +280,8 @@ cyup      write(*,*)'equilib.f before read (30,2)'
 cyup      write(*,*)'nxeqd,nyeqd,nveqd',nxeqd,nyeqd,nveqd
 2     format(52x,3i4)
 
+      nreqd= nxeqd  ! YuP: R-grid size
+      nzeqd= nyeqd  ! YuP: Z-grid size
       if (nveqd.gt.nxeqd) stop 'nveqd.gt.nxeqd NOT ENABLED'
       if (nveqd.eq.0) nveqd=nxeqd
 
@@ -580,6 +582,31 @@ c--------------------------------------------------------
       ysep=ysep*pr
       write(*,*)'in equilib psimag,psilim',psimag,psilim
       write(*,*)'nveqd,nxeqda',nveqd,nxeqda
+      
+c----- GRIDS/extra ---------------------------------------------
+      dstep= rdimeqd/(nreqd-1) !same as xdimeqd/(nxeqd-1)
+      write(*,*) 'rdimeqd, redeqd=', rdimeqd, redeqd
+      do i=1,nreqd
+        req(i)= redeqd+dstep*(i-1) !same as rr(i)
+      enddo
+ 
+      dstep= (zeqmax-zeqmin)/(nzeqd-1)
+      !where zeqmin= zmideqd - 0.5d0*zdimeqd
+      !and   zeqmax= zmideqd + 0.5d0*zdimeqd
+      do i=1,nzeqd
+        zeq(i)= zeqmin+dstep*(i-1) ! YuP [zeqmin; zeqmax]
+      enddo
+
+      !Only for subroutine wrtnetcdf_plasma_prof
+      dstep= (xeqmax-xeqmin)/(2*nxeqd-1)
+      !where xeqmax= redeqd+rdimeqd
+      !and   xeqmin=-xeqmax
+      do i=1,2*nxeqd
+        xeq(i)= xeqmin+dstep*(i-1) ! YuP [xeqmin; xeqmax] X-axis in top view
+      enddo
+      yeq(:)=xeq(:) !Y-axis in top view
+c----- GRIDS/extra (done)------------------------------------------
+
       do 30 i=1,nveqd 
         feqd(i)=feqd(i)*pr*pb
 	pres(i)=pres(i)*pr*pr*pb
@@ -772,7 +799,7 @@ c     1                 mya,arfya,myb,arfyb,tx,ty,cxy,ncx,ncy,nry,cy)
      &                 mya,arfya,myb,arfyb,tx,ty,cxy,ncx,ncy,nry,cy,
      &                 nxeqda,nx4a)
       write(*,*)
-     1     'spline coeffisients for psi, feqd, and pres were created'
+     1     'spline coefficients for psi, feqd, and pres were created'
 
 
 ctest     

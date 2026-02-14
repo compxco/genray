@@ -16,7 +16,7 @@ c        > 1 - ions.                                               !
 c       rho is in common /one/
 c------------------------------------------------------------------
       real*8 function dxdphi(z,r,phi,i)
-c      implicit double precision (a-h,o-z)
+      !implicit double precision (a-h,o-z)
 
       implicit none 
 
@@ -30,6 +30,23 @@ c-----external
 
 c-----locals
       real*8 den
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by many...  - dddrz1, rside, transmit_coef_ox,
+!find_rho_X, reflect, bound, boundc, plasmray, hotdervs]
+      if((model_rho_dens.eq.7).and.(dens_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from dengrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi).
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=1 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dn/d*
+         !dxdr=   v(i)*dvalr
+         dxdphi= v(i)*dvalphi !Here: in func dxdphi(z,r,phi,i)
+         !dxdz=   v(i)*dvalz 
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(dens_read.eq.'enabled'))
 
 cSAP090206
 c      den=densrho(rho,i)

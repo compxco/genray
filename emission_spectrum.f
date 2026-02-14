@@ -28,6 +28,8 @@ c-----output
 c-----external
       real*8   x,y,tempe,b,gamma1,cn,tpoprho,dense,zeff,vflowrho, zeffi
       external x,y,tempe,b,gamma1,cn,tpoprho,dense,zeff,vflowrho, zeffi
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
 c-----local
       integer i,j,iray_loc,i_geom_optic_loc,n_elt
@@ -195,7 +197,7 @@ c---------calculate cnray
              if(i.eq.1) y_ar(1)=-y_ar(1)
 	     te=tempe(z,r,phi,i) ! kev
 	     t_av_ar(i)=te*1000.d0      ! ev 
-             tpop_ar(i)=tpoprho(rho,i)
+             tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
              vflow_ar(i)=vflowrho(rho,i)
           enddo        
  
@@ -272,11 +274,10 @@ c        write(*,*)'before calc_emission_spectrum'
      
         call calc_emission_spectrum(nrelta,wsn,
      &  wal_emis,wj_emis,
-     &  wnray,win_sn,win_0,wi_0,wi_0sn,wtaun_em,nrayelt_emis,
+     &  wnray,win_sn,win_0, wi_0(iray_loc,ifreq),
+        !YuP[2026-01-14] Corrected: input argument i_0 must be a scalar. 
+     &  wi_0sn,wtaun_em,nrayelt_emis,
      &  transm_ox,nrayelt_o_cutoff_emis,
-cSm061215
-cSAP090808 jx_kin_a -> jx_kin
-c     &  jx_kin_a,jx_kin,kinetic_energy_kev,
      &  jx_kin,kinetic_energy_kev,
      &  wj_emis_x,in_sn_x,in_0_x,i_0_x,i_0sn_x,
      &  work_j_emis_x_n,work_j_emis_x_np1,

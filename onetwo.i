@@ -16,10 +16,11 @@ c    power_s is the absorbed power due to coll'less ion damping on each ion
 c    power_cl is the absorbed power due to collisional damping
 c    spower_e summed absorbed power due to coll'less electron damping
 c    spower_i summed absorbed power due to collisionless ion damping
-c    spower_i summed absorbed power due to coll'less ion damping on each ion
+c    spower_s summed absorbed power due to coll'less ion damping on each ion
 c    spower_cl summed absorbed power due to collisional damping
 c    allcur     total current
 c    densprof,temprof,zefprof   for output of radial profiles to .nc file
+c    rhoprof ![2024-01-24] rho corresponding to densprof (just for nc file)
 c
 c050406
 c    currtot is a total current along B field

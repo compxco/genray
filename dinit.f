@@ -40,6 +40,7 @@ c------------------------------------------------------------------
       include 'one.i'
       include 'ions.i'
       include 'three.i'
+      include 'fourb.i'
       include 'five.i'
       include 'cone.i'
       include 'grill.i'
@@ -539,7 +540,7 @@ c--------vflowtab
          write(*,*)'dinit_mr: idens=1:  izeff=',izeff
          if(((izeff.eq.1).or.(izeff.eq.2)).or.(izeff.eq.4)) then
 c           the given Zeff profile is in the table form
-            write(*,*)'dinit_mr: idens=1:  zeff1(k)'
+            write(*,*)'dinit_mr: idens=1:  zeff1(k)',zeff1
          else
             write(*,*)'dinit_mr: idens=1:  uniform zeff1',zeff1
          endif !izeff              
@@ -806,16 +807,27 @@ c     spline coefficients
 cyup      write(*,*)'dinit_mr:  after spldens1'
 c-----test printing density,temperature,zeff
       if(outprint.eq.'enabled')then !YuP[2018-01-17] Added
+      write(*,*)'dinit, after spldens1. rhom='
       do j=1,ndens
-         write(*,*)'j,rhom(j)',j,rhom(j)
-         do i=1,nbulk
-           den_test=densrho(rhom(j),i)
-           tem_test=temperho(rhom(j),i)
-           write(*,*)'i,dens(i,rhom(j)),temp(i,rhom(j))',
-     &     i,den_test,tem_test
-         enddo
-      enddo
+         write(*,*)rhom(j)
+      enddo   
+      do i=1,nbulk
+        write(*,*)' Density for species k=',i
+        do j=1,ndens
+          den_test=densrho(rhom(j),i)
+          write(*,*)den_test
+        enddo   
+      enddo !i=1,nbulk
+      do i=1,nbulk
+        write(*,*)' Temperature for species k=',i
+        do j=1,ndens
+          tem_test=temperho(rhom(j),i)
+          write(*,*)tem_test
+        enddo   
+      enddo !i=1,nbulk
       endif ! outprint
+      
+      
 c------------------------------------------------------------
 c     Reading or creation the non-maxwellian electron distribution
 c     for the calculation the anti-hermitian relativistic tensor
@@ -1146,7 +1158,7 @@ c      write(*,*)'imax,h_rho',imax,h_rho
          rho=h_rho*i
          dens=densrho(rho,1)
          temp=temperho(rho,1)
-         tpop=tpoprho(rho,1)
+         tpop=tpoprho(rho,1) !Using rho=h_rho*i here
          !write(*,*)'i,rho,dens,temp,tpop',i,rho,dens,temp,tpop
 cSAP090311
          zeff_loc=zeffrho(rho)
@@ -1382,7 +1394,7 @@ c        nx,ny,nz at starting point:
          !for definition of {cnxst,cnyst,cnzst} if the launching point
          !is inside plasma. Need to find the value of |N| refr.index.
          !We find it from cold plasma, using value of given ioxm.
-         !See GENRAY-C, it was done there.
+         !See GENRAY, it was done there.
 
          write(*,*)'rmin,rmax [m]=',rmin,rmax
          write(*,*)'dinit_1/plasmray+edgcor: betast,alfast+phiu0',
@@ -1849,7 +1861,7 @@ c      cnr=-0.7701078676733518d0
         Eminus_imag= (Ex_imag - Ey_real)/dsqrt(2.d0)
         Eminus_abs= sqrt(Eminus_real**2 + Eminus_imag**2)
         write(*,*)'------------------------------------------'
-        write(*,*)'--------- INITIAL DATA ------------- iray=',iray
+        write(*,*)'--------- INITIAL DATA ------------- iray=' !iray Not defined
         write(*,*)'   z=',z,' r=',r,' phi=',phi
         write(*,*)'   cnz=',cnz,' cnr=',cnr,' cm=',cm
         write(*,*)'   rho=',rho
@@ -2176,20 +2188,20 @@ c                charge(i)*(charge(nbulk)-charge(i))
 c           sum2=sum{i=2,nbulk-2}(density(i)/electron_density*
 c                charge(i)*(charge(nbulk-1)-charge(i))
             do i=2,nbulk-2
-	       if ((charge(nbulk)-charge(i)).lt.0) then
+             if ((charge(nbulk)-charge(i)).lt.0) then
 	         write(*,*)'in denscalc charge(nbulk).lt.charge(i)'
-		 write(*,*)'change array charge in genray.in'
-		 write(*,*)'in array charge(i+1) must be >charge(i)'
-		 write(*,*)'change the array charge(i) in genray.in'
-		 stop
-	       endif
-	       if ((charge(nbulk-1)-charge(i)).lt.0) then
-	         write(*,*)'in denscalc charge(nbulk-1).lt.charge(i)'
-		 write(*,*)'change array charge in genray.in'
-		 write(*,*)'in array charge(i+1) must be >charge(i)'
-		 write(*,*)'change the array charge(i) in genray.in'
-		 stop
-	       endif
+               write(*,*)'change array charge in genray.in'
+               write(*,*)'in array charge(i+1) must be >charge(i)'
+               write(*,*)'change the array charge(i) in genray.in'
+               stop
+             endif
+             if ((charge(nbulk-1)-charge(i)).lt.0) then
+               write(*,*)'in denscalc charge(nbulk-1).lt.charge(i)'
+               write(*,*)'change array charge in genray.in'
+               write(*,*)'in array charge(i+1) must be >charge(i)'
+               write(*,*)'change the array charge(i) in genray.in'
+               stop
+             endif
 	       if (idens.eq.0) then
 c                 analytical representation of the ion density profiles
 	          dens_ion=(dense0(i)-denseb(i))*
@@ -2199,18 +2211,18 @@ c                 table representation of the ion density profiles
 	          dens_ion=dens1(j,i)
 	       endif
 
-               if (dens_el.ne.0.d0) then
+             if (dens_el.ne.0.d0) then
 	          denside=dens_ion/dens_el
-	       else
-	          if(dens_ion.eq.0.d0) then
+             else
+                if(dens_ion.eq.0.d0) then
 	            denside=1.d0
-		  else
-		    write(*,*)'in denscalc dens_el=0,
-     1		    but dens_ion.ne.0, j=',j,'i=',i
-                    write(*,*)'change density profiles parameters'
-		    stop
+                else
+		          write(*,*)'in denscalc dens_el=0,
+     1		       but dens_ion.ne.0, j=',j,'i=',i
+                  write(*,*)'change density profiles parameters'
+                  stop
 	          endif
-	       endif
+	       endif !dens_el
 	       sum1=sum1+denside*charge(i)*(charge(nbulk)-charge(i))
 	       sum2=sum2+denside*charge(i)*(charge(nbulk-1)-charge(i))
 	    enddo !nbulk
@@ -3056,6 +3068,16 @@ c-----locals
       if(myrank.eq.0)WRITE(*,*)
      + 'in ainalloc_writencdf_i nray,nrelt,nfreq,nbulk',
      &                          nray,nrelt,nfreq,nbulk
+
+      if (nray.gt.nraya) then !YuP[2022-02-21] Added this check:
+       !It seems this subr. is called before other subroutines
+       !where same check for nray>nraya is performed.
+         if(myrank.eq.0)then
+         WRITE(*,*)'ainalloc_writencdf_i: nray=',nray,'nraya=',nraya
+         WRITE(*,*)'nray>nraya. Inrease nraya in param.i'
+         endif
+         stop
+      endif  
      
       zero=0.d0
       compl_zero=dcmplx(zero,zero)
@@ -4104,30 +4126,33 @@ c-----locals
     
       zero=0.d0
 
-cyup      write(*,*)'in ainalloc_fourb_i'
+      write(*,*)'in ainalloc_fourb_i  nxeqd_add,nyeqd_add=',
+     & nxeqd_add,nyeqd_add 
 
       allocate(rr_add(1:nxeqd_add),STAT=istat)
       call bcast(rr_add,zero,SIZE(rr_add))
-cyup      write(*,*)'in ainalloc_fourb_i after rr_add istat',istat
+      write(*,*)'in ainalloc_fourb_i after rr_add istat',istat
 
       allocate(zz_add(1:nyeqd_add),STAT=istat)
       call bcast(zz_add,zero,SIZE(zz_add))
-cyup      write(*,*)'in ainalloc_fourb_i after zz_add istat',istat
+      write(*,*)'in ainalloc_fourb_i after zz_add istat',istat
 
       allocate(distance_to_wall(1:nxeqd_add,
      &1:nyeqd_add,0:max_limiters),STAT=istat)
       call bcast(distance_to_wall,zero,SIZE(distance_to_wall))
-cyup      write(*,*)'in ainalloc_fourb_i after distance_to_wall istat',istat
+      write(*,*)'in ainalloc_fourb_i after distance_to_wall istat',istat
 
+      write(*,*)'max_limiters,nbulk=',max_limiters,nbulk
       allocate(density_r_z(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
+      write(*,*)'in ainalloc_fourb_i after density_r_z istat',istat
       call bcast(density_r_z,zero,SIZE(density_r_z))
-cyup      write(*,*)'in ainalloc_fourb_i after density_r_z istat',istat
-
+      write(*,*)'in ainalloc_fourb_i after density_r_z istat',istat
+      
       allocate(density_r_z_rr(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)
       call bcast(density_r_z_rr,zero,SIZE(density_r_z_rr))
-cyup      write(*,*)'in ainalloc_fourb_i after &density_r_z_rr istat',istat
+      write(*,*)'in ainalloc_fourb_i after &density_r_z_rr istat',istat
 
       allocate(density_r_z_zz(1:nxeqd_add,1:nyeqd_add,1:nbulk,
      &0:max_limiters),STAT=istat)

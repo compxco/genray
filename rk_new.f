@@ -688,7 +688,8 @@ c                 x, y, dery, ihlf, ndim, prmt                   !
 c          output date						 !
 c    u(1)=z,u(2)=r,u(3)=phi,u(4)=nz,u(5)=nr,u(6)=m               !                                         !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
-      subroutine drkgs2(prmt,u,deru,ndim,ihlf,fct,outp,aux,i_output)
+      subroutine drkgs2(prmt,u,deru,ndim,ihlf,fct,outp,aux,i_output,
+     & nbulk,nharm_refined_step) ![2025-12-16] added nbulk,nharm_refined_step
       implicit none
 cSAP100514
       include 'param.i'
@@ -703,10 +704,16 @@ c-----locals
       dimension up(6),uu(6),startu(6),uplus(6)
       real*8 up,uu,startu,uplus
       real*8 t,tend,h,tt,hh,
-     & dd,eps
+     & dd,eps_prmt4
       real*8 us,uz,ur,dels1,dels2,uphi,
      &uout1,uout2,uout3,uout4,uout5,uout6,
      &usold,dp,delh,ham,dtstep,eps_ham,hnew,hold
+     
+      real*8 yi
+      real*8 y !external
+      real*8 prmt4_orig, prmt4_adj, prmt6_orig, prmt6_adj !original and adjusted
+      integer nbulk,nharm_refined_step !INPUT
+      integer ic_near,nh !local
 
 cSAP120517
       real*8 us_total,dels_total,us_total_old
@@ -727,13 +734,19 @@ c for ibm
 c      call gettim(it1,it2,it3,it4)
 c      tstart=it1*3600.00d0+it2*60.00d0+it3*1.00d0+it4*0.01d0
 c----------------------------------------------------------------
+
+      prmt4_orig= prmt(4) !Save original value
+      prmt4_adj=  prmt(4)
+      prmt6_orig= prmt(6) !Save original value
+      prmt6_adj=  prmt(6)
+      
       t=prmt(1)
       tt=t
       tend=prmt(2)
       h=prmt(3)
       hh=h/2.0
-      prmt(5)=0.d0
-      eps=prmt(4)
+      prmt(5)=0.d0 !if =1.d0, it will stop the ray after 1 step
+      eps_prmt4=prmt(4)
       iflag=0  ! control of the RK method accuracy
       iflagh=3 ! control of the plasma edg intersecsion
       us=0.d0  ! poloidal length (initial value)
@@ -745,7 +758,7 @@ c    ntau is the number of runge-kutta time step.it may be delitted
 c    if you do not want to find the calculation time
       ntau=0
 c---------------------------------------------------------------
- 10   continue
+ 10   continue ! handle for time advances (in a loop)
 
 c      write(*,*)'R-K 10 h',h,'t',t
 cSAP090726
@@ -758,16 +771,51 @@ c      write(*,*)'after jump prmt(7)',prmt(7)
 c-------------------------------------------------
 cSAP090228
 cSAP090502
+
+      ![2025-12-15] Adjust integration step near resonance.
+      ic_near=0 ! To be changed if ray element is near resonance.
+      !Restore to original (from genray namelist):
+      prmt4_adj=prmt4_orig 
+      prmt6_adj=prmt6_orig 
+      prmt(4)=prmt4_orig
+      prmt(6)=prmt6_orig
+      if(nharm_refined_step>0)then
+      uz=u(1)
+      ur=u(2)
+      uphi=u(3)
+      do i=1,nbulk !scan species
+        !If at least one species has nearly res.,
+        ! change ic_near to 1 
+        if(ic_near.eq.0)then
+          yi= dabs(y(uz,ur,uphi,i)) != |omega_ci/omega|
+          do nh=1,nharm_refined_step !scan harmonics
+            if( dabs(1.d0-nh*yi) .le. 0.1d0 ) then
+              ic_near=1 !flag for proximity of resonance
+            endif
+          enddo !nh
+        endif
+      enddo !i=1,nbulk
+      if(ic_near.eq.1)then !Near resonance. Reduce steps:
+        prmt4_adj=prmt4_orig*0.1 !Reduce by 10x (hardwired, for now)
+        prmt6_adj=prmt6_orig*0.1 !Reduce by 10x (hardwired, for now)
+        prmt(4)=prmt4_adj
+        prmt(6)=prmt6_adj
+      endif 
+      eps_prmt4=prmt(4)
+      endif !(nharm_refined_step>0)
+      ![2025-12-15] done
+
       if (dabs(h).lt.1.d-11) then
-         write(*,*)'***** In Runge-Kutta subroutine drkgs2 *********'
-         write(*,*)'***** it was too small time step h.lt.1.d-11 ***' 
-         write(*,*)'***** can not to get the given accuracy prmt4 **' 
-         write(*,*)'h',h
-         iraystop=1
-cSAP100514
-         iray_status_one_ray=13 
-         goto 100
-         goto 100
+         write(*,*)'***** In Runge-Kutta subroutine drkgs2 *****'
+         write(*,*)'***** time step is too small prmt3<1.e-11  *****' 
+         write(*,*)'***** Cannot achieve given accuracy prmt4 or prmt9'
+         write(*,*)'h=prmt3=',h
+         write(*,*)'  iraystop->1'
+         iraystop=1 ! Cannot achieve given accuracy 
+         iray_status_one_ray=13 ! dabs(h).lt.1.d-11 !in subroutine drkgs2
+         prmt(4)=prmt4_orig ![2025-12-15] reset to original (in case it was adjusted)
+         prmt(6)=prmt6_orig ![2025-12-15] reset to original (in case it was adjusted)
+         goto 100 ! exit
       endif    
 
 c       write(*,*)'R-K 10 h',h,'us',us
@@ -858,9 +906,10 @@ c      write(*,*)'u',u
 cedtest
 
 c=====================================================================
+      !for accuracy control: two steps starting with old uu 
+      !but using h/2
       do 320 j=1,2
-c      write(*,*)'in rk 320 j',j
-c      write(*,*)'bef fct uu',uu
+      ! u->uu was saved before step 1
       call fct(tt,uu,deru)
 c      write(*,*)'rk 320 after fct1 deru',deru
 
@@ -910,16 +959,10 @@ c--------------------------------------------------------------------
       tt=tt+hh
 c--------------------------------------------------------------------
  320  continue
+      ! Done: uu() after 2steps using h/2 is obtained
+!So, (uz,ur,uphi) is before step, u(i) - after 1 step with h, 
+!                               uu(i) - after 2 steps with h/2
 
-c       write(*,*)'in rk after 320 uu',uu
-ctest 
-c      call calc_hamiltonian(uu,hamiltonian)
-c      write(*,*)'in rk_new after 320 hamiltonian=',hamiltonian
-c      write(*,*)'uu',uu
-cedtest
-
-cc      write(*,*)'(uu(i),i=1,ndim)'
-cc      write(*,*)(uu(i),i=1,ndim)
 c=====================================================================
       dd=0.0d0
       
@@ -940,7 +983,7 @@ c         dd=dd+(u(i)-uu(i))*(u(i)-uu(i))
  80   continue  
       
       dd=dsqrt(dd)
-c       write(*,*)'2 test rk eps=',dd
+c       write(*,*)'2 test rk eps_prmt4=',dd
 c       write(*,*)'test rk iflag=',iflag
 
 cSAP080807
@@ -948,10 +991,10 @@ cSAP080807
       call callc_eps_ham(uu,ham)
 c      write(*,*)'ham,eps_ham',ham,eps_ham
      
-c      write(*,*)'dd,eps',dd,eps
+c      write(*,*)'dd,eps_prmt4',dd,eps_prmt4
 c      write(*,*)'dabs(ham),eps_ham',dabs(ham),eps_ham
-      if ((dd .lt. eps).and.(dabs(ham).lt.eps_ham)) goto 189
-c      if (dd .lt. eps) goto 189
+      if ((dd .lt. eps_prmt4).and.(dabs(ham).lt.eps_ham)) goto 189
+c      if (dd .lt. eps_prmt4) goto 189
         
 c      write(*,*)'iflag',iflag
  
@@ -962,7 +1005,8 @@ c      write(*,*)'iflag',iflag
         enddo
 c         write(*,*)'!!!!!!!!!!!!!!!! back !!!!!!!!!!!!!!!'
         iflag=-1
-        goto 10
+        !write(*,*)'drkgs2_xyz: dd>eps_prmt4  goto 10',dd,eps_prmt4
+        goto 10 !another step
       else
         h=hh
         do i=1,ndim
@@ -978,9 +1022,11 @@ c      if (iflagh.eq.-1) goto 191
        if (iflagh.eq.2) goto 191
 c       write(*,*)'test rk 189 iflag=',iflag
       if (iflag .lt. 0) goto 191
-cSAP080807
-       if ((dd .lt. (eps/16)).and. (dabs(ham).lt.prmt(9))) then
-	h=h*2.0d0
+
+      if ((dd.lt.eps_prmt4/16.d0) .and. (dabs(ham).lt.prmt(9))) then
+        ! The time step might be too small (dd can be 0)
+        ! Double the time step and try again:
+        h=h*2.0d0
         do i=1,ndim
            uplus(i)=u(i)
         enddo
@@ -988,12 +1034,12 @@ cSAP080807
            u(i)=startu(i)
         enddo
 c         write(*,*)'!!!!!!!!!!!!!!!! back++ !!!!!!!!!!!!!!!'
-        i flag=1
-        goto 10
+        iflag=1
+        !write(*,*)'dd<eps_prmt4/16  h->2h, goto 10'
+        goto 10 !another step
       endif
 
 c=====================================================================
-
 
 191   continue
 
@@ -1043,29 +1089,15 @@ c-----check that the ray point is close to the output point
  20   continue
       i_delh=0
 
-c      write(*,*)'rk delh,prmt(6),prmt(7)',delh,prmt(6),prmt(7)
-
-      if(us.gt.(prmt(7)+delh*prmt(6))) then
-
-cyup        write(*,*)'1 us >prmt(7)+delh*prmt(6) us,prmt(7),prmt(6)',
-cyup     &  us,prmt(7),prmt(6)
-
+      if(us.gt.(prmt(7)+delh*prmt6_adj)) then
 c-------trajectory jumped past the output point us > prmt(7)+delh*prmt(6)
 c-------We will reduse the time step to get the point close to the given output point 
         i_delh=1
         hold=h 
  
-c        write(*,*)'i_delh_1',i_delh_1
-
-        if (i_delh_1.ne.1) hnew=h*(prmt(7)+delh*prmt(6)-usold)/(dels1)
+        if (i_delh_1.ne.1) hnew=h*(prmt(7)+delh*prmt6_adj-usold)/(dels1)
         i_delh_1=1
 
-cyup        write(*,*)'hold,hnew,usold,us',hold,hnew,usold,us
-c        write(*,*)'prmt(7)+delh*prmt(6)',prmt(7)+delh*prmt(6)
-c        write(*,*)'prmt(7)+delh*prmt(6)-usold',
-c     &            prmt(7)+delh*prmt(6)-usold
-c        write(*,*)'h,dels1',h,dels1
-        
 c-------one step using the Runge-Kutta with the constant time step h=hnew
 
 c       go back (to the previous time step) to start of the Runge-Kutta procedure 
@@ -1113,20 +1145,15 @@ c      write(*,*)'uz,u(1)',uz,u(1)
 
       if (i_delh.eq.0) goto 60
       goto 60  
-      if(us.lt.(prmt(7)+delh*prmt(6))) then 
-c--------hnew is too shot to jump past prmt(7)+delhprmt(6).
+      if(us.lt.(prmt(7)+delh*prmt6_adj)) then 
+c--------hnew is too short to jump past prmt(7)+delh*prmt(6).
 c        Now we will increase hnew.
-cyup          write(*,*)' hold,hnew',hold,hnew
           hnew=0.5d0*(hold+hnew)
-cyup          write(*,*)'increase hnew hnew,hold',hnew,hold
           goto 20      
        endif
  60   continue
 cyup      write(*,*)'rk_new before outp us,u(1),u(2)',us,u(1),u(2)
       call outp(us,u,deru,ihlf,ndim,prmt,iflagh,iraystop,
-cSAP100202
-c     &i_go_to_previous_output_step)
-cSAP120517
      &i_go_to_previous_output_step,us_total,us_total_old )
 cyup      write(*,*)'rk_new.f in drkgs2 after outp us',us
 
@@ -1134,7 +1161,7 @@ cyup      write(*,*)'rk_new.f in drkgs2 after outp us',us
 cyup          write(*,*)'in rk_new.f i_go_to_previous_output_step',
 cyup     &                           i_go_to_previous_output_step
 cyup          write(*,*)'in rk_new.f us',us
-          goto 10
+          goto 10 !another step
        endif
 c       write(*,*)'rk_new aft outp iraystop',iraystop
 c-----------------------------------------------------------
@@ -1161,41 +1188,43 @@ c----------------------------------------------------------------------
 	  dtstep=prmt(3)/h
 cyup	  write(*,*)'ray is outside the plasma after correction'
 c------------------------------------------------------------------
-	  if (dtstep.lt.100.d0)then
-c if 2.1
-c            write(*,*)'in rk after output 2.1  iflagh, h=',iflagh,h
-	    do i=1,ndim
-	      u(i)=startu(i)
-	    enddo
-	    goto 10
+          if ((prmt(3)/h).lt.100.d0)then !if 2.1
+             do i=1,ndim
+                u(i)=startu(i)
+             enddo
+             goto 10 !another step
           else
-cyup            write(*,*)'dtstep.gt.100.0'
-	    do i=1,ndim
-	      u(i)=startu(i)
-	    enddo
-	    goto 10
-	  endif
-c end if 2.1
+             write(*,*)' Initial_step/adjusted_step: prmt(3)/h > 100'
+             do i=1,ndim
+                u(i)=startu(i)
+             enddo
+             goto 10 !another step
+          endif !end if 2.1
 c-------------------------------------------------------------------
         else
 c-------------------------------------------------------------------
 c     ordinary ray point	  iflagh=3
 c     value of u(i) after correction procedure
 c-------------------------------------------------------------------
-        endif
-c end if 2
-      endif
-c end if 1
+        endif !end if 2
+      endif !end if 1
 c--------------------------------------------------------------------
       if (iraystop.eq.1) then
-        goto 100
+         prmt(4)=prmt4_orig ![2025-12-15] reset to original (in case it was adjusted)
+         prmt(6)=prmt6_orig ![2025-12-15] reset to original (in case it was adjusted)
+         goto 100 !-> finish and stop the ray
       end if     
-      if (prmt(5).gt.0) goto 100
-  30      format(1x,6(1x,e11.4))
+      if (prmt(5).gt.0) then ! handle to exit integration along ray
+         prmt(4)=prmt4_orig ![2025-12-15] reset to original (in case it was adjusted)
+         prmt(6)=prmt6_orig ![2025-12-15] reset to original (in case it was adjusted)
+         !write(*,*)'prmt(5)>0  goto 100 finish',prmt(5)
+         goto 100 !-> finish here
+      endif
+  30  format(1x,6(1x,e11.4))
 c------------------------------------------------------------------
 c  the program for calculation time determination
       ntau=ntau+1
-      if (ntau.eq.10) then
+c      if (ntau.eq.10) then
 c        call gettim(itf1,itf2,itf3,itf4)
 c	itd1=itf1-it1
 c	itd2=itf2-it2
@@ -1211,12 +1240,12 @@ c	write(*,*)'itd1=',itd1,'itd2=',itd2,'itd3=',itd3,'itd4=',itd4
 c        call gettim(time2)
 c        time=time2-time1
 c        write(*,*) ' 2 - calculation time for 100 step:',time
-      end if
+c      end if
 c--------------------------------------------------------
-      goto 10
+      goto 10 !---> go back for another step along ray.
   100 continue
       return
-      end
+      end subroutine drkgs2
 	 
 
 
@@ -1710,7 +1739,8 @@ c                 output data:                                   !
 c          u(1)=z, u(2)=r, u(3)=phi, u(4)=Nz, u(5)=Nr, u(6)=cm     !                                         !
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       subroutine drkgs_auto(prmt,u,deru,ndim,ihlf,fct,outp,
-     +  aux,dL_step,dN_step)
+     +  aux,dL_step,dN_step,nbulk,nharm_refined_step)  
+       ![2025-12-16] added nbulk,nharm_refined_step
       implicit none !integer (i-n), real*8 (a-h,o-z)
       integer ndim,ihlf !Input
       real*8 dL_step,dN_step !input
@@ -1723,9 +1753,16 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       integer iflag,iflagh, i, iraystop, i_go_to_previous_output_step !local
       real*8 tdum,dt_code, us_total, us_total_old, dndt,drdt,step_inv
       
+      real*8 dL_step_orig, dL_step_adj !original and adjusted
+      integer nbulk,nharm_refined_step !INPUT ![2025-12-16]added
+      integer ic_near,nh ![2025-12-16]
+      real*8 yi
+      real*8 y !external
       
       external fct !=rside1() !YuP: Does not actually dep. on t
       external outp != outpt()
+      
+      dL_step_orig= dL_step ![2025-12-16] Save original value
 
       h=prmt(3) !step of integration; not really needed here:
       !h is set below, based on dL_step and dN_step.
@@ -1739,6 +1776,32 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  !
       
 c---------------------------------------------------------------
  10   continue ! handle for time-advancing (loop)
+
+      ![2025-12-15] Adjust integration step near resonance.
+      ic_near=0 ! To be changed if ray element is near resonance.
+      !Restore to original (from genray namelist):
+      dL_step_adj= dL_step_orig
+      if(nharm_refined_step>0)then
+      uz=u(1)
+      ur=u(2)
+      uphi=u(3)
+      do i=1,nbulk !scan species
+        !If at least one species has nearly res. - change ic_near to 1
+        if(ic_near.eq.0)then
+          yi= dabs(y(uz,ur,uphi,i)) != |omega_ci/omega|
+          do nh=1,nharm_refined_step !scan harmonics
+            if( dabs(1.d0-nh*yi) .le. 0.1d0 ) then
+              ic_near=1 !flag for proximity of resonance
+            endif
+          enddo !nh
+        endif
+      enddo
+      if(ic_near.eq.1)then !Near resonance. Reduce steps:
+        dL_step_adj= dL_step_orig*0.1 !Reduce by 10x (hardwired, for now)
+      endif 
+      endif !(nharm_refined_step>0)
+      ![2025-12-15] done
+
       ! Save values from previous time step:
       uz=u(1) !=Z
       ur=u(2) !=R
@@ -1763,7 +1826,7 @@ c---------------------------------------------------------------
       ! 1/dt ~ (dN/dt)/dN_step
       ! Select the larger of the two - it will correspond to the smaller 
       ! value of dt
-      step_inv= max( drdt/dL_step , dNdt/dN_step )
+      step_inv= max( drdt/dL_step_adj , dNdt/dN_step )
       ! Why we need to consider the inverse time step:
       ! because one of these speeds, dr/dt or dN/dt, can be exactly 0
       ! or at least very close to 0.
@@ -1776,10 +1839,11 @@ c---------------------------------------------------------------
         write(*,*)'***** In Runge-Kutta subroutine drkgs_auto *****'
         write(*,*)'***** time step is too small.'
         write(*,*)'***** dr/dt, dN/dt=',drdt,dNdt
-        write(*,*)'***** dL_step=',dL_step
+        write(*,*)'***** dL_step=',dL_step_adj
         write(*,*)'***** dN_step=',dN_step
         write(*,*)'  iraystop->1'
         iraystop=1 ! step_inv is too small (=0)
+        !iray_status_one_ray=13 ! step_inv is too small !in subroutine drkgs_auto
         goto 100 ! exit
       endif
       ! The advantage of using both drdt/dL_step and dNdt/dN_step is:

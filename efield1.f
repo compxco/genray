@@ -256,10 +256,12 @@ c     & dreal(cez)/abs(cez)
          cex=cex*cp
          cey=cey*cp
          cez=cez*cp
-       else
-         ! YuP: do nothing?
-         WRITE(*,*)'efield1: abs(cez)=0.  cez=', cez
-         !pause
+       else !abs(cez)=0., but sometimes it gets here because
+         !cez=(NaN,NaN), because cnprim_e or cnprim_i become NaN.
+         !YuP[2022-08-17] Fixed subr.absorpfd_091016,
+         !to avoid NaN. Maybe need more fixing...
+         WRITE(*,*)'efield1: cez=', cez
+         WRITE(*,*)'efield1: cnpar,cnperp=',cnpar,cnperp
        endif
 c       write(*,*)'efield1 cez',cez
 c       write(*,*)'efield1 cex',cex 

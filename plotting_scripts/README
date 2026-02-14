@@ -1,0 +1,8 @@
+genray/plotting_scripts
+
+260114
+======
+Various python plotting scripts, plotting from genray *.nc output file.
+Mostly in python2,  but genray_plots_python3.py is a conversion of
+genray_plots.py to python3.
+

@@ -1,0 +1,28 @@
+genray/make_archive/
+
+260214
+======
+This directory shows makefiles developed over the years, giving
+a record of various machines genray has been run on.
+
+The most recent are:
+makefile_gfortran64_mp
+makefile_gfortran64_debug_BOUND_CHECK.Ubuntu  #BH local computer
+makefile_mpi_gnu.perl   #perlmutter.nersc.gov
+makefile_gfortran.Ubuntu  #BH local computer
+
+NOTE: there are also MPI versions. ls -lt *mpi* ==> latest
+[See ../mpi/README] to see how this works, making insertions of mpi
+ commands at points specified in genray.  The commands are in a file
+ in ../mpi.]
+These makefiles may need a little updating.
+ 6568 Sep 17  2024 makefile_mpi_gnu.perl   !perlmutter
+  594 Sep 14  2020 cori_batchscript_mpi
+ 6558 Sep 14  2020 makefile_mpi_gnu.cori
+ 5669 Sep 14  2020 makefile_mpi_intel.edison
+ 6534 Jan 20  2020 makefile_mpi_intel.cori
+ 5938 Jan 17  2020 makefile_mpi_intel.cori_consulters
+ 5169 Jan 10  2020 makefile_mpi_gfortran.cori
+ 4850 Sep 28  2014 makefile_mpi.gfortran64
+ 4845 Sep 28  2014 makefile_mpi_intel.hopper
+ 5487 Aug  1  2014 makefile_mpi_pathscale_portal_pppl

@@ -1,8 +1,8 @@
 
 c the arrays from the input eqdskin (default="equilib.dat") file
       real*8 peqd,feqd,pres,ffpeqd,
-     1ppeqd,qpsi,rlimit,zlimit,
-     2rves,zves,rr,zz,flux
+     1 ppeqd,qpsi,rlimit,zlimit,req,xeq,yeq,zeq,
+     2 rves,zves,rr,zz,flux
 
 c	Set up some variables for re-gridding of input f(1:nveqd), etc.,
 c       arrays onto a equispaced mesh of dimension nxeqd.
@@ -64,6 +64,7 @@ cSAP111012
      3             rlimit(nlimit),zlimit(nlimit),
      4             rves(nves),zves(nves),
      5             rr(nxeqda),zz(nyeqda),
+     5             req(nxeqda),xeq(2*nxeqda),yeq(2*nxeqda),zeq(nyeqda),
      6             flux(nxeqda),
      &             theta_pol_limit(nlimit),        
      &             rho_geom_limit(nlimit),           
@@ -109,3 +110,55 @@ c thetapol_wall,       ! poloidal angles [radians] of
 c thetapol_limiter     ! wall and limiter points     
 c rho_wall,rho_limiter !small radius
 c
+!=======================================================================
+!YuP[2024-08-14] added, for new option of density(z,r,phi) profile
+!and temperature(z,r,phi) (for each species).
+c Input data from dendsk file (model_rho_dens.eq.7):
+      integer nzden,nrden,nphiden !Grid sizes, read from file
+      !Note: Assume same (z,r,phi)-grid for density and temperature!
+      real*4 denmin,denmax
+      real*4 tempmin,tempmax
+      
+      !Note for zden,rden,phiden: Same grid for density and temperature!
+      real*4 rdenmin,rdenmax, phidenmin,phidenmax, zdenmin,zdenmax
+      real*4 drden,dphiden,dzden  !grid spacings
+      real*4,pointer :: zden(:)   !(nzden) !grid in Z
+      real*4,pointer :: rden(:)   !(nrden) !grid in R
+      real*4,pointer :: phiden(:) !(nphiden) !grid in phi
+      
+      !Density and derivatives of density:
+      !save in single precision - could be a huge array:
+      real*4,pointer :: dengrid_zrp(:,:,:,:) !(nzden,nrden,nphiden,nbulk) 
+      real*4,pointer :: dnzrp_dz(:,:,:,:)    !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dnzrp_dr(:,:,:,:)    !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dnzrp_dphi(:,:,:,:)  !(nzden,nrden,nphiden,nbulk)     
+      common/dendsk_zrp/
+     1         nzden,nrden,nphiden,
+     2  zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax,
+     2               dzden,drden,dphiden,
+     3               zden, ! uniform-grid
+     3               rden, ! uniform-grid
+     3               phiden, ! uniform-grid
+     1      denmin,denmax, !To be found: density min/max 
+     4      dengrid_zrp, dnzrp_dz,dnzrp_dr,dnzrp_dphi
+     
+      !Temperature and derivatives of T:  
+      !save in single precision - could be huge arrays:
+      real*4,pointer :: tempgrid_zrp(:,:,:,:) !(nzden,nrden,nphiden,nbulk) 
+      real*4,pointer :: dtzrp_dz(:,:,:,:)     !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dtzrp_dr(:,:,:,:)     !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dtzrp_dphi(:,:,:,:)   !(nzden,nrden,nphiden,nbulk)
+      common/tempdsk_zrp/
+     1      tempmin,tempmax, !To be found: T min/max [keV]
+     4      tempgrid_zrp,dtzrp_dz,dtzrp_dr,dtzrp_dphi
+     
+      ![2024-08-14] Added, for Tpop=T_perp/T_parallel and derivatives of Tpop
+      real*4 tpopmin,tpopmax
+      !save in single precision - could be huge arrays:
+      real*4,pointer :: tpopgrid_zrp(:,:,:,:)  !(nzden,nrden,nphiden,nbulk) 
+      real*4,pointer :: dtpopzrp_dz(:,:,:,:)   !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dtpopzrp_dr(:,:,:,:)   !(nzden,nrden,nphiden,nbulk)
+      real*4,pointer :: dtpopzrp_dphi(:,:,:,:) !(nzden,nrden,nphiden,nbulk)
+      common/tpopdsk_zrp/
+     1      tpopmin,tpopmax,    !To be found: Tpop min/max
+     4      tpopgrid_zrp,dtpopzrp_dz,dtpopzrp_dr,dtpopzrp_dphi

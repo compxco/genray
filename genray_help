@@ -944,12 +944,15 @@
 ! prmt3=initial tau step=prmt(3) non-dimensional
 ! prmt4=required accuracy=prmt(4)
 ! prmt6=hprint=prmt(6) [meter] poloidal or total distance for results output
+! genray.dat: prmt6 is in cms.
 ! prmt9 accuracy of Hamiltonian in the Runge-Kutta subroutine at irkmeth=2
 !       it will reduce Runge-Kutta time step if dabs(ham).ge.eps_ham)
 !       =1.d15 by default (for so big value the comparison
 !                         of the hamiltonian (hamilt<prmt9) in Runge-Kutta
 !                         practically does no change time step
 !                         and Runge-Kutta works like without this comparison)
+!       See new[2025] namelist variable nharm_refined_step 
+!       for refining the step around cyclotron resonances. 
 !--------------------------------------------------------------------------
 !icorrect= switch for Hamiltonian correction in subroutine outpt
 !          [See manual].
@@ -1039,6 +1042,41 @@
 !                       !
 !                       ! eps_delta_pow is used in prep3d.f
 !--------------------------------------------------------------------------
+!  New option for refining the step of integration
+!  around cyclotron resonances ([2025-12-15], [2025-12-16]).
+!  The step is reduced around omega = n*omega_c resonances
+!  where the harmonic number n is "tried" (scanned) in the range
+!  n= [1; nharm_refined_step]. 
+!  nharm_refined_step is the new namelist variable
+!  (see below).
+!  Each species in the 1:nbulk list is checked.
+!  If condition abs(1.0 - n*|omega_c/omega|) .le. 0.1
+!  is met, i.e. the proximity to a resonance is detected,
+!  then the step is reduced by 10x 
+!  (hardwired, for now).
+!  Away from the resonance, the step is restored.
+!  The advantage is that a user can start 
+!  with fairly large prmt4 and prmt6 
+!  (for irkmeth=2, i.e. subr.drkgs2),
+!  but around resonance they are reduced.
+!  Similarly - for irkmeth=3 (subr. drkgs_auto)
+!  where dL_step is refined.
+!  As a result, the number of total steps
+!  (ray elements) is reduced.
+!  This is especially useful for runs in cold plasma
+!  where the effective width of power absorption
+!  around resonance is very narrow.
+!  Presently this option works for irkmeth=2 (subr. drkgs2) 
+!  and irkmeth=3 (subr. drkgs_auto).
+!
+!  Namelist variable for this option:
+!
+!       nharm_refined_step= (integer). 
+!              Highest harmonic n in the scan for omega-n*|omega_c| =0.
+!              Default value is 0, which means no detection of
+!              omega = n*omega_c is done, thus no refinement of steps.
+!--------------------------------------------------------------------------
+  
  &numercl
  irkmeth=2
  ndim1=6
@@ -1056,6 +1094,7 @@
  maxsteps_rk=50000
  i_output=1
  i_uh_switch=0
+ nharm_refined_step=0 ![2025-12-16]
  uh_switch=1.5d0 
  prmt6_uh_switch=1.d-5
  toll_hamilt=1.d-3
@@ -1359,6 +1398,88 @@
 !                                spline profiles (works for idens=1 only)
 !                = 'disabled'    do not use nonuniform mesh (default)
 !--------------------------------------------------------
+! model_rho_dens=7 enables    [default=0, i.e. not used]
+!  Use 3D profiles for density, Temperature and Tpop==Tpar/Tperp 
+!  by reading data from files produced by other codes.
+!  [This feature adapted from genray-c, the cartesian versin of genray,
+!  which has other model_rho_dens=[1-6] options which are not herein adapted.]
+!  The profiles are set over uniform (Z,R,phi) grids.
+!  This coord. system is convenient for cases
+!  that have a small or no variation
+!  in the phi direction (phi= toroidal or azimuthal angle).
+!  In case of exact symmetry of profiles in phi angle -
+!  the size of phi grid should be set to nphiden=1
+!  (set nphiden=1 in the auxiliary code, such as CQL3D,
+!  which saves the data on density, T and Tpar/Tperp profiles).
+!  GENRAY will be reading data files as specified with
+!  dendsk=  (e.g. = 'dens_zr.dat')
+!  tempdsk= (e.g. = 'temp_zr.dat')
+!  tpopdsk= (e.g. = 'tpop_zr.dat')
+!  See subroutine density_zrp_profile_read(nbulk,dendsk)
+!  and subroutine temperature_zrp_profile_read(nbulk,tempdsk)
+!  and subroutine tpop_zrp_profile_read(nbulk,tpopdsk)
+!  for details. These subroutines read dmas() values 
+!  (mass of species/m_e) from each data file
+!  and identify them with a species in genray.in input list.
+!  Also - a basic check is performed that nbulk_in from the data
+!  matches nbulk from genray.in namelist.
+!  The sequence of species in the data files can be different from 
+!  the sequence in the genray.in list (e.g., CQL3D may have 
+!  'D','e' species in the run, while GENRAY may have 'e','D').
+!  If dmas(isp_in) does not match any species in the GENRAY list
+!  the run will be stopped with error message. 
+!  Adjust genray.in accordingly. 
+!  Example of use:
+!  -- Step0. Make a GENRAY run using namelist profiles for n and T 
+!     (and tpop, if needed)
+!     (see idens=0 or 1). Use model_rho_dens=0 (not 7).
+!  -- Step1. Make a run with CQL3D that uses genray.nc
+!     (or your-renamed *.nc file) output file produced in Step0.
+!     (In general, use some other code that can produce 3D profiles)
+!     In cqlinput, specify:
+!     write_dens_temp_for_genray='enabled' !May create huge ASCII files (at n=nstop)
+!     Also specify the names of output data files (example):
+!     dendsk= "dens_zr.dat"  !To save density (all 1:nbulk species in one file)
+!     tempdsk="temp_zr.dat"  !To save temperature (all 1:nbulk species in one file)
+!     tpopdsk="tpop_zr.dat"  !To save Tpar/Tperp (all 1:nbulk species in one file)
+!     Specify number of species, for which profiles are saved:
+!     nbulk=2 !Number of species to be saved [should match Genray input]
+!             !nbulk should not exceed ngen 
+!             !(the procedure uses densz() and energyz() arrays, 
+!             !which are only computed for 1:ngen species)
+!     Also specify grid sizes (example):
+!     nzden=100 !Z grid covers the whole range of device
+!     nrden=60  !For R-range
+!     nphiden=1 !For 2D profiles (Z,R) use nphiden=1 
+!               !which means symmetry in tor.angle
+!     Also specify MIN/MAX range for each of the grids:
+!     zdenmin=-100. !cm  Z grid covers the whole range of device
+!     zdenmax=+100. !cm 
+!     rdenmin=0.  !cm  For R grid
+!     rdenmax=15. !cm
+!     phidenmin=0. !rad  For tor.angle grid
+!     phidenmax=0. !rad
+!  -- Step2. Make GENRAY run with model_rho_dens=7,
+!     specify the data files to read, which were produced in Step1, e.g.
+!     dendsk= "dens_zr.dat"
+!     tempdsk="temp_zr.dat"
+!     tpopdsk="tpop_zr.dat"
+!     (these files should be copied into GENRAY work directory).
+!     Also, check these namelist inputs (they are enabled by default): 
+!  dens_read='enabled' !for reading 3D (2D) density profiles
+!  temp_read='enabled' !for reading temperature profiles
+!  tpop_read='enabled' !for reading profiles of tpop=Tpar/Tperp
+!     They are enabled by default, which means - read data from files
+!     specified with corresponding filenames for dendsk,tempdsk,tpopdsk.
+!  Alternatively, if (e.g.) temp_read is 'disabled', then T(x,y,z) is determined
+!  from namelist settings (analytic or tabulated, based on rho)
+!  rather than by reading the data file. It means that 
+!  model_rho_dens=7 allows mixing of data_file and rho-based profiles,
+!  depending on combination of settings for dens_read, temp_read and tpop_read.
+!
+!  For further details on model_rho_dens=7, search YuP[2024-08-14] in the
+!  genray source files.
+!--------------------------------------------------------
  &plasma
  ndens=21
  nbulk=1
@@ -1367,6 +1488,14 @@
  temp_scale(1)=1.d0
  den_scale(1)=1.d0
  nonuniform_profile_mesh='disabled'
+ model_rho_dens=0   !=7 enabled input of 3D background plasma profiles
+ dendsk=  'dens_zr.dat' !Data file (in case dens_read.eq.'enabled')
+ tempdsk= 'temp_zr.dat' !Data file (in case temp_read.eq.'enabled')
+ tpopdsk= 'tpop_zr.dat' !Data file (in case tpop_read.eq.'enabled')
+ dens_read='enabled' !YuP[2024-08-14] added
+ temp_read='enabled' !YuP[2024-08-14] added
+ tpop_read='enabled' !YuP[2024-08-14] added
+
  &end
 
 
@@ -1594,7 +1723,8 @@
 !          where ngrilla is parameter in param.i
 !----------------------------------------------------------------------
 !  igrillpw options specifying N_parallel power spectra
-!           =1 power=powers/nnkpar, =2 power=sin**2x/x**2,
+!           =1 power=powers/nnkpar, 
+!           =2 power=sin**2x/x**2,
 !           =3 power=exp-((npar-anmin)/anmax)**2    [default=1]
 !----------------------------------------------------------------------
 !  igrilltw specifies the form poloidal variation of power,
@@ -2737,10 +2867,10 @@ radii_2d(1,1)=0.d0, 0.5d0, 1.d0,
 !   i_diskf=3 analytic calculation of the non-Maxwellian distribution:
 !             f(p,theta,rho)=ne(rho)*[(1-rtail-rhot-rbeam)*f_max(T(rho))
 !                                     +rtail*f_tail+rhot*f_hot+rbeam*f_beam]
-!   i_diskf=4 analytic +3D spline calculation of continuous non-Maxwellian
-!              distribution with three temperatures in  three energy ranges.
+!   i_diskf=4 analytic + 3D spline calculation of continuous non-Maxwellian
+!              distribution with three temperatures in three energy ranges.
 !             Uses 3D spline calculation of distributions on a grid.
-!   i_diskf=5 Fully analytic velocity space  +1D  spline vs radois for
+!   i_diskf=5 Fully analytic velocity space  +1D  spline vs radius for
 !             density calculation of continuous non-Maxwellian distribution
 !             with three temperatures in  three energy ranges.
 !             Generally, much faster than i_diskf=4 approach.

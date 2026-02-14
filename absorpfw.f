@@ -1365,14 +1365,14 @@ c	 vi=(sqrt(2Te/me)),    vi in (cm/sec),Ti(keV)
          rho_larm=dsqrt(2.d0)*1.02d2*dsqrt(dmas(i)/1837.d0)/charge(i)*
      &            dsqrt(tempiar(i)*1.d+3)/btot   !cm
          c_kperp=cnper*2.d0*pi*frqncy*1.d9/cvac         !1/cm
-         write(*,*)'rho_larm,c_kperp',rho_larm,c_kperp
+         !write(*,*)'rho_larm,c_kperp',rho_larm,c_kperp
          clambda=0.5d0*(c_kperp*rho_larm)**2
 
          clambda_old=0.5d0*(cnper*vi/(yi*cvac))**2
 
-         write(*,*)'pinsker_1 clambda_old,clambda', clambda_old,clambda
+         !write(*,*)'pinsker_1 clambda_old,clambda', clambda_old,clambda
      
-	 exp_lambda=dexp(-clambda)
+         exp_lambda=dexp(-clambda)
 
          cksi_0=cvac/(cnpar*vi)
 
@@ -1391,7 +1391,7 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 l1=(1-p)/yi
 	 l2=(1+p)/yi+1
 
-         write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
+         !write(*,*)'absorpfw_pinsker l1,l2,1/yi',l1,l2,1./yi
 
 	 if(l2.gt.(nb-2)) then
 	   WRITE(*,*)'in absorpfw_pinsker_1 l2>(nb-2)  Increase
@@ -1412,6 +1412,12 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 endif 
 
          cnprim_s(i)=0.d0
+       eps11_i=0.d0 !YuP[2022-02-21] Was not initialized
+       eps22_i=0.d0 !YuP[2022-02-21] Was not initialized
+       eps12_i=0.d0 !YuP[2022-02-21] Was not initialized 
+       eps11_r=0.d0 !YuP[2022-02-21] Was not initialized
+       eps22_r=0.d0 !YuP[2022-02-21] Was not initialized
+       eps12_r=0.d0 !YuP[2022-02-21] Was not initialized 
 	 do l=l1,l2
 c          cksi_l=(1-l*yi)/(N_par*Vi/cvac)
 	   if(l.ge.0) then
@@ -1582,7 +1588,7 @@ c---------------------------------------------
          if(i.eq.1) y_ar(1)=-y_ar(1)
 	 te=tempe(z,r,phi,i)        ! kev
 	 t_av_ar(i)=te*1000.d0      ! ev 
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
          vflow_ar(i)=vflowrho(rho,i)
       enddo
 
@@ -2038,6 +2044,7 @@ c        BESSEL FUNCTIONS AND ARGUMENTS ARE REAL
 	 endif 
 
          cnprim_s(i)=0.d0
+       eps11_i=0.d0 !YuP[2022-02-21] Was not initialized
 	 do l=l1,l2
 c          cksi_l=(1-l*yi)/(N_par*Vi/cvac)
 	   if(l.ge.0) then
@@ -2178,7 +2185,8 @@ c------------------------------------------------------------------
       implicit double precision (a-h,o-z)
       include 'param.i'
       include 'ions.i'
-      include'eps.i'
+      include 'eps.i'
+      include 'writencdf.i' !to access freqcy, for printout
 
       dimension cnprim_s(*)   !BH041009, for separate ion contributions
                               !cnprim_s(1:nbulk), cnprim_s(1)=cnprim_e
@@ -2245,58 +2253,72 @@ c        write(*,*)'absorpfd_091016 i,xi',i,xi
         d_=d_+xi*p/yi
       enddo
       p_=-xe
-c---------------------------------------
-c      rpr=real(cksi_e)
-c      argz=cmplx(rpr,0.)
-      argz=dcmplx(cksi_e,0.d0)
-
-
-c      call zfunc(argz,zf,zfp)
-cSm021022
-c      call czeta(argz,zf,zfp,ierror)
-      call CZETA0(cnpar,argz,zf,zfp,ierror)
-c      rpr=real(zf)
-c      rpr=dble(zf)
-      rpr=dreal(zf)
-      
-      zf_r=dble(rpr)      !real(Z(cksi_e))
-c      rpim=aimag(zf)      
-      rpim=dimag(zf)      
-      zf_im=dble(rpim)	  !imag(Z(cksi_e))
-
-      cksi_e2=cksi_e*cksi_e
-      z_r=2.d0*cksi_e2*(1.d0+cksi_e*zf_r) ! article formula (18)
-      z_im=2.d0*cksi_e2*cksi_e*zf_im	  ! article formula (18)
-      cmodez_2=z_r*z_r+z_im*z_im
-      eps33_r=xe*z_r			  ! article formula (5)
-      eps33_im=xe*z_im			  ! article formula (5)
-      eps33_2=eps33_r*eps33_r+eps33_im*eps33_im
       cnpar2=cnpar*cnpar
       p1=cnpar2-s_			  ! for (15),(16),(17)
       dp1=1.d0/p1			  ! for	(15),(16),(17)
-      z_rdz2=z_r/(cmodez_2)
-      p2=xe*z_rdz2*dp1/(ye*ye)
-      a1_=p1+p2*cnpar2			  ! (16)
-      a2_=p1+p2*(cnpar2+s_)		  ! (17)
-      g_=p1/a2_+(1.d0+p2)*mu2*ye*ye*d_*d_/(eps33_2*a1_*a2_) !(15)
-      cnprim_e=0.25d0*spi*cnper*beta_e*cksi_e*dexp(-cksi_e2)*g_	!(13)
-cSm021021
-      cnprim_e=dabs(cnprim_e)     
+c---------------------------------------
 
-      cn1=p1/a2_ !(15)
-      cn2=(1.d0+p2)*mu2*ye*ye*d_*d_/(eps33_2*a1_*a2_) !(15)
-
+      if(abs(cksi_e).gt. 1.d5)then !YuP[2022-08-17]correction
+          !(Omega/|Kpar| is far above Vte)==> Set cnprim_e to zero.
+          zf_r= -1.d0/cksi_e
+          zf_im= 0.d0
+          z_r= 0.d0
+          z_im=0.d0
+          eps33_r= 0.d0
+          eps33_im=0.d0
+          eps33_2= 0.d0
+          p2= 0.d0
+          a1_=p1 !+p2*cnpar2			  ! (16)
+          a2_=p1 !+p2*(cnpar2+s_)		  ! (17)
+          cnprim_e=0.d0
+          !In fact, we could reduce this limit to abs(cksi_e).gt.10. -
+          !There is no imaginary part in cpz0 output
+          !of ZFUN_cur(X,cpz0,cpz1,cpz2), where X==cksi_e
+          !See notes below.
+      else ! Imaginary part can be present
+          argz=dcmplx(cksi_e,0.d0)
+          call CZETA0(cnpar,argz,zf,zfp,ierror)
+          rpr=dreal(zf)
+          zf_r=dble(rpr)      !real(Z(cksi_e))
+          rpim=dimag(zf)      
+          zf_im=dble(rpim)	  !imag(Z(cksi_e))
+          cksi_e2=cksi_e*cksi_e
+          z_r= 2.d0*cksi_e2*(1.d0+cksi_e*zf_r) ! article formula (18)
+          !YuP[2022-08-17]: If |cksi_e|>>1 (Omega/|Kpar| is far above Vte)
+          ! then  CZETA0() gives zf_r= -1/cksi_e and zf_im=0.
+          ! In such a case,  (1.d0+cksi_e*zf_r) becomes zero,
+          ! hence z_r=0, then cmodez_2=0 and eps33_2=0,
+          ! which causes 1/0 below.
+          ! In fact, we don't need to worry about case |cksi_e|>>1
+          ! because there can be no damping (there is no imaginary part in zf
+          ! output from CZETA0 [cpz0 output of ZFUN_cur(X,cpz0,cpz1,cpz2)]
+          ! when |X|>10. where X==cksi_e). 
+          ! Simply set cnprim_e to zero in this case.
+          z_im=2.d0*cksi_e2*cksi_e*zf_im	  ! article formula (18)
+          cmodez_2= z_r*z_r + z_im*z_im !YuP: Both z_r and z_im can be 0
+          !at large |cksi_e|>>1.  Then, eps33_2 becomes zero.
+          eps33_r=xe*z_r			  ! article formula (5)
+          eps33_im=xe*z_im			  ! article formula (5)
+          eps33_2=eps33_r*eps33_r+eps33_im*eps33_im
+          z_rdz2=z_r/(cmodez_2)
+          p2=xe*z_rdz2*dp1/(ye*ye)
+          a1_=p1+p2*cnpar2			  ! (16)
+          a2_=p1+p2*(cnpar2+s_)		  ! (17)
+          g_=p1/a2_+(1.d0+p2)*mu2*ye*ye*d_*d_/(eps33_2*a1_*a2_) !(15)
+          cnprim_e=0.25d0*spi*cnper*beta_e*cksi_e*dexp(-cksi_e2)*g_	!(13)
+          cnprim_e=dabs(cnprim_e)     
+          cn1=p1/a2_ !(15) Not used?
+          cn2=(1.d0+p2)*mu2*ye*ye*d_*d_/(eps33_2*a1_*a2_) !(15)
+      endif ! abs(cksi_e).gt. 1.d5 !YuP[2022-08-17]correction
 c end of the electron absorption calculations
+
+      !YuP: Next few lines - for tests only?
       ci=dcmplx(0.d0,1.d0)
       cmue=0.5d0*(cnper*ve/(ye*cvac))**2
       ckappae2=xe*2.d0*cmue*cksi_e*(zf_r+ci*zf_im)  ! formula (7)
-
 c       call tensrcld(z,r,phi)
-   
       xe=x(z,r,phi,1)
       ye=y(z,r,phi,1)
-
-cSm021018
 c-----tensor for the electrons with the hot correction
 c     The hot correction is in eps(2,2),eps(3,3),eps(2,3)
 c-----------------------------------------------------
@@ -2305,23 +2327,12 @@ c-----------------------------------------------------
          reps(i,j)=czero
          enddo
       enddo
-
       reps(1,1)=1.d0+xe/ye**2 !part of formula(2)
-
-cSm021018 
-c      reps(1,2)=-ci*xe/ye      !part of formula(4) 
-cSm050207
-c      reps(1,2)=xe/ye      !part of formula(4)
-cSm080916
       reps(1,2)=-ci*xe/ye      !part of formula(4)
-
-
       reps(2,2)=reps(1,1)+ckappae2                  !part of formula (3)
       reps(3,3)=xe*(z_r+ci*z_im)                            !formula (5)
 c      reps(2,3)=-ci*0.5*dsqrt(2.d0*cmue)*reps(3,3)/cksi_e  !formula (6)
-cSm021018
       reps(2,3)=-ci*0.5*dsqrt(2.d0*cmue)*reps(3,3)/cksi_e
-cSm021022
 c      if(cnpar.lt.0.d0) reps(2,3)=-reps(2,3)
          
       cnprim_s(1)=cnprim_e
@@ -2333,6 +2344,8 @@ c        reps(1,1)=reps(1,1)+xi/(yi**2-1.d0)
 c        reps(2,2)=reps(2,2)+xi/(yi**2-1.d0)
 c        reps(1,2)=reps(1,2)-ci*yi*xi/(yi**2-1.d0)
 c      enddo
+
+
 c***********************************************************************
 c ion absorption:
 c-----------------------------------------------------------------
@@ -2365,6 +2378,20 @@ c	 vi=(sqrt(2Te/me)),    vi in (cm/sec),Ti(keV)
 cSAP091015
 c         write(*,*)'in absorpfd i,cnper,yi,vi/cvac,cmui',
 c     &                          i,cnper,yi,vi/cvac,cmui
+     
+         !--- Alternatively, for printout:
+         if(i.eq.2)then !print for first ion species
+         rho_larm=dsqrt(2.d0)*1.02d2*dsqrt(dmas(i)/1837.d0)/charge(i)*
+     &            dsqrt(tempiar(i)*1.d+3)/btot   !cm
+         c_kperp=cnper*6.28*freqcy/cvac         !1/cm
+         clambda=0.5d0*(c_kperp*rho_larm)**2
+!         if(clambda.gt.0.2)then
+!          write(*,'(a,1p5e10.3)')
+!     &    'R,Z[m],rho_L[cm],Kper[1/cm],0.5(Kper*rho_L)^2',
+!     &      r, z, rho_larm, c_kperp, clambda
+!         endif
+         endif
+         !--- done printout; Verified: clambda==cmui
 
 	 expmui=dexp(-cmui)
          cksi_0=cvac/(cnpar*vi)
@@ -2476,7 +2503,7 @@ c            by argument cmui :I_0 prime=I_1
 cSm050209    The calculatios for eps22_r
 c            They are not used in absorption calculations
              eps22_r=eps22_r+2.d0*p22*cmui*(besm_l-besmp_l)*zfr_l   !(3)
-	   else
+	   else ! |l|>0
 	     cksi_l=(1.d0-l*yi)*cvac/(cnpar*vi)
 	     cksi_l2=cksi_l*cksi_l
              zfi_l=spi*dexp(-cksi_l2)	 !Im(Z_func(cksi_l))
@@ -2512,10 +2539,17 @@ c            They are not used in absorption calculations
          enddo !l  (bessel function order)
 
       eps22_i=eps22_i+eps11_i					   !(3)
+      
+      eps_33_r2=0.d0 !and eps33_r=0 in this case.
+      if(eps33_2.ne.0.d0)then !YuP[2022-08-17] added, to avoid 0/0
+        eps_33_r2= eps33_r/eps33_2
+      endif
 
+!      write(*,*)'i, eps11_i-2.d0*d_*eps12_r*eps_33_r2, a2_=',
+!     &  i, eps11_i-2.d0*d_*eps12_r*eps_33_r2, a2_
 
       cnprim_s(i)=0.5d0*cnper*(
-     1 (eps11_i-2.d0*d_*eps33_r*eps12_r/eps33_2)/a2_+
+     1 (eps11_i - 2.d0*d_*eps12_r*eps_33_r2)/a2_+
      1 (-p1*(eps22_i+eps11_i)-2.d0*d_*eps12_r)*a1_/((p1*p1-d_*d_)*a2_))
 
       cnprim_i=cnprim_i+cnprim_s(i)

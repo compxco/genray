@@ -9,6 +9,83 @@ c
 c
 c***********************************************************************
 
+!------------------------------------
+[233] version="genray_v12.1_260114"
+!------------------------------------
+
+[233] Corrected several bugs. Search [2026-01-14].
+ Most important - in the call of subr. 
+ calc_emission_spectrum() - 
+ the argument wi_0 is replaced with wi_0(iray_loc,ifreq),
+ It should be a scalar. 
+
+!------------------------------------
+[232] version="genray_v12.0_251217"
+!------------------------------------
+
+[232]  Added an option for refining the step of integration
+  around cyclotron resonances.
+  Presently it is done for irkmeth=2 (subr. drkgs2) 
+  and irkmeth=3 (subr. drkgs_auto).
+  The step is reduced around omega = n*omega_c resonances
+  where the harmonic number is scanned in the range
+  n= [1; nharm_refined_step], 
+  where nharm_refined_step is the new namelist variable.
+  Each species in the 1:nbulk list is checked.
+  If condition (1.0 - n*|omega_c/omega|) .le. 0.1
+  is met, then the step is reduced by 10x (hardwired, for now).
+  Away from the resonance, the step is restored.
+  The advantage is that a user can start 
+  with fairly large prmt4 and prmt6 
+  (for irkmeth=2, i.e. subr.drkgs2),
+  but around resonance they are reduced.
+  Similarly - for irkmeth=3 (subr. drkgs_auto)
+  where dL_step is refined.
+  As a result, the number of total steps
+  (ray elements) is reduced.
+  This is especially useful for runs in cold plasma
+  where the effective width of power absorption
+  around resonance is very narrow.
+  See [2025-12-15], [2025-12-16]
+
+!------------------------------------
+[231] version="genray_v11.2_240814"
+!------------------------------------
+
+[231] Added new namelist variables to enable capability for using
+  3D profiles for density, temperature and Tpar/Tperp values
+  over general (Z,R,phi) grid.
+  See description for model_rho_dens=7
+  in read_write_genray_input.f.
+  Track changes related to this option by searching "[2024-08-14]".
+
+!------------------------------------
+[230] version="genray_v11.1_240725"
+!------------------------------------
+
+[230] Fixed subr. absorpfd_091016,
+  to avoid NaN. Maybe need more fixing...
+  Search for "YuP[2022-08-17]", see details in comments. 
+
+[229] Corrected functioning of ion_absorption.eq.'disabled' option
+  (used for test purposes). For disabled ion absorption
+  need to set cnprim_i=0.d0 in coding. See "YuP[2022-04-22]" for details.
+
+[228] Impose a lower limit of 1.0 for Zeff after 
+   call read_nonuniform_line_profile() which makes splines for profiles.
+   Reason: spline-related "oscillations" in Zeff(rho)
+   when tabulated values have a sudden change from one radial
+   point to next point. [2022-03-22]
+
+[227] Fixed a bug in subr.grill_lh, for the option igrillpw=1.
+   This option is supposed to give a flat power spectrum over Npar0.
+   The problem was occuring when the number of points in Npar0
+   spectrum, nnkpar, was set to an odd number. In this case,
+   the power for the central point in Npar0 spectrum
+   was set to a larger value comparing to other points.
+   See YuP[2022-03] in grill_lh.f
+ 
+
 [226] In subr. efKarney (called for ieffic=2 setting), 
    added islofa==jwave=0 condition 
    for Landau damping (was: jwave.ne.-1 for Landau damping);

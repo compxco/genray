@@ -741,7 +741,7 @@ c--------------------------------------------------------------------
            WRITE(*,*)'Please change ion_absorption'
            WRITE(*,*)'in input genray.in or genray.dat file'
            endif
-           stop 'reaf_write_genray_input.f ion_absorption problem'
+           stop 'read_write_genray_input.f ion_absorption problem'
        endif
 c----------------------------------------------------------------------
       rewind(unit=i_unit)
@@ -1203,11 +1203,12 @@ c------------------------------------------------------------------
 cSAP090315
          if(myrank.eq.0) WRITE(*,*)'at temperature reading kode=',kode
          if(kode.eq.0) then
-c----------temperature data reading has complited succefully
+c----------temperature data reading has completed succefully
            do i=1,nbulk
-	    do k=1,ndens
+           do k=1,ndens
                temp1(k,i)=prof2_uniform(k,i)
-            enddo
+           enddo
+           !if(myrank.eq.0) WRITE(*,*)'species,temp1(k)',i,temp1(:,i)
            enddo
          else
            if (kode.lt.0) then       
@@ -1368,8 +1369,13 @@ c------------------------------------------------------------------
      &     'zeftab_nonuniform_line',nbulk,ndens,
      &     prof2_uniform,
      &     zeff1_nonuniform,radii_nonuniform_zeff1,nj_tab_zeff1,kode)
+           ![2022-03-22]Impose a lower limit of 1.0 for Zeff.
+           !Reason: spline-related "oscillations" in Zeff
+           !when tabulated values have a sudden change from one radial
+           !point to next point.
            do k=1,ndens
              zeff1(k)=prof2_uniform(k,1)
+             zeff1(k)=max(1.d0,zeff1(k)) ![2022-03-22] Added. See above
              if(myrank.eq.0) WRITE(*,*)'k,zeff1(k)',k,zeff1(k)
            enddo
          endif
@@ -2129,7 +2135,8 @@ c$$$           endif
 
            call write_uniform_column_profile(i_unit,
      &     'temtab',nbulk,
-     &     ndens,temp1,zeff1)
+!     &     ndens,temp1,zeff1) !YuP: BUG?
+     &     ndens,temp1,prof1_uniform) !YuP: ok?
 
            call write_uniform_column_profile(i_unit,
      &     'tpoptab',nbulk,
@@ -3005,7 +3012,8 @@ c-----------------------------------------------------------
 
       if (nametab.eq.'temtab_nonuniform_line') then
          read(i_unit,temtab_nonuniform_line,iostat=kode)
-         call check_read(kode,'temtab_nonuniform_lined')
+         call check_read(kode,'temtab_nonuniform_line') 
+         ![2022-03-23]was 'temtab_nonuniform_lined' (not important)
          write(*,temtab_nonuniform_line)
          write(*,*)'after temtab_nonuniform_line kode',kode
       endif
@@ -3064,7 +3072,7 @@ c--------------------------------------------------------------------
       write(*,*)'nj_tab',nj_tab
 
 c-----------------------------------------------------------------------
-c     check that radial knots are positive and montonic
+c     check that radial knots are positive and monotonic
 c----------------------------------------------------------------------
       do i=1,nbulk
            
@@ -3080,7 +3088,7 @@ c----------------------------------------------------------------------
             if(radii_2d(j-1,i).gt.radii_2d(j,i)) then
                write(*,*)'*****************************************'
                write(*,*)'in genray.dat or genray.in namelist',nametab
-               write(*,*)'has nonmontonic radii knots at i,j',i,j
+               write(*,*)'has nonmonotonic radii knots at i,j',i,j
                write(*,*)'radii_2d(j-1,i).gt.prof_radii_2d(j,i)'
                write(*,*)'Please correct input radii_2d'
                stop 'in read_nonuniform_line_profile'
@@ -3119,12 +3127,11 @@ c---------------------------------------------------------------------
          do j=1,ndens         
             prof2_uniform(j,1)=prof_1_out(j)
          enddo  
-      else
+      else ! any other type of nametab 
          do i=1,nbulk
             do j=1,nj_tab(i)
                radii_1_in(j)=radii_2d(j,i)
                prof_1_in(j)=prof_2d(j,i)
-
             enddo
             
 c            write(*,*)'before put_to_uniform_mesh'
@@ -4860,6 +4867,7 @@ c&numercl
       maxsteps_rk=10000
       i_output=1
       i_uh_switch=0
+      nharm_refined_step=0 ![2025-12-16]
       uh_switch=1.5d0 
       prmt6_uh_switch=1.d-5
       toll_hamilt=1.d-3
@@ -6463,7 +6471,7 @@ c&tpoptab_nonuniform_line
             rho=1.d0*(k-1)/dfloat(ndens-1)
             tpop1(k,i)=(tp0(i)-tpb(i))*(1-rho**rn1tp(i))**rn2tp(i)
      .                 +tpb(i)
-            write(*,*)'default_in k,i,tpop1(k,i)',k,i,tpop1(k,i)
+            !write(*,*)'default_in k,i,tpop1(k,i)',k,i,tpop1(k,i)
          enddo
       enddo
       write(*,*)'nj_tab_tpop1',nj_tab_tpop1

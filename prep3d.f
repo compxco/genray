@@ -363,6 +363,8 @@ cSAP081111
            if (ion_absorption.eq.'enabled') then 
               cnprim=cnprim_e+cnprim_i
            else
+             cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+             if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
               cnprim=cnprim_e !only electron absorption
            endif 
 
@@ -387,21 +389,18 @@ c----------electric field calculations using the dielectric tensor
 c          from absorpfd (the electron plasma with the thermal correction)
 c
 c          electric field using the cold plasma dielectric tensor
-cSm030512
 c           call tensrcld(u(1),u(2),u(3))
 c
            cnx=dcmplx(cnper,0.d0)
-cSAP080916  
            cnx=dcmplx(cnper,(cnprim_e+cnprim_i))
-c           cnx=dcmplx(cnper,(cnprim_e+cnprim_i))
-
-
            do i=1,3
               do j=1,3
                  w_ceps(i,j,is)=reps(i,j) !cold plasma with thermal correction
               enddo
            enddo
-         
+!           write(*,*)'rho,temp_e,dens_e,z_eff',rho,temp_e,dens_e,z_eff
+!           write(*,*)'prep3d/bef.efield1: cnprim_e,cnprim_i=',
+!     &       cnprim_e,cnprim_i
            call efield1(cnpar,cnx,ex,ey,ez,eplus,eminus,epar)
 c          electric field parallel to wave
            enp=(ex*cnper+ez*cnpar)/dsqrt(cnper**2+cnpar**2)
@@ -520,7 +519,7 @@ cSm000324
 c                 if(i.eq.1) y_ar(1)=-y_ar(1)
 c	         te=tempe(z,r,phi,i) ! kev
 c	         t_av_ar(i)=te*1000.d0      ! ev 
-c                 tpop_ar(i)=tpoprho(rho,i)
+c                 tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
 c                 vflow_ar(i)=vflowrho(rho,i)
 c              enddo
 c              d=dhot_sum(nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,
@@ -604,6 +603,8 @@ cSAP081111
          if (ion_absorption.eq.'enabled') then
             cnprim=cnprim_e+cnprim_i
          else
+            cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+            if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
             cnprim=cnprim_e
          endif
          
@@ -707,7 +708,7 @@ cSm000324
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
 
@@ -887,8 +888,8 @@ cyup     &     number_map_points_image_nperp
 
            call map_dhot_nper(m_r_nperp,m_i_nperp, 
      .     dmax_r_nperp,dmin_r_nperp,dmax_i_nperp,dmin_i_nperp,
-     .     n_contour_plot_disp,
      .     nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,
+     .     n_contour_plot_disp,  !YuP[2026-01-14] this line was misplaced
      .     vflow_ar,cnparp,cnper_new,cnprim,iabsorp,
      .     n_relt_harm1,n_relt_harm2,n_relt_intgr,
      .     i_resonance_curve_integration_method,epsi,
@@ -1040,7 +1041,7 @@ c-------Hermitian non-relativistic tensor reps
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
  
@@ -1146,8 +1147,8 @@ c-------------to plot.ps file using PGplot
 
               call map_dhot_nper(m_r_nperp,m_i_nperp, 
      .        dmax_r_nperp,dmin_r_nperp,dmax_i_nperp,dmin_i_nperp,
-     .        n_contour_plot_disp,
      .        nbulk,dmas,x_ar,y_ar,t_av_ar,tpop_ar,
+     .        n_contour_plot_disp, !YuP[2026-01-14] this line was misplaced
      .        vflow_ar,cnparp,cnperp,cnprim,iabsorp,
      .        n_relt_harm1,n_relt_harm2,n_relt_intgr,
      .        i_resonance_curve_integration_method,epsi,
@@ -1230,7 +1231,7 @@ c       It will be in eps.i
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
         enddo
          
@@ -1362,6 +1363,8 @@ cSAP08111
          if (ion_absorption.eq.'enabled') then
             cnprim=cnprim_e+cnprim_i
          else
+            cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+            if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
             cnprim=cnprim_e
          endif        
 c         cnprim=cnprim_e+cnprim_i
@@ -1626,6 +1629,8 @@ cSAP08111
         if (ion_absorption.eq.'enabled') then
            cnprim=cnprim_e+cnprim_i
         else
+           cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+           if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
            cnprim=cnprim_e
         endif
 
@@ -1686,6 +1691,8 @@ cSAP080303
         if (ion_absorption.eq.'enabled') then
            cnprim=cnprim_e+cnprim_i
         else
+           cnprim_i=0.d0 !YuP[2022-04-22] Added, for ion_absorption='disabled'
+           if(nbulk.gt.1) cnprim_s(2:nbulk)=0.d0 !YuP[2022-04-22] Added
            cnprim=cnprim_e
         endif
 
@@ -2473,7 +2480,7 @@ c----------usage of the mech relativistic function and its derivatives
          wz_em(is)=wz(is)/r00     !for emission
          wphi_em(is)=wphi(is) !for emission
         
-         xe=x(z,r,wphi,1)
+         xe=x(z,r,phi,1) !YuP[2026-01-14] was wphi. 
          ye=y(z,r,phi,1) !it will be used as negative for electron
          T_kev=tempe(z,r,phi,1)         
          wtemp_em(is)=T_kev  
@@ -2494,7 +2501,7 @@ c--------initialize arrays
            if(i.eq.1) y_ar(1)=-y_ar(1)
 	   te=tempe(z,r,phi,i) ! kev
 	   t_av_ar(i)=te*1000.d0      ! ev 
-           tpop_ar(i)=tpoprho(rho,i)
+           tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
            vflow_ar(i)=vflowrho(rho,i)
          enddo
 
@@ -5296,8 +5303,8 @@ c                       jwave (=islofa)=-1 Alfven wave , 0- Landau damp.
 c                       cnpar -paralell to magnetic field refractive
 c                              index
 c                       r0x character length
-c     computed:  J/P=efficient in (A/m**2)/(W/m**3), converted to 
-c     output parameter: efficien J/P in (A/cm**2)/(erg/(sec*cm**3))
+c     computed:  J/P=efficiency in (A/m**2)/(W/m**3), converted to 
+c     output parameter: efficiency effKarn= J/P in (A/cm**2)/(erg/(sec*cm**3))
 !     Conversion is 1.0(A/m^2)/(W/m^3) = 1e-5*(A/cm**2)/(erg/(sec*cm**3))
 c------------------------------------------------------------------
 c     It uses:
@@ -5486,7 +5493,7 @@ c     determination the of the current drive sign
       else
          s=-1.d0
       endif
-      efficien=efficien*s
+      !efficien=efficien*s !YuP[2021-12] Not used/commented
 c-------------------------------------------------------------
 cSm050923
 c      effKarn=effKarn*s*1.d-5  !  (A/cm**2)/(erg/(sec*cm**3))
@@ -5517,7 +5524,7 @@ c     input u
                                    ! for (ReN_perp,ImN_perp)
      .n_contour_plot_disp          ! the number of contours
 
-      double precision max_r_nperp,min_r_nperp!max and min ReN_perp
+      double precision max_r_nperp,min_r_nperp !max and min ReN_perp
       double precision max_i_nperp,min_i_nperp !max and min ImN_perp
 c      nbulk - the total number of the plasma species 
 c      mass_ar - the masses of the plasma  species (in electron mass) 

@@ -675,7 +675,7 @@ c------------------------------------------------------------------
       include 'param.i'
       include 'one.i'
 c-----input
-      real*8 z,r,phi!space coordinates
+      real*8 z,r,phi !space coordinates
 c     rho is in common  /one/
       integer i !plasma species number
 c-----local
@@ -686,9 +686,23 @@ c-----externals
       real*8 density_r_z_i
       real*8 thetapol,   ! -pi <thetapol =<pi
      &vardens,densrho
+     
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
 
 c      write(*,*)'in dense z,r,phi,i,nbulk',z,r,phi,i,nbulk
 c      write(*,*)'in dense rho',rho
+
+      if((model_rho_dens.eq.7).and.(dens_read.eq.'enabled')) then 
+         ![2024-08-14] added 
+         !Interpolate from dengrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi)
+         itype=1 !=1 for density (and derivs); =2 for temperature
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !val=n()
+         dense=val
+         return
+      endif ![2024-08-14]
 
       if(i.gt.nbulk)then
 c        write(*,*)'in dense i.gt.nbulk: i,nbulk',i,nbulk
@@ -704,9 +718,9 @@ cSAP090403
 c-----------------------------------------------------------
 c           calculate density using 2D spline at RZ mesh
 c-----------------------------------------------------------
-c           write(*,*)'in dense before density_r_z_i'
+           !write(*,*)'in dense before density_r_z_i'
             dense=density_r_z_i(z,r,phi,i)
-c           write(*,*)'in dense after density_r_z_i '
+           !write(*,*)'in dense after density_r_z_i '
           else
 c----------------------------------------------------------
 cSAP090206
@@ -725,13 +739,13 @@ c           write(*,*)'dens_rho_theta_LCFS i',i
 
             rho_small=rho
    
-c           write(*,*)'dense.f z,r,phi,i,rho_small',z,r,phi,i,rho_small
+           !write(*,*)'dense.f z,r,phi,i,rho_small',z,r,phi,i,rho_small
 
             call dens_rho_theta_LCFS(rho_small,theta_pol,i,
      &        dens_rho_theta,d_dens_rho_theta_d_rho,
      &        d_dens_rho_theta_d_theta)
-c             write(*,*)'dense.f in function dense after'
-c             write(*,*)'dens_rho_theta_LCFS i',i
+             !write(*,*)'dense.f in function dense after'
+             !write(*,*)'dens_rho_theta_LCFS i',i
             dense = dens_rho_theta 
 
 cSAP090222
@@ -739,7 +753,7 @@ c           write(*,*)'in dense i,rho,theta_pol,dense',
 c     &                       i,rho,theta_pol,dense
          endif
       else
-c      write(*,*)'in dense0 dense',dense
+      !write(*,*)'in dense0 dense',dense
 ctest beg
 c         write(*,*)'in dense rho,i',rho,i
 c         denst=densrho(rho,i)
@@ -749,7 +763,7 @@ c tes end
          dense=densrho(rho,i)*(1.0d0+vardens(z,r,phi))
 c         write(*,*)'in dense0 dense',dense
       endif
-c         write(*,*)'in dense dense',dense
+         !write(*,*)'in dense dense',dense
       return
       END
 
@@ -789,20 +803,35 @@ c------------------------------------------------------------------
       include 'edge_prof_nml.i'
 
 c-----input
-      real*8 z,r,phi !sapce coordinates
+      real*8 z,r,phi !space coordinates
       integer i     !number of plasma specie
 
 c-----externals
-      real*8  temperho,temperature_r_z_i
+      real*8  temperho,temperature_r_z_i, rhof
 
 c-----locals
-
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
  
       if(i.gt.nbulk)then
         write(*,*)'in tempe i.gt.nbulk: i,nbulk',i,nbulk
 	stop
       endif
 
+      if((model_rho_dens.eq.7).and.(temp_read.eq.'enabled')) then 
+         ![2024-08-14] added flag/condition for temp_read
+         !Interpolate from tempgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi)
+         itype=2 !=1 for density (and derivs); =2 for temperature
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !val=T()
+         tempe=val
+         return
+      endif !model_rho_dens.eq.7
+
+
+      rho=rhof(z,r,phi) !YuP[2024-08-14] added: not always defined ?
+      
 cBH151016: As discovered by Syun'ichi Shiraiwa, this bug precludes use of
 cBH151016: the temperature profiles outside the LCFS
 c      if ((rho.gt.(1.d0-1.d-10)).and.(i_edge_dens_rz_mesh.gt.2)) then
@@ -1284,3 +1313,60 @@ c-----locals
 
       return
       end
+
+c======================================================================
+c======================================================================
+
+
+c        *********************tpop_zrp ***********************
+c        * this function calculates Tpop==T_par/T_perp  
+c        * profile as a function  of (z,r,phi)       	 
+c        **************************************************
+c
+c------------------------------------------------------------------
+c								   
+c        input parameters					   
+c      								   
+c      z,r,phi - coordinates of the  point    
+c              where  Tpop  is calculated.      		         	    
+c------------------------------------------------------------------
+	real*8 function tpop_zrp(z,r,phi,i)
+      implicit none !integer (i-n), real*8 (a-h,o-z)
+      include 'param.i'
+      include 'one.i' ! stores rho
+      include 'three.i'
+      include 'fourb.i'
+      include 'five.i'
+      !--------------
+      real*8 z,r,phi !IN
+      integer i !IN (species)
+      integer itype,isp !local
+      real*8 val,dvalx,dvaly,dvalz, den !local
+      real*8 dvalr,dvalphi
+      real*8 tpoprho !external func. tpoprho(rho,i)
+      real*8 rhof !external func.
+      real*8 rholoc !local rho
+
+      if((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled')) then 
+         ![2024-08-14] added 
+         !Interpolate from tpoprid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi)
+         itype=3 !=1 for density (and derivs); =2 for T, =3 for Tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !val=Tpop()
+         tpop_zrp=val
+         !Note: no rho is needed 
+         return
+      endif !model_rho_dens.eq.7
+	
+      !All other cases - based on rho 
+      rholoc=rhof(z,r,phi)
+      if(rholoc.gt.1.d0)then
+      tpop_zrp=1.d0 !assume Tpar=Tper outside of LCFS
+      else
+	tpop_zrp=tpoprho(rholoc,i) !This is based on 1D spline over rho-grid
+	endif
+      !Includes case of (model_rho_dens.eq.7) but (tpop_read.eq.'disabled')
+
+      return
+      end function tpop_zrp

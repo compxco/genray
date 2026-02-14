@@ -220,14 +220,14 @@ Test10 and Test10.1:  EBW O-X-B test case.
 ====================
 
 Test case for CD with EBW, which is propagated
-through O-X-B conversion.
+through O-X-B conversion.  test10 with i_ox=2, test10.1 with i_ox=1
 The rays are launched from a disk, using raypatt='diskdisk'.
 The O-X conversion occurs outside of LCFS at the omega=omega_pe layer.
 The effect of an exponential drop-off density profile outside the LCFS 
 is included using the new option istep_in_lcfs=0 in genray.in.
 istep_in_lcfs=0 means: Start ray-tracing directly from {rst,zst} even
 if it is far outside of the LCFS, until omega=omegape is encountered. 
-That is, there no stepping along the straight-line ray characteristic 
+That is, ray tracing, not stepping along the straight-line ray characteristic 
 from rst,zst until inside LCFS, as in the prior istep_in_lcfs=1 (the default) 
 model.
 

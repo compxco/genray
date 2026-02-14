@@ -226,7 +226,7 @@ c        if (nbulk.gt.2) then
         if (nbulk.gt.3) then
            p12=wyi(I)*wxi2(I)/(wyi2(I)*wxi(I))
 
-           write(*,*)'p12',p12
+           !write(*,*)'p12',p12
 
            del=1.d0/(1.d0+p12)
            yii=wyi(I)*wyi2(I)*((1.d0-del)*wyi(I)+del*(wyi2(I)))/
@@ -2787,6 +2787,8 @@ c     &nperp_ar(n_nperp_a)   !mesh of nperp
 c-----externals
       double precision b,x,y,tempe,tpoprho,vflowrho
       double complex dhot_sum
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
       if(myrank.ne.0) return
       
@@ -2811,7 +2813,7 @@ c-----externals
         if(i.eq.1) y_ar(1)=-y_ar(1)
 	te=tempe(z,r,phi,i) ! kev
 	t_av_ar(i)=te*1000.d0      ! ev 
-        tpop_ar(i)=tpoprho(rho,i)
+        tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
         vflow_ar(i)=vflowrho(rho,i)
       enddo
 
@@ -6258,7 +6260,7 @@ c        if (nbulk.gt.2) then
         if (nbulk.gt.3) then
            p12=wyi(I)*wxi2(I)/(wyi2(I)*wxi(I))
 
-           write(*,*)'p12',p12
+           !write(*,*)'p12',p12
 
            del=1.d0/(1.d0+p12)
            yii=wyi(I)*wyi2(I)*((1.d0-del)*wyi(I)+del*(wyi2(I)))/

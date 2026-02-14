@@ -30,6 +30,7 @@ c----------------------
       namelist /numercl/ irkmeth,ndim1,isolv,idif,nrelt,
      * prmt1,prmt2,prmt3,prmt4,prmt6,prmt9,icorrect,iout3d,
      * maxsteps_rk,i_output,
+     & nharm_refined_step, ![2025-12-16]
      & i_uh_switch,uh_switch,prmt6_uh_switch,
      &toll_hamilt,  
      + dL_step, dN_step, der_r, der_n, der_f,
@@ -60,8 +61,15 @@ c----------------------
      &r_freq,z_freq,alpha_freq,beta_freq,dist_freq,max_plot_freq,
      &nsteps_freq,n_ec_harmonics_freq,npar_freq
 
-      namelist /plasma/ nbulk,izeff,idens,temp_scale,den_scale,ndens,
-     &nonuniform_profile_mesh
+      namelist /plasma/ nbulk,izeff,idens,model_rho_dens,
+     +  temp_scale,den_scale,
+!     +  elx0,ely0,elz0, elax,elay,elaz,  ! YuP added !
+!     +  dens0rr,dens0es,dens0ub,eltheta,sintt,costt, ! YuP added !
+!     +  Rm0rr,Rm0es,rtau,r_ub_edge,      ! YuP added !
+     +  ndens,
+     &  nonuniform_profile_mesh,
+     &  dendsk, tempdsk, tpopdsk,  ! YuP[2024-08-14] added !
+     &  dens_read, temp_read, tpop_read !YuP[2024-08-14] added
 
       namelist /species/ charge,dmas
 

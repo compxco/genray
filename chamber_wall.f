@@ -728,7 +728,7 @@ c     &cos_theta,sin_theta,
      &r_b,z_b,l_z_b_r_b,r_k,z_k,
      &x_l,y_l        
 
-      write(*,*)'rho_wall_at_theta_2 z_q,r_q',z_q,r_q
+      !write(*,*)'rho_wall_at_theta_2 z_q,r_q',z_q,r_q
 
       pi=4*datan(1.d0)
 
@@ -779,7 +779,7 @@ c              i_wall_ar_m(n_rho_wall)=0
           n_rho_wall=n_rho_wall+1
           i_wall_ar_m(n_rho_wall)=i-1
           i_wall_ar_p(n_rho_wall)=i
-          write(*,*)'n_rho_wall',n_rho_wall
+          !write(*,*)'n_rho_wall',n_rho_wall
         endif
 
  10   continue

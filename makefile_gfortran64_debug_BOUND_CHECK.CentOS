@@ -69,7 +69,7 @@ LIBRARIES=	-lX11 -lnetcdff -lnetcdf -lpgplot
 #LIBRARIES=	-lX11 -lnetcdf -lpgplot -lnetcdf  -lm -llapack -lblas -lg2c
 INCLUDE=/usr/include
 DEBUG= -g		
-CSPECIAL= -O0 -frecord-marker=4 -fno-align-commons
+CSPECIAL= -O0 -frecord-marker=4 -fno-align-commons -fbounds-check
 BSPECIAL=	
 
 COMPILE=	$(COMPILER) -c $(CSPECIAL) $(DEBUG) -I $(INCLUDE)

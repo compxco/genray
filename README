@@ -71,7 +71,10 @@ Put in to git version control on CompX2.
 version="genray_v10.11_180410"  
 Otherwise, little changed from "genray_v10.11_170725".
 
-
+June 10, 2019
+=============
+Got connection to git@github.com:compxco/genray.git working,
+using ssh method for connection to github.com.
 
 200117
 ======
@@ -109,3 +112,19 @@ dispersion in near vacuum (when two cold roots are very close).
 See a_change.i.
 
 git add -u [stages changed files that are tracked]
+
+
+240110
+======
+Interesting talks (hosted by Bonoli) by Batchelor on RAYS code, 
+and by Mark Cianciosa (ORNL)
+on a new ray tracing code constructed with the graph framework:
+https://code.ornl.gov/m4c/graph_framework
+Supports auto differentiation.  Showed 100,000 EC rays into a eqdsk tokamak
+representation, obtained with 1 min of Perlmutter GPU wall-clock time.
+
+
+260214
+======
+github.com/compxco/genray  commit
+version="genray_v12.1_260114"

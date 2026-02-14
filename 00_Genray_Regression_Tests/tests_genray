@@ -71,7 +71,7 @@ mkdir test2
 cp genray.dat_HPRT_test_case_061219 test2/genray.dat
 cp equilib.dat_HPRT_test_case_061219 drawgenr.in test2/
 cd test2/
-time $XGENRAY > log_test2    #3.04s on compx1
+time $XGENRAY > log_test2    #3.04s on compx1, 0.53s on CompX6
 rm  con1 eps* genray.doc gr3d* *.sap zrn.dat
 xdraw genr &
 cd ..

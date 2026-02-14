@@ -310,8 +310,1421 @@ c              write(*,*)'i,j,k,f(i,j,k,1)',i,j,k,f(i,j,k,1)
       deallocate (tem2,STAT=istat)
 
       return
-      end
-       
+      end subroutine netcdfr3d
+
+
+C=======================================================================
+C=======================================================================
+C=======================================================================
+C=======================================================================
+
+      subroutine wrtnetcdf_plasma_prof(netcdfnml)
+C===> YuP 120505
+C     Write plasma profiles into existing netcdf file.     
+C     These data are not related to ray-tracing results. 
+c     Called by genray.f (line~424), just once.
+      !implicit integer (i-n), real*8 (a-h,o-z)
+      implicit none
+      include 'param.i'     
+      include 'one.i'
+      include 'three.i'
+      include 'fourb.i'
+      include 'five.i' ! contains rmax
+      include 'ions.i'     
+      include 'onetwo.i'  !For profiles and total current.
+      include 'rho.i'     !For areatot,voltot,torftot,totlength
+      include 'writencdf.i'     !
+      include 'eps.i'  ! reps(3,3)
+      
+      
+c --- include file for netCDF declarations 
+c --- (obtained from NetCDF distribution)
+      include 'netcdf.inc'
+
+      include 'nperpcom.i'
+                                 
+c --- some stuff for netCDF file ---
+      integer ncid,vid,istatus,istat,ncvdef2,ncdid2,ncddef2
+      integer nrhoid,nrhomid,nbulkid,nbulkmid
+      integer NRgrid_id, NZgrid_id
+      integer nxeqd_id,nyeqd_id,nzeqd_id,nreqd_id
+      integer i,rdims(2),rdimss(2)
+      integer start(2),counts(2)
+      integer xzdims(2),countxz(2)
+      integer yzdims(2),countyz(2)
+      integer xydims(2),countxy(2)
+      integer nscanid,nparid,nperid
+      integer npdims(2),countnp(2)
+      integer dddims(3),startddd(3),countddd(3)
+      
+      integer nxden_id,nyden_id,nzden_id,nrden_id !YuP[2024-01-31]
+      
+      character(*) netcdfnml ! input filename
+      
+      real*8 dense,zeffrho,temperho,  !wpw_2,wcw,
+     +       tempe,tpop_zrp,tpoprho,vflowrho  !external
+     
+      integer ireq !local
+      real*8 r,phi !local
+     
+      double complex hotnp
+      real*8 tem1(NR*nbulk), r_max,x,y,z,den,dstep,xe,ye
+      real*8 xmin,xmax
+      integer kk,j, ixeq,iyeq,izeq, id_loc,ibw_loc
+            
+      real*8 dnpar,dnper,cnper2m,cnper2p,cnper_0,
+     + cnt2,arg, cnpar, 
+     + cnparp,cnperp,te,cnprim,dDcold
+c-----local
+      real*8 x_ar(nbulka),y_ar(nbulka),t_av_ar(nbulka),
+     & tpop_ar(nbulka),vflow_ar(nbulka)
+      real*8 tempiar(nbulka), cnper, dens_e,temp_e,z_eff,
+     + cnprim_cl,cnprim_e,cnprim_i,cnprim_s(nbulka),ckvipl_s(nbulka)
+      double complex dK(3,3,7),dd(5),d,ddn,aK(3,3)
+      double complex dd5(5,nbulka),ddnp_h,ddnll_h,ddnp
+      double complex disp_func,dcold_rlt, dhot, dhot_rlt
+
+      double precision nll ! N_parallel
+      double complex K(3,3), hotnpc
+      integer iraystop,is,i_fkin
+      
+      real*8 ye2,xi
+      integer isp
+      integer ll, length_char
+      
+      real*8 f000, rho_larm_max0
+      
+c    For output of electron density profiles in xz and yz-plane to .nc file
+c    For plots of total B (equilibrium): bmodprofxz(:,:), !(nxeqd,nzeqd)
+      real*8,ALLOCATABLE :: 
+     +         densprofxz(:,:), !(nreqd,nzeqd)
+     +         densprofyz(:,:), !(nreqd,nzeqd)
+     +         densprofxy(:,:), !(nxeqd,nyeqd)
+     +         tempprofxz(:,:), !(nreqd,nzeqd) !YuP[2024-08-14] Added, for plots
+     +         tempprofyz(:,:), !(nreqd,nzeqd)
+     +         tempprofxy(:,:), !(nxeqd,nyeqd)
+     +         tpopprofxz(:,:), !(nreqd,nzeqd) !YuP[2024-08-14] Added, for plots
+     +         tpopprofyz(:,:), !(nreqd,nzeqd)
+     +         tpopprofxy(:,:)  !(nxeqd,nyeqd)
+
+!      ! For i_save_disp=1 option:
+!      ! (saving Nper^2(xscan,Npar) for cold plasma and hot plasma)
+!      ! Use allocatable arrays 
+!      !(could take large memory space, if xscan-grid is refined,
+!      ! and/or inper_save_disp is large)
+!      ! These are real*4 arrays, to save memory:
+!      REAL(4),ALLOCATABLE :: xscan(:)    ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: rhoscan(:)  ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: wcwscan(:)  ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: wpwscan(:)  ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: wuwscan(:)  ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: wlwscan(:)  ! (ixscan_save_disp)
+!      REAL(4),ALLOCATABLE :: Npara(:)   ! (inpar_save_disp)
+!      REAL(4),ALLOCATABLE :: Npera(:)   ! (inper_save_disp)
+!      REAL(4),ALLOCATABLE :: Nperp2m(:,:)   !(ixscan_save_disp, inpar_save_disp)
+!      REAL(4),ALLOCATABLE :: Nperp2p(:,:)   !(ixscan_save_disp, inpar_save_disp)
+!      REAL(4),ALLOCATABLE :: Nperp_im(:,:)  !(ixscan_save_disp, inpar_save_disp)
+!      REAL(4),ALLOCATABLE :: Nperp2hot(:,:) !(ixscan_save_disp, inpar_save_disp)
+!      REAL(4),ALLOCATABLE :: ddd(:,:,:) 
+!      !(ixscan_save_disp, inper_save_disp, inpar_save_disp)
+      
+
+      data start/1,1/, startddd/1,1,1/
+      
+      f000=frqncy
+
+c     1.1 open existing netCDF file: netcdfnml, 
+c         and define additional;
+c         dimensions,variables and attributes
+c
+c.......................................................................
+c     1.1.1 open existing netCDF file: netcdfnml
+      write(*,*)'wrtnetcdf_plasma_prof: Opening file'
+      call ncopn2(netcdfnml,NCWRITE,ncid,istatus) ! Open existing file
+      call check_err(istatus)
+c.......................................................................
+c     1.1.2 
+c     Put Open NetCDF file into Define Mode
+      write(*,*)'wrtnetcdf_plasma_prof: Define mode'
+      call ncredf2(ncid,istatus)
+      call check_err(istatus)
+
+c-------------------------------------------------------------------
+c     1.1.3 define dimensions
+c     integer function ncddef(ncid,character(*) dim_name,
+c                             integer cdim_siz, integer error_code)
+c     returns dimension id.
+
+c-----define dimensions      
+      nbulkid=ncddef2(ncid,'nbulk',nbulk,istatus) 
+      call check_err(istatus)     
+      nrhoid=ncddef2(ncid,'nrho',NR,istatus)
+      call check_err(istatus)     
+      nrhomid=ncddef2(ncid,'nrhom',NR-1,istatus)
+      call check_err(istatus)     
+      rdimss(1)=nrhoid
+      rdimss(2)=nbulkid
+      counts(1)=NR
+      counts(2)=nbulk
+      
+!      ! YuP[Nov-2014] Added: Saving Local absorbed power over (R,Z) grid.
+!      NRgrid_id=ncddef2(ncid,'NRgrid',NRgrid,istatus)
+!      call check_err(istatus)     
+!      NZgrid_id=ncddef2(ncid,'NZgrid',NZgrid,istatus)
+!      call check_err(istatus)
+      
+
+      ! Get dimension ID from dimension name
+      nxeqd_id=ncdid2(ncid,'nxeqd',istatus) !defined in netcdf_eqdsk_data
+      nyeqd_id=ncdid2(ncid,'nyeqd',istatus) !defined in netcdf_eqdsk_data
+      nzeqd_id=ncdid2(ncid,'nzeqd',istatus) !defined in netcdf_eqdsk_data
+      nreqd_id=ncdid2(ncid,'nreqd',istatus) !defined in netcdf_eqdsk_data
+      xzdims(1)=nreqd_id 
+      xzdims(2)=nzeqd_id 
+      countxz(1)=nreqd
+      countxz(2)=nzeqd
+      yzdims(1)=nreqd_id 
+      yzdims(2)=nzeqd_id 
+      countyz(1)=nreqd
+      countyz(2)=nzeqd
+      xydims(1)=nxeqd_id 
+      xydims(2)=nyeqd_id 
+      countxy(1)=nxeqd
+      countxy(2)=nyeqd
+      
+      
+!      ! For i_save_disp=1 option:
+!      nscanid=ncddef2(ncid,'nscan',ixscan_save_disp,istatus)
+!      call check_err(istatus)     
+!      nparid=ncddef2(ncid,'inpar_save_disp',inpar_save_disp,istatus)
+!      call check_err(istatus)     
+!      nperid=ncddef2(ncid,'inper_save_disp',inper_save_disp,istatus)
+!      call check_err(istatus)     
+!      npdims(1)=nscanid
+!      npdims(2)=nparid
+!      countnp(1)=ixscan_save_disp !size(xscan)
+!      countnp(2)=inpar_save_disp
+!      dddims(1)=nscanid
+!      dddims(2)=nperid
+!      dddims(3)=nparid
+!      countddd(1)=ixscan_save_disp !size(xscan)
+!      countddd(2)=inper_save_disp
+!      countddd(3)=inpar_save_disp
+      
+      vid=ncvdef2(ncid,'nbulk',NCLONG,0,0,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,43,
+     +          'Number of Maxl plasma cmpts, electrons+ions',istatus)
+      call check_err(istatus)  
+         
+      vid=ncvdef2(ncid,'freqcy',NCDOUBLE,0,0,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,14,
+     +            'Wave frequency',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+     +           'Hz',istatus)
+
+
+      vid=ncvdef2(ncid,'model_rho_dens',NCLONG,0,0,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,14,
+     +            'model_rho_dens',istatus)
+
+
+      !YuP[2024-08-14] For model_rho_dens.eq.7 - save grid sizes
+      !See dengrid_zrp(nzden,nrden,nphiden,nbulk)
+      if(model_rho_dens.eq.7)then
+      vid=ncvdef2(ncid,'nzden',NCLONG,0,0,istatus)
+      vid=ncvdef2(ncid,'nrden',NCLONG,0,0,istatus)
+      vid=ncvdef2(ncid,'nphiden',NCLONG,0,0,istatus)
+      !Save grid limits (For model_rho_dens.eq.7):
+      vid=ncvdef2(ncid,'zdenmin',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,37,
+     +  'Lower range in Z-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,1,'m',istatus)
+      vid=ncvdef2(ncid,'zdenmax',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,37,
+     +  'Upper range in Z-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,1,'m',istatus)
+      vid=ncvdef2(ncid,'rdenmin',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,37,
+     +  'Lower range in R-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,1,'m',istatus)
+      vid=ncvdef2(ncid,'rdenmax',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,37,
+     +  'Upper range in R-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,1,'m',istatus)
+      vid=ncvdef2(ncid,'phidenmin',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,39,
+     +  'Lower range in phi-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'rad',istatus)
+      vid=ncvdef2(ncid,'phidenmax',NCFLOAT,0,0,istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,39,
+     +  'Upper range in phi-grid for dengrid_zrp',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'rad',istatus)
+      endif !YuP[2024-03-27] model_rho_dens.eq.7
+      
+!      vid=ncvdef2(ncid,'y_save_disp',NCDOUBLE,0,0,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,30,
+!     +            'Y-coord for scans of wc/w vs x',istatus)
+     
+!      vid=ncvdef2(ncid,'z_save_disp',NCDOUBLE,0,0,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,30,
+!     +            'Z-coord for scans of wc/w vs x',istatus)
+
+      vid=ncvdef2(ncid,'dmas',NCDOUBLE,1,nbulkid,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,41,
+     +           'plasma species mass: electrons, then ions',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,27,
+     +           'Normalized to electron mass',istatus)
+
+      vid=ncvdef2(ncid,'charge',NCDOUBLE,1,nbulkid,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,44,
+     +           'plasma species charge: electrons, then ions',istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,31,
+     +           'Normalized to electronic charge',istatus)
+
+      vid=ncvdef2(ncid,'rho_bin',NCDOUBLE,1,nrhoid,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,38,
+     +            'normalized small radius bin boundaries',istatus)
+      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'rho_bin_center',NCDOUBLE,1,nrhomid,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,35,
+     +            'normalized small radius bin centers',istatus)
+      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'densprof',NCDOUBLE,2,rdimss,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,44,
+     +     'plasma density at bin boundaries, e and ions',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,14,
+     +     'particles/cm^3',istatus)
+      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'temprof',NCDOUBLE,2,rdimss,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,49,
+     +     'plasma temperatures at bin boundaries, e and ions',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,
+     +     'keV',istatus)
+      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'zefprof',NCDOUBLE,1,rdimss(1),istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,41,
+     +     'plasma Zeff at bin boundaries, e and ions',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,8,
+     +     'unitless',istatus)
+      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'rhoprof',NCDOUBLE,1,rdimss(1),istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,37,
+     +  'rho corr. to densprof,temprof,zefprof',istatus)
+
+      !--------------------------------------------------
+
+!      vid=ncvdef2(ncid,'bmodprofxz',NCDOUBLE,2,xzdims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,24,
+!     +     'Total B on xz-grid (y~0)',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,5,
+!     +     'Tesla',istatus)
+!      call check_err(istatus)
+
+      vid=ncvdef2(ncid,'densprofxz',NCDOUBLE,2,xzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,42,
+     +     'plasma density on xz-grid (y~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,14,
+     +     'particles/cm^3',istatus)
+      
+      vid=ncvdef2(ncid,'densprofyz',NCDOUBLE,2,yzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,42,
+     +     'plasma density on yz-grid (x~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,14,
+     +     'particles/cm^3',istatus)
+
+      vid=ncvdef2(ncid,'densprofxy',NCDOUBLE,2,xydims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,42,
+     +     'plasma density on xy-grid (z~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,14,
+     +     'particles/cm^3',istatus)
+
+      !YuP[2024-08-14] added, for plots
+      vid=ncvdef2(ncid,'tempprofxz',NCDOUBLE,2,xzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,46,
+     +  'plasma temperature on xz-grid (y~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'keV',istatus)
+      
+      vid=ncvdef2(ncid,'tempprofyz',NCDOUBLE,2,yzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,46,
+     +  'plasma temperature on yz-grid (x~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'keV',istatus)
+
+      vid=ncvdef2(ncid,'tempprofxy',NCDOUBLE,2,xydims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,46,
+     +  'plasma temperature on xy-grid (z~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'keV',istatus)
+
+      !YuP[2024-08-14] added, for plots
+      vid=ncvdef2(ncid,'tpopprofxz',NCDOUBLE,2,xzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,43,
+     +  'Tpop=Tpar/Tperp on xz-grid (y~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'[-]',istatus)
+      
+      vid=ncvdef2(ncid,'tpopprofyz',NCDOUBLE,2,yzdims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,43,
+     +  'Tpop=Tpar/Tperp on yz-grid (x~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'[-]',istatus)
+
+      vid=ncvdef2(ncid,'tpopprofxy',NCDOUBLE,2,xydims,istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'long_name',NCCHAR,43,
+     +  'Tpop=Tpar/Tperp on xy-grid (z~0), electrons',istatus)
+      call check_err(istatus)
+      call ncaptc2(ncid,vid,'units',NCCHAR,3,'[-]',istatus)
+
+
+!      !--------------------------------------------------
+!      ! plasma profiles VS x [m], at y=0,z=0
+!      !--------------------------------------------------
+!      vid=ncvdef2(ncid,'w_x_densprof_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,26,
+!     +            'x-grid for plasma profiles',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+!     +     'm ',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_bmod_vs_x_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,32,
+!     +            'B profile vs x, at fixed y and z',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+!     +     'T ',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_dens_vs_x_nc',NCDOUBLE,2,rdimss,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,46,
+!     +     'plasma density at bin bndries, e and ions vs x',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,13,
+!     +     'particles/cm^3',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_temp_vs_x_nc',NCDOUBLE,2,rdimss,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,51,
+!     +    'plasma temperatures at bin bndries, e and ions vs x',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,3,
+!     +     'keV',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_zeff_vs_x_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,31,
+!     +     'plasma Zeff at bin bndries vs x',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,8,
+!     +     'unitless',istatus)
+!      call check_err(istatus)
+!
+!      !--------------------------------------------------
+!      ! plasma profiles VS y [m], at x=0,z=0
+!      !--------------------------------------------------
+!      vid=ncvdef2(ncid,'w_y_densprof_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,26,
+!     +            'y-grid for plasma profiles',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+!     +     'm ',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_bmod_vs_y_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,32,
+!     +            'B profile vs y, at fixed x and z',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+!     +     'T ',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_dens_vs_y_nc',NCDOUBLE,2,rdimss,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,46,
+!     +     'plasma density at bin bndries, e and ions vs y',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,13,
+!     +     'particles/cm^3',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_temp_vs_y_nc',NCDOUBLE,2,rdimss,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,51,
+!     +    'plasma temperatures at bin bndries, e and ions vs y',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,3,
+!     +     'keV',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'w_zeff_vs_y_nc',NCDOUBLE,1,nrhoid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,31,
+!     +     'plasma Zeff at bin bndries vs y',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,8,
+!     +     'unitless',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'xscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,42,
+!     +            'refined x-grid for Nperp2(x,Npar) profiles',istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'units',NCCHAR,2,
+!     +     'm ',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'rhoscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,23,
+!     +            'rho vs x (at fixed y,z)',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'wcwscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,23,
+!     +            'omega_ce/omega profiles',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'wpwscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,23,
+!     +            'omega_pe/omega profiles',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'wuwscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,27,
+!     +            'Upper_Hybrid/omega profiles',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'wlwscan',NCFLOAT,1,nscanid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,27,
+!     +            'Lower_Hybrid/omega profiles',istatus)
+!      call check_err(istatus)
+
+!      !--------------------------------------------------
+!      ! For i_save_disp=1 option:
+!      if(i_save_disp.eq.1)then
+!      vid=ncvdef2(ncid,'Npara',NCFLOAT,1,nparid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,36,
+!     +            'Npar grid for Nperp2(x,Npar) profiles',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'Npera',NCFLOAT,1,nperid,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,41,
+!     +            'Nper grid for ddd(x,Nper,Npar) dispersion',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'Nperp2m',NCFLOAT,2,npdims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,51,
+!     +    'Nperp2(x,Npar) profile vs x; Cold root with ioxm=-1',istatus)
+!      call check_err(istatus)
+!      
+!      vid=ncvdef2(ncid,'Nperp2p',NCFLOAT,2,npdims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,51,
+!     +    'Nperp2(x,Npar) profile vs x; Cold root with ioxm=+1',istatus)
+!      call check_err(istatus)
+!      
+!      vid=ncvdef2(ncid,'Nperp_im',NCFLOAT,2,npdims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,39,
+!     +    'imaginary Nperp (damping) profile vs x',istatus)
+!      call check_err(istatus)
+!
+!      vid=ncvdef2(ncid,'Nperp2hot',NCFLOAT,2,npdims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,44,
+!     +   'Nperp2(x,Npar) profile vs x; Hot plasma root',istatus)
+!      call check_err(istatus)
+!      
+!      vid=ncvdef2(ncid,'ddd',NCFLOAT,3,dddims,istatus)
+!      call check_err(istatus)
+!      call ncaptc2(ncid,vid,'long_name',NCCHAR,52,
+!     +   'ddd(x,Nper,Npar) dispers.function over (x,Nper) grid',istatus)
+!      call check_err(istatus)
+!      endif ! i_save_disp=1
+c--------------------------------------------------------------------
+      
+cl    1.1.5 end the define-mode and start the data-mode
+      call ncendf2(ncid,istatus)
+      call check_err(istatus)
+      write(*,*)'wrtnetcdf_plasma_prof: End of Define mode'
+
+
+
+      ! Calculate data
+c-----evaluate radial profiles of density, temperature, zeff
+c-----to put with radial profile data.
+c-----(units: 10**13/cm**3, keV)
+      ! Get density profile as a function of x;
+      ! Scan along x view line;  y=0, z=0 plane.
+      ! (modify if needed; used for netcdf file only)
+      !r_max= xeqmax ! Limits: from equilibr.grid
+c      if(rlim>0.) r_max=rlim
+      r_max=rmax ! rmax is set in dinitr(), for all cases of model_b
+      z= 0.d0
+      phi=0.d0 ! corr to Y=0 in top view
+      dstep= (rmax-rmin)/(NR-1)
+      do kk=1,nbulk
+         do i=1,NR
+            r= rmin+dstep*(i-1) ! [rmin; rmax]
+            ! This is only used for saving data into nc-file:
+            densprof(i,kk)=dense(z,r,phi,kk)*1.e13 !-> get rho 
+            rhoprof(i)=rho 
+            !The above rho is non-monotonic, as we start from edge,
+            !move towards plasma center, then again to edge.
+            temprof(i,kk)=tempe(z,r,phi,kk) ![2024-08-14]
+            zefprof(i)=zeffrho(rho)
+            if(kk.eq.1) write(*,'(a,3e12.5)')
+     &       'netcdfr3d: r,rho,densprof=',
+     &        r,rho,densprof(i,kk)
+         enddo
+      enddo
+      write(*,*)'wrtnetcdf_plasma_prof: after 1D prof. densprof,temprof'
+
+      !--------------------------------------------------
+!      ! Total B on the grid [Tesla]
+!      IF (.NOT. ALLOCATED(bmodprofxz)) then
+!      allocate(  bmodprofxz(nxeqd,nzeqd) ,STAT=istatus )
+!      endif
+!      if(istatus.eq.0)then
+!        call bcast( bmodprofxz, 0.d0, SIZE(bmodprofxz) )
+!      else
+!        stop 'Cannot allocate bmodprofxz'
+!      endif
+
+      ! Density on xz-grid and yz-grid (for electrons only, for now)
+      ! This is just for netcdf output file.
+c     for output of electron density profile in xz-plane to .nc file
+      IF (.NOT. ALLOCATED(densprofxz)) then
+      allocate(  densprofxz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( densprofxz, 0.d0, SIZE(densprofxz) )
+      else
+        stop 'Cannot allocate densprofxz'
+      endif
+      
+c     for output of electron density profile in yz-plane to .nc file
+      IF (.NOT. ALLOCATED(densprofyz)) then
+      allocate(  densprofyz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( densprofyz, 0.d0, SIZE(densprofyz) )
+      else
+        stop 'Cannot allocate densprofyz'
+      endif
+
+c     for output of electron density profile in xy-plane to .nc file
+      IF (.NOT. ALLOCATED(densprofxy)) then
+      allocate(  densprofxy(nxeqd,nyeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( densprofxy, 0.d0, SIZE(densprofxy) )
+      else
+        stop 'Cannot allocate densprofxy'
+      endif
+
+      ![2024-08-14] Temperature on xz-grid and yz-grid (for electrons only, for now)
+      ! This is just for netcdf output file.
+c     for output of electron T profile in xz-plane to .nc file
+      IF (.NOT. ALLOCATED(tempprofxz)) then
+      allocate(  tempprofxz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tempprofxz, 0.d0, SIZE(tempprofxz) )
+      else
+        stop 'Cannot allocate tempprofxz'
+      endif
+      
+c     for output of electron T profile in yz-plane to .nc file
+      IF (.NOT. ALLOCATED(tempprofyz)) then
+      allocate(  tempprofyz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tempprofyz, 0.d0, SIZE(tempprofyz) )
+      else
+        stop 'Cannot allocate tempprofyz'
+      endif
+
+c     for output of electron T profile in xy-plane to .nc file
+      IF (.NOT. ALLOCATED(tempprofxy)) then
+      allocate(  tempprofxy(nxeqd,nyeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tempprofxy, 0.d0, SIZE(tempprofxy) )
+      else
+        stop 'Cannot allocate tempprofxy'
+      endif
+
+      ![2024-08-14] tpop=Tpar/Tperp on xz-grid and yz-grid (for electrons only, for now)
+      ! This is just for netcdf output file.
+c     for output of electron tpop=Tpar/Tperp profile in xz-plane to .nc file
+      IF (.NOT. ALLOCATED(tpopprofxz)) then
+      allocate(  tpopprofxz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tpopprofxz, 1.d0, SIZE(tpopprofxz) )
+      else
+        stop 'Cannot allocate tpopprofxz'
+      endif
+      
+c     for output of electron tpop=Tpar/Tperp profile in yz-plane to .nc file
+      IF (.NOT. ALLOCATED(tpopprofyz)) then
+      allocate(  tpopprofyz(nreqd,nzeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tpopprofyz, 1.d0, SIZE(tpopprofyz) )
+      else
+        stop 'Cannot allocate tpopprofyz'
+      endif
+
+c     for output of electron tpop=Tpar/Tperp profile in xy-plane to .nc file
+      IF (.NOT. ALLOCATED(tpopprofxy)) then
+      allocate(  tpopprofxy(nxeqd,nyeqd) ,STAT=istatus )
+      endif
+      if(istatus.eq.0)then
+        call bcast( tpopprofxy, 1.d0, SIZE(tpopprofxy) )
+      else
+        stop 'Cannot allocate tpopprofxy'
+      endif
+
+      write(*,*)'wrtnetcdf_plasma_prof: working on 2D prof. for plots..'
+      kk=1 ! save for electrons !!!
+      phi=0.d0  
+      do izeq=1,nzeqd
+         z=zeq(izeq)
+      do ireq=1,nreqd
+         r=req(ireq)
+         !uses rho which is found in dense_xyz
+         densprofxz(ireq,izeq)=dense(z,r,phi,kk)*1.e13 
+         tempprofxz(ireq,izeq)=tempe(z,r,phi,kk) ![keV] YuP[2024-08-14]
+         tpopprofxz(ireq,izeq)=tpop_zrp(z,r,phi,kk)  ![-] YuP[2024-08-14]
+      enddo
+      enddo
+      write(*,*)'wrtnetcdf_plasma_prof: after 2D prof. densprofxz'
+
+      kk=1 ! save for electrons !!!      
+      dstep= (zeqmax-zeqmin)/(nzeqd-1)
+      izeq= (zmideqd-zeqmin)/dstep +1
+      z= zeq(izeq)   ! approximately z~midplane 
+      do ixeq=1,2*nreqd
+         x=xeq(ixeq)
+      do iyeq=1,2*nreqd
+         y=yeq(iyeq)
+         r=sqrt(x*x+y*y)
+         phi=atan2(y,x) ! Returns value in range [-pi,pi]
+         if(x.lt.0.d0) phi=phi+2*pi ! [0,2pi]
+         densprofxy(ixeq,iyeq)=dense(z,r,phi,kk)*1.e13 
+         tempprofxy(ixeq,iyeq)=tempe(z,r,phi,kk) ![keV] YuP[2024-08-14]
+         tpopprofxy(ixeq,iyeq)=tpop_zrp(z,r,phi,kk)  ![-] YuP[2024-08-14]
+      enddo
+      enddo
+      write(*,*)'wrtnetcdf_plasma_prof: after 2D prof. densprofxy'
+      
+      kk=nbulk ! save for last species: Can be fast ions !!!      
+      phi=pi/2.   !x~0 (phi~pi/2)
+      do izeq=1,nzeqd
+         z=zeq(izeq)
+      do ireq=1,nreqd
+         r=req(ireq)
+         densprofyz(iyeq,izeq)=dense(z,r,phi,kk)*1.e13 
+         tempprofyz(iyeq,izeq)=tempe(z,r,phi,kk) ![keV] YuP[2024-08-14]
+         tpopprofyz(iyeq,izeq)=tpop_zrp(z,r,phi,kk)  ![-] YuP[2024-08-14]
+      enddo
+      enddo
+      write(*,*)'wrtnetcdf_plasma_prof: after 2D prof. densprofyz'
+      
+!c     Calculate 1D arrays of density,temperature,zeff
+!c     vs x-coord. and vs y-coord., at given fixed z
+!      call plasma_profiles_vs_xy(0.d0)  ! YuP: maybe from zma?
+!      write(*,*)'wrtnetcdf_plasma_prof: after 1D w_dens_vs_x_nc,...'
+!
+!      ! This is used For i_save_disp=1 option,
+!      ! for calc. of dispersion function along (xscan,y=fixed,z=fixed).
+!      ! But find/save omega_ce/omega as a func. of xscan anyway,
+!      ! even when i_save_disp=0.  (Does not take much time or memory) 
+!      IF (.NOT. ALLOCATED(xscan)) then
+!          allocate(xscan(ixscan_save_disp),   STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for xscan()',istat
+!          endif
+!          xscan=0.d0 ! Initialize
+!          allocate(wcwscan(ixscan_save_disp), STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for wcwscan()',istat
+!          endif
+!          wcwscan=0.d0 ! Initialize omega_ce/omega
+!          allocate(wpwscan(ixscan_save_disp), STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for wpwscan()',istat
+!          endif
+!          wcwscan=0.d0 ! Initialize Upper_hybrid/omega
+!          allocate(wuwscan(ixscan_save_disp), STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for wuwscan()',istat
+!          endif
+!          wuwscan=0.d0 ! Initialize Upper_hybrid/omega
+!          allocate(wlwscan(ixscan_save_disp), STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for wlwscan()',istat
+!          endif
+!          wlwscan=0.d0 ! Initialize Lower_hybrid/omega
+!          allocate(rhoscan(ixscan_save_disp), STAT=istat)
+!          if(istat.ne.0) then
+!             print*,'Allocation problem for rhoscan()',istat
+!          endif
+!      endif
+!      
+!      rhoscan=0.d0 ! Initialize rhoscan( )
+!      if(i_save_disp.eq.1) then
+!         xmax= min(xeqmax,xmax_save_disp) ! To stay within equilib grid
+!         xmin= max(xeqmin,xmin_save_disp) ! To stay within equilib grid
+!      else ! i_save_disp=0 (no saving of Nperp(x) data)
+!         xmax= xeqmax
+!         xmin= xeqmin
+!      endif
+!      write(*,*) 'wrtnetcdf_plasma_prof: xmin,xmax=',xmin,xmax
+!
+!      dstep= (xmax-xmin)/(countnp(1)-1)
+!      y= y_save_disp ! use default value, which is 0.
+!      z= z_save_disp ! use default value, which is 0.
+!      do i=1,countnp(1) ! size of xscan grid
+!         x= xmax -dstep*(i-1) ! scan from xmax to xmin
+!         xscan(i)= x ! scan along x-axis
+!         bmod=bxyz(x,y,z) !-> get b (needed for wcw)
+!         ye= wcw(x,y,z,1)   ! Ye== omega_ce/omega
+!         ye2=ye*ye ! = (omega_ce/omega)^2
+!         xe= wpw_2(x,y,z,1) ! Xe== (wpe/w)^2    ! also gets rho
+!         rhoscan(i)= rho ! as a function of xscan, for a fixed (y,z)
+!         wcwscan(i)= ye
+!         wpwscan(i)= sqrt(xe) ! wpe/w = omega_pe/omega
+!         wuwscan(i)= sqrt(xe+ye2) ! (Upper hybrid)/omega
+!         !YuP[2022-04-21] Add w_LH (Lower Hybrid resonance frequency)
+!         if(nbulk.ge.2)then
+!           xi=0.d0 !To get SUM_ions(omega_pi^2) /omega^2
+!           do isp=2,nbulk
+!           xi= xi + wpw_2(x,y,z,isp) ! Xi== SUM[(Wpi/W)^2]  
+!           enddo
+!           ! Lower Hybrid resonance frequency :
+!           ! (WLH/W)^2 = SUM[(Wpi/W)^2]*[Wce^2/(Wce^2 + Wpe^2)]
+!           ! [ Assuming Wci^2 << W^2 << Wce^2 ]
+!           wlwscan(i)= sqrt(xi*ye2/(ye2+xe)) ! (Lower hybrid)/omega
+!         endif
+!               write(*,'(a,2e12.3,a,e12.3,a,e12.3,a,e12.3)') 
+!     +         'x,z[m]=', x,z,
+!     +         '  (w/wpe)^2=',  1.0/xe,
+!     +         '   w/wce=',     1.0/ye,
+!     +         '   bmod=',      bmod
+!      enddo
+!      !pause
+
+!
+!      !--------------------------------------------------
+!      ! For i_save_disp=1 option:
+!      if(i_save_disp.eq.1) then
+!      ! scan x, find Nper^2(x,Npar) for cold plasma and hot plasma
+!      ! First, allocate arrays 
+!      !(could take large memory space, if xscan-grid is refined,
+!      ! and/or inper_save_disp is large)
+!      ! These are real*4 arrays, to save memory:
+!      IF (.NOT. ALLOCATED(Npara)) then
+!        allocate(Npara(inpar_save_disp),  STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Npara()',istat
+!        endif
+!        Npara=0.d0
+!        allocate(Npera(inper_save_disp),  STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Npera()',istat
+!        endif
+!        Npera=0.d0
+!        allocate(Nperp2m(ixscan_save_disp,inpar_save_disp),  STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Nperp2m()',istat
+!        endif
+!        Nperp2m=0.d0
+!        allocate(Nperp2p(ixscan_save_disp,inpar_save_disp),  STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Nperp2p()',istat
+!        endif
+!        Nperp2p=0.d0
+!     
+!        allocate(Nperp_im(ixscan_save_disp,inpar_save_disp), STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Nperp_im()',istat
+!        endif
+!        Nperp_im=0.d0
+!
+!        allocate(Nperp2hot(ixscan_save_disp,inpar_save_disp),STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for Nperp2hot()',istat
+!        endif
+!        Nperp2hot=0.d0
+!        allocate(ddd(ixscan_save_disp,inper_save_disp,inpar_save_disp),
+!     +         STAT=istat)
+!        if(istat.ne.0) then
+!           print*,'Allocation problem for ddd()',istat
+!        endif
+!        ddd=0.d0
+!      endif
+!      !---
+!
+!      id_loc=id ! save
+!      ibw_loc=ibw ! save
+!      id=6 ! used by hamilt_xyz ! HOT ROOTS
+!      print*,'wrtnetcdf_plasma_prof: Dispersion Function D(R,Nper,Npar)'
+!      dnpar= (Npar_mx_save_disp-Npar_mn_save_disp)/(inpar_save_disp-1)
+!      ! Linear scale:
+!      !dnper= (Nper_mx_save_disp-Nper_mn_save_disp)/(inper_save_disp-1)
+!      ! Parabolic scale (for better resolution at small Nperp):
+!      dnper=(Nper_mx_save_disp-Nper_mn_save_disp)/(inper_save_disp**2-1)
+!      if(dnper.le.0.d0)then
+!        WRITE(*,*)'wrtnetcdf_plasma_prof: check Npar_mn_save_disp'
+!        WRITE(*,*)'wrtnetcdf_plasma_prof: check Npar_mx_save_disp'
+!        WRITE(*,*)'set Npar_mx_save_disp>Npar_mn_save_disp'
+!        stop
+!      endif
+!      do kk=1,inpar_save_disp ! several values of Npar
+!         Npara(kk)= Npar_mn_save_disp +(kk-1)*dnpar ! min:max of Npar
+!         print*,'wrtnetcdf_plasma_prof: Dhot() for Npar=',Npara(kk)
+!         do j=1,inper_save_disp ! Nperp grid
+!            ! Linear scale:
+!            !Npera(j)= Nper_mn_save_disp +(j-1)*dnper ! min:max of Nper
+!            ! Parabolic scale (for better resolution at small Nperp):
+!            Npera(j)= Nper_mn_save_disp +(j**2 -1)*dnper 
+!            cnt2= Npara(kk)**2 + Npera(j)**2 ! N^2
+!            arg= Npara(kk)/sqrt(cnt2)  ! == N.b/(|N||b|) == Npar/N
+!            gam=dacos(arg) !-> to one.i ; used by hamilt_xyz
+!            print*,'wrtnetcdf_plasma_prof: Dhot() for Nperp=',Npera(j)
+!            do i=1,countnp(1) ! size of xscan
+!               x= xscan(i) ! scan from xmax to xmin (along x-axis)
+!               bmod=bxyz(x,y,z) !-> get b (needed for wcw)
+!c               write(*,'(a,2e12.3,a,e12.3,a,e12.3)') 'x,z[m]=', x,z,
+!c     +         '  (w/wpe)^2=',  1.0/wpw_2(x,y,z,1),
+!c     +         '   w/wce=',     1.0/wcw(x,y,z,1)
+!               ddd(i,j,kk)=hamilt_xyz(x,y,z,cnt2)
+!               ! Here, we simply save the value of dispersion function 
+!               ! over 2D grid (Nper,Npar). 
+!               ! Then, in genray_c_plot.py, 
+!               ! we plot the contour levels of ddd().
+!               ! Level=0 marks the roots of ddd()=0.
+!               ! (In fact, we only plot level=0.)
+!            enddo ! i=1,countnp(1) !  xscan
+!         enddo ! j=1,inper_save_disp
+!      enddo ! kk=1,inpar_save_disp
+!
+!      cnper_0=1.d0 ! initialize
+!      do kk=1,inpar_save_disp ! several values of Npar
+!         do i=1,countnp(1) ! size of xscan
+!            x=xscan(i) ! scan along x-axis ! scan from xmax to xmin
+!            cnpar=dble(Npara(kk))
+!            id=2 ! used by npernpar_xyz  ! COLD ROOTS
+!            cnper2p=0.d0
+!            cnper2m=0.d0
+!            call npernpar_xyz(x,y,z,cnpar,cnper2p,cnper2m)
+!            Nperp2m(i,kk)=cnper2m ! X-mode !could be neg., if non-propagating
+!            Nperp2p(i,kk)=cnper2p ! O-mode !could be neg., if non-propagating
+!            !write(*,'(a,4e12.4)')'x,Npara(kk),Nperp2m,Nperp2p=',
+!     +      !  x,Npara,cnper2m,cnper2p
+!
+!            cnper=0.d0 ! to initialize: cold root for Nperp
+!            if(ioxm.eq.-1 .and. cnper2m.gt.0.d0) cnper= sqrt(cnper2m)
+!            if(ioxm.eq. 1 .and. cnper2p.gt.0.d0) cnper= sqrt(cnper2p)
+!            bmod=bxyz(x,y,z) !-> get b
+!            dens_e= dense_xyz(x,y,z,1) !-> get rho and dens_e
+!            temp_e=tempe_xyz(x,y,z,1)
+!
+!            !----------- YuP[04-2016] Add absorption -> Nper_im array
+!            
+!            !if ((iabsorp.eq.3).or.(iabsorp.eq.2)) then
+!	      !absorption for lh and fw
+!            !electric field using the cold plasma dielectric tensor
+!            call tensrcld_xyz(x,y,z)
+!            do is=2,nbulk
+!               tempiar(is)=tempe_xyz(x,y,z,is)
+!            enddo
+!            z_eff=zeffrho(rho) 
+!
+!            if (iabsorp.eq.3 .and. cnper.gt.0.d0) then 
+!              !FW absorption, using cnper from id=2
+!              cnprim_cl=0.d0
+!            !absorpfd uses complex function modified bessel zfunc(argz,zf,zfp) 
+!            !call absorpf1(z,r,phi,cnpar,cnper,temp_e,dens_e,tempiar,
+!            !absorpfd uses double complex function modified bessel 
+!            !czeta(argz,zf,zfp,ierror) and calculates the dielectric tensor
+!            !reps )(in common eps.i)
+!            !for the electron plasma with the hot correction using
+!            !Chiu et al, Nucl.Fus Vol. 29, No.12(1989) p.2175
+!            !formula (2),(3),(4),(5),(6) and (7)
+!              rho_larm_max0=rho_larm_max ! YuP[11-2016]
+!              call absorpfd_xyz(x,y,z,f000,rho_larm_max0,cnpar,cnper,
+!     1             temp_e,dens_e,tempiar,nbulk,bmod,
+!     1             cnprim_e,cnprim_i,cnprim_s)
+!              if (ion_absorption.eq.'enabled') then 
+!                 cnprim=cnprim_e+cnprim_i
+!              else
+!                 cnprim=cnprim_e !only electron absorption
+!              endif 
+!              if (cnprim_e.lt.0.d0 .or. cnprim_i.lt.0.d0) then
+!                !YuP[04-2016] Sometimes cnprim_s are negative,
+!                !especially for ion damping (case of HHFW, for example).
+!                !If they are negative, they are reset to abs().
+!                !Before 04-11-2016: 
+!                !         the negativity of total(e+i) cnprim was checked.
+!                !After  04-11-2016: each of cnprim_e, cnprim_i is checked.
+!                write(*,'(a,4e12.3,a)')
+!     +          'netcdfr3d: cnprim<0. cnprim_e,cnprim_i,cnpar,cnper=',
+!     +           cnprim_e,cnprim_i, cnpar,cnper,
+!     +          '  Resetting to abs(cnprim)'
+!                !if(cnprim_i.lt.0.d0) cnprim_i=0.d0 ! another version
+!                !if(cnprim_e.lt.0.d0) cnprim_e=0.d0 ! another version
+!                cnprim_e=dabs(cnprim_e)
+!                cnprim_i=dabs(cnprim_i)
+!                do is=1,nbulk
+!                   cnprim_s(is)=dabs(cnprim_s(is))
+!                enddo
+!                !YuP: But is it a valid change? Maybe set to 0, if cnprim<0?
+!              endif
+!              if (ion_absorption.eq.'enabled') then 
+!                ! repeated, after possible resetting of
+!                ! cnprim_i to abs(cnprim_i)
+!                cnprim=cnprim_e+cnprim_i
+!              else
+!                cnprim=cnprim_e !only electron absorption
+!              endif 
+!              Nperp_im(i,kk)=cnprim
+!            endif ! iabsorp=3
+!
+!            if(iabsorp.eq.7) then
+!                 !EC wave case.The complex electric field calculations
+!                 !using Cold plasma tensor +antihermition relativistic tensor
+!                 !EC relativistic absorption 
+!                 !dielectric tensor=hermitian part(cold plasma)+
+!                 !anti-hermitian part(full relativistic) 
+!                 cnparp=cnpar
+!                 !if(cnper2p.gt.0.d0)then
+!                 !  cnperp=sqrt(cnper2p)
+!                 !elseif(cnper2m.gt.0.d0)then
+!                 !  cnperp=sqrt(cnper2m)
+!                 !else
+!                   cnperp=10. ! as a guess for hot plasma root.
+!                 !endif
+!                 !calculate Hermitian cold plasma complex tensor reps. 
+!                 !It will be in eps.i        
+!                 call tensrcld_xyz(x,y,z)
+!                 do is=1,nbulk
+!                    x_ar(is)=wpw_2(x,y,z,is)
+!                    y_ar(is)=wcw(x,y,z,is)
+!                    if(is.eq.1) y_ar(1)=-y_ar(1)
+!                    te=tempe_xyz(x,y,z,is) ! kev
+!                    t_av_ar(is)=te*1000.d0      ! ev 
+!                    tpop_ar(is)=tpop_xyz(x,y,z,is) ![2024-08-14] was tpoprho(rho,is)
+!                    vflow_ar(is)=vflowrho(rho,is)
+!                 enddo
+!                 if ((i_diskf.eq.0).or.(i_diskf.eq.5)) then
+!                  !usage of the analytical relativistic function and its derivatives 
+!                    i_fkin=0
+!                 else 
+!                  !usage of the mech relativistic function and its derivatives
+!                    i_fkin=1
+!                 endif
+!                 call anth_rlt_xyz(x_ar(1),y_ar(1), t_av_ar(1)*1.d-3,
+!     +                      cnparp,cnperp,
+!     +                      n_relt_harm1,n_relt_harm2,n_relt_intgr,
+!     +                      i_resonance_curve_integration_method,epsi,
+!     +                      i_fkin,x,y,z,
+!     +                      aK)
+!                 !complex dispersion function calculated from the sum of
+!                 !of the cold electron plasma dielectric tensor eps_h
+!                 !and the relativistic electron anti-hermition dielectric tensor eps_a
+!                 disp_func=dcold_rlt(reps,aK,cnparp,cnperp)
+!                 !calculate the derivative d(D_hermitian)/d(ReN_perp)
+!                 !from the electron cold plasma dispersion function D
+!                 ddnp=dDcold(reps,cnparp,cnperp)
+!                 cnprim = dabs(DIMAG(disp_func) / DREAL(ddnp))
+!                 !cnprim_cl=0.d0
+!                 !cnprim_e=cnprim
+!                 !cnprim_i=0.d0
+!                 Nperp_im(i,kk)=cnprim
+!            endif ! iabsorp.eq.7
+!c------------------------------------------------------------------
+!            if(iabsorp.eq.6) then
+!c       EC wave case.The complex electric field calculations
+!c       using Forest tensor (with antihermition part)
+!c       reps(3,3), and N_per=N_per(N_par) from forest solver
+!c-------EC relativistic absorption 
+!c       dielectric tensor=hermitian part(from Forest code)+
+!c                         anti-hermitian part(full relativistic) 
+!                 !-------Hermitian non-relativistic tensor reps        
+!                 cnparp=cnpar
+!                 !if(cnper2p.gt.0.d0)then
+!                 !  cnperp=sqrt(cnper2p)
+!                 !elseif(cnper2m.gt.0.d0)then
+!                 !  cnperp=sqrt(cnper2m)
+!                 !else
+!                   cnperp=10. ! as a guess for hot plasma root.
+!                 !endif
+!                 do is=1,nbulk
+!                    x_ar(is)=wpw_2(x,y,z,is)
+!                    y_ar(is)=wcw(x,y,z,is)
+!                    if(is.eq.1) y_ar(1)=-y_ar(1)
+!                    te=tempe_xyz(x,y,z,is) ! kev
+!                    t_av_ar(is)=te*1000.d0      ! ev 
+!                    tpop_ar(is)=tpop_xyz(x,y,z,is) ![2024-08-14] was tpoprho(rho,is)
+!                    vflow_ar(is)=vflowrho(rho,is)
+!                 enddo
+!                 if ((i_diskf.eq.0).or.(i_diskf.eq.5)) then
+!                  !usage of the analytical relativistic function and its derivatives 
+!                    i_fkin=0
+!                 else 
+!                  !usage of the mech relativistic function and its derivatives
+!                    i_fkin=1
+!                 endif
+!                 call anth_rlt_xyz(x_ar(1),y_ar(1), t_av_ar(1)*1.d-3,
+!     +                      cnparp,cnperp,
+!     +                      n_relt_harm1,n_relt_harm2,n_relt_intgr,
+!     +                      i_resonance_curve_integration_method,epsi,
+!     +                      i_fkin,x,y,z,
+!     +                      aK)
+!                 cnprim=0.d0
+!                 D=dhot_rlt(reps,aK,cnparp,cnperp,cnprim)
+!                 !dham=dreal(d)
+!                 call Ddhot(nbulk,dmas,x_ar,y_ar,
+!     +                t_av_ar,tpop_ar,vflow_ar,
+!     +                cnparp,cnperp,reps,dd5,ddnp_h,ddnll_h, ddnp)
+!                 cnprim = dabs(DIMAG(D) / DREAL(ddnp))
+!                 !cnprim_cl=0.d0
+!                 !cnprim_e=cnprim
+!                 !cnprim_i=0.d0
+!                 Nperp_im(i,kk)=cnprim
+!            endif ! iabsorp.eq.6
+!
+!            !-> Try to find a Hot plasma root.
+!            Nperp2hot(i,kk)= cnper2m ! X-mode ! initialize
+!            goto 10 !---> skip this part - takes too long !comment if needed
+!            !initialization for common/nperpcom/,  in nperpcom.i
+!            nllc= Npara(kk)
+!            nbulkc=nbulk
+!            do j=1,nbulk
+!               massc(j)=dmas(j)
+!               xc(j)=wpw_2(x,y,z,j)
+!               bmod=bxyz(x,y,z) !-> get b (needed for wcw)
+!               yc(j)=wcw(x,y,z,j)
+!               if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_ce/omega) for electrons
+!               tec(j)=tempe_xyz(x,y,z,j)*1.d+3 !(eV) averaged temperature
+!               tpopc(j)=tpop_xyz(x,y,z,j) ![2024-08-14] was tpoprho(rho,j)
+!               vflowc(j)=vflowrho(rho,j)         
+!            enddo
+!            iraystop=0 ! initialize
+!            if(cnper2m.gt.0.d0 .or. cnper2p.gt.0.d0)then
+!               ! Try X-mode or O-mode as an initial guess (the larger)
+!               ibw=0
+!               cnper_0= sqrt(max(cnper2m,cnper2p)) ! the larger root
+!               hotnpc=
+!     +         hotnp(nbulk,ibw,cnper_0,cnper2p,cnper2m,K,iraystop)
+!               cnper_0= real(hotnpc) ! save for the next r(i) step
+!            else ! No O or X mode
+!               !if(cnper_0.ne.1.d0) then ! use cnper_0 from previous r(i)
+!               !   ibw=1
+!               !   hotnpc=
+!     +         !   hotnp(nbulk,ibw,cnper_0,cnper_0,cnper_0,K,iraystop)
+!               !else
+!                  iraystop=1
+!               !endif
+!            endif
+!            if (iraystop.eq.0) then ! the root was found
+!               Nperp2hot(i,kk)=hotnpc*CONJG(hotnpc)
+!            else ! could not find the root
+!               Nperp2hot(i,kk)=1.d-6
+!            endif
+!   10       continue ! handle to skip hot root calculations
+!
+!         enddo ! i=1,countnp(1) !  xscan
+!      enddo ! kk=1,inpar_save_disp
+!      id=id_loc   ! restore
+!      ibw=ibw_loc ! restore
+!      endif ! i_save_disp=1
+c-------------------------------------------------------
+
+      ! Write data
+      write(*,*)'wrtnetcdf_plasma_prof: Start writing data'
+      
+      call ncvid2(vid,ncid,'nbulk',istatus)
+      call ncvpt_int2(ncid,vid,1,1,nbulk,istatus)
+
+      call ncvid2(vid,ncid,'model_rho_dens',istatus)
+      call ncvpt_int2(ncid,vid,1,1,model_rho_dens,istatus)
+
+      call ncvid2(vid,ncid,'freqcy',istatus)
+      call ncvpt_doubl2(ncid,vid,0,0,freqcy,istatus)
+
+
+      if(model_rho_dens.eq.7)then !YuP[2024-08-14]
+      call ncvid2(vid,ncid,'nzden',istatus)   ![2024-03] For model_rho_den.eq.7
+      call ncvpt_int2(ncid,vid,1,1,nzden,istatus)
+      call ncvid2(vid,ncid,'nrden',istatus)   ![2024-03] For model_rho_den.eq.7
+      call ncvpt_int2(ncid,vid,1,1,nrden,istatus)
+      call ncvid2(vid,ncid,'nphiden',istatus) ![2024-03] For model_rho_den.eq.7
+      call ncvpt_int2(ncid,vid,1,1,nphiden,istatus)
+      call ncvid2(vid,ncid,'zdenmin',istatus) ![2024-03] For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,zdenmin,istatus)
+      call ncvid2(vid,ncid,'zdenmax',istatus) ![2024-03] For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,zdenmax,istatus)
+      call ncvid2(vid,ncid,'rdenmin',istatus) ![2024-03] For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,rdenmin,istatus)
+      call ncvid2(vid,ncid,'rdenmax',istatus) ![2024-03] For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,rdenmax,istatus)
+      call ncvid2(vid,ncid,'phidenmin',istatus) ![2024-03]For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,phidenmin,istatus)
+      call ncvid2(vid,ncid,'phidenmax',istatus) ![2024-03]For model_rho_den.eq.7
+      call ncvpt_real(ncid,vid,0,0,phidenmax,istatus)
+      endif !(model_rho_dens.eq.7)
+
+!      call ncvid2(vid,ncid,'y_save_disp',istatus)
+!      call ncvpt_doubl2(ncid,vid,0,0,y_save_disp,istatus)
+!
+!      call ncvid2(vid,ncid,'z_save_disp',istatus)
+!      call ncvpt_doubl2(ncid,vid,0,0,z_save_disp,istatus)
+
+      call ncvid2(vid,ncid,'dmas',istatus)
+      call ncvpt_doubl2(ncid,vid,1,nbulk,dmas,istatus)
+
+      call ncvid2(vid,ncid,'charge',istatus)
+      call ncvpt_doubl2(ncid,vid,1,nbulk,charge,istatus)
+
+      call ncvid2(vid,ncid,'rho_bin',istatus)  
+      call ncvpt_doubl2(ncid,vid,1,NR,rho_bin,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'rho_bin_center',istatus)  
+      call ncvpt_doubl2(ncid,vid,1,NR-1,rho_bin_center,istatus)
+      call check_err(istatus)
+            
+      call ncvid2(vid,ncid,'rhoprof',istatus)
+      call ncvpt_doubl2(ncid,vid,start(1),counts(1),rhoprof,istatus)
+      call check_err(istatus)
+
+      call ncvid2(vid,ncid,'zefprof',istatus)
+      call ncvpt_doubl2(ncid,vid,start(1),counts(1),zefprof,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'temprof',istatus)
+      call ncvpt_doubl2(ncid,vid,start,counts,temprof,istatus)
+      call check_err(istatus)
+
+      call ncvid2(vid,ncid,'densprof',istatus)
+      call ncvpt_doubl2(ncid,vid,start,counts,densprof,istatus)
+      call check_err(istatus)
+
+      !call ncvid2(vid,ncid,'bmodprofxz',istatus) ! big increase in file size
+      !call ncvpt_doubl2(ncid,vid,start,countxz,bmodprofxz,istatus)
+      !call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'densprofxz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxz,densprofxz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'densprofyz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countyz,densprofyz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'densprofxy',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxy,densprofxy,istatus)
+      call check_err(istatus)
+      
+      !YuP[2024-08-14] added, for plots
+      call ncvid2(vid,ncid,'tempprofxz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxz,tempprofxz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'tempprofyz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countyz,tempprofyz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'tempprofxy',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxy,tempprofxy,istatus)
+      call check_err(istatus)
+
+      !YuP[2024-08-14] added, for plots
+      call ncvid2(vid,ncid,'tpopprofxz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxz,tpopprofxz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'tpopprofyz',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countyz,tpopprofyz,istatus)
+      call check_err(istatus)
+      
+      call ncvid2(vid,ncid,'tpopprofxy',istatus) ! big increase in file size
+      call ncvpt_doubl2(ncid,vid,start,countxy,tpopprofxy,istatus)
+      call check_err(istatus)
+
+      deallocate( densprofxz, densprofyz, densprofxy)  
+      deallocate( tempprofxz, tempprofyz, tempprofxy)  !YuP[2024-08-14]
+      deallocate( tpopprofxz, tpopprofyz, tpopprofxy)  !YuP[2024-08-14]
+      
+!      call ncvid2(vid,ncid,'w_x_densprof_nc',istatus)  
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_x_densprof_nc,istatus)
+!      call check_err(istatus)
+! 
+!      call ncvid2(vid,ncid,'w_bmod_vs_x_nc',istatus)
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_bmod_vs_x_nc,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_dens_vs_x_nc',istatus)
+!      call pack21(w_dens_vs_x_nc,1,NR,1,nbulk,tem1,NR,nbulk)
+!      call ncvpt_doubl2(ncid,vid,start,counts,tem1,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_temp_vs_x_nc',istatus)
+!      call pack21(w_temp_vs_x_nc,1,NR,1,nbulk,tem1,NR,nbulk)
+!      call ncvpt_doubl2(ncid,vid,start,counts,tem1,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_zeff_vs_x_nc',istatus)
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_zeff_vs_x_nc,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_y_densprof_nc',istatus)  
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_y_densprof_nc,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_bmod_vs_y_nc',istatus)
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_bmod_vs_y_nc,istatus)
+!      call check_err(istatus)
+! 
+!      call ncvid2(vid,ncid,'w_dens_vs_y_nc',istatus)
+!      call pack21(w_dens_vs_y_nc,1,NR,1,nbulk,tem1,NR,nbulk)
+!      call ncvpt_doubl2(ncid,vid,start,counts,tem1,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_temp_vs_y_nc',istatus)
+!      call pack21(w_temp_vs_y_nc,1,NR,1,nbulk,tem1,NR,nbulk)
+!      call ncvpt_doubl2(ncid,vid,start,counts,tem1,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'w_zeff_vs_y_nc',istatus)
+!      call ncvpt_doubl2(ncid,vid,1,NR,w_zeff_vs_y_nc,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'xscan',istatus) ! x-grid for Nperp^2(x,Npar)
+!      call ncvpt_real(ncid,vid,1,countnp(1),xscan,istatus)
+!      call check_err(istatus)
+!      
+!      call ncvid2(vid,ncid,'wcwscan',istatus) ! omega_ce/omega
+!      call ncvpt_real(ncid,vid,1,countnp(1),wcwscan,istatus)
+!      call check_err(istatus)
+!      
+!      call ncvid2(vid,ncid,'wpwscan',istatus) ! omega_pe/omega
+!      call ncvpt_real(ncid,vid,1,countnp(1),wpwscan,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'wuwscan',istatus) ! Upper_hybrid/omega
+!      call ncvpt_real(ncid,vid,1,countnp(1),wuwscan,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'wlwscan',istatus) ! Lower_hybrid/omega
+!      call ncvpt_real(ncid,vid,1,countnp(1),wlwscan,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'rhoscan',istatus) ! rho vs x
+!      call ncvpt_real(ncid,vid,1,countnp(1),rhoscan,istatus)
+!      call check_err(istatus)
+!      
+!      ! For i_save_disp=1 option:
+!      if(i_save_disp.eq.1)then !----------------------------------------
+!      call ncvid2(vid,ncid,'Npara',istatus) !Npar-grid for Nperp^2(x,Npar)
+!      call ncvpt_real(ncid,vid,1,countnp(2),Npara,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'Npera',istatus) !Nper-grid for ddd(x,Nper,Npar)
+!      call ncvpt_real(ncid,vid,1,countddd(2),Npera,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'Nperp2m',istatus) ! Nperp^2(x,Npar) Cold'-1'
+!      call ncvpt_real(ncid,vid,start,countnp,Nperp2m,istatus)
+!      call check_err(istatus)
+!      
+!      call ncvid2(vid,ncid,'Nperp2p',istatus) ! Nperp^2(x,Npar) Cold'+1'
+!      call ncvpt_real(ncid,vid,start,countnp,Nperp2p,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'Nperp_im',istatus) !Nperp_im(x,Npar) damping
+!      call ncvpt_real(ncid,vid,start,countnp,Nperp_im,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'Nperp2hot',istatus) !Nperp^2(x,Npar) Hot root
+!      call ncvpt_real(ncid,vid,start,countnp,Nperp2hot,istatus)
+!      call check_err(istatus)
+!
+!      call ncvid2(vid,ncid,'ddd',istatus) !ddd(x,Nper,Npar) dispers.function
+!      call ncvpt_real(ncid,vid,startddd,countddd,ddd,istatus)
+!      call check_err(istatus)
+!      endif ! i_save_disp=1 !-------------------------------------------
+      
+      write(*,*)'wrtnetcdf_plasma_prof: Finished writing data'
+
+c     Close netCDF file
+      call ncclos2(ncid,istatus)
+      call check_err(istatus)
+      write(*,*)'wrtnetcdf_plasma_prof: File is Closed'
+
+      return
+      end subroutine wrtnetcdf_plasma_prof
+
+
+C=======================================================================
+C=======================================================================
+     
      
       subroutine wrtnetcdf(kopt)
       !implicit integer (i-n), double precision (a-h,o-z)
@@ -324,9 +1737,11 @@ c     If the parameter ionetwo.eq.1 it will write the current
 c     and power profiles into a netcdf file
 
       include 'param.i'
+      include 'write.i'
       include 'writencdf.i'
       include 'one.i'
       include 'ions.i'
+      include 'fourb.i'
       include 'adj.i'
       include 'cone_nml.i'     !nccone
       include 'grill_nml.i'    !ngrill
@@ -571,6 +1986,11 @@ c      write(*,*)'before ncvdef2(ion_absorption)'
      +'Switch on/off ion absorption at iabsorp=3,9,91,92',istatus)
       call check_err(istatus)
 
+      !These are only needed for model_rho_dens.eq.7 (or 6)
+      !('enabled' means that the corresponding profile was read from data file)
+      vid=ncvdef2(ncid,'dens_read',NCCHAR,1,char8id,istatus)
+      vid=ncvdef2(ncid,'temp_read',NCCHAR,1,char8id,istatus)
+      vid=ncvdef2(ncid,'tpop_read',NCCHAR,1,char8id,istatus)
 
 c      write(*,*)'before ncvdef2(refl_loss)'
       vid=ncvdef2(ncid,'refl_loss',NCDOUBLE,0,0,istatus)
@@ -876,7 +2296,7 @@ c      write(*,*)'before ncvdef2(sb_r)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,28,
      +           'B_r magnetic field component',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(sb_z)'
 
@@ -884,7 +2304,7 @@ c      write(*,*)'before ncvdef2(sb_z)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,28,
      +           'B_z magnetic field component',istatus) 
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(sb_phi)'
 
@@ -892,7 +2312,7 @@ c      write(*,*)'before ncvdef2(sb_phi)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,30,
      +           'B_phi magnetic field component',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(wn_r)'
 
@@ -1599,9 +3019,16 @@ cSAP090903
       deallocate (tem1,STAT=istat)
 
       return
-      end
+      end subroutine wrtnetcdf
 c
 c
+
+
+
+
+C=======================================================================
+C=======================================================================
+
 
 
       subroutine wrtnetcdf_prof(netcdfnml,kopt)
@@ -2461,10 +3888,7 @@ c     into into existing netcdf file: netcdfnml
 
       integer n1n2,istat
 c     Storage tem1 is used in netcdf writes, including complex numbers.
-cSAP090903
-c      parameter (n1n2=2*nrelta*nraya)
-c      real*8 tem1(n1n2) 
-      real*8, pointer :: tem1(:)
+      real*8, ALLOCATABLE :: tem1(:)
 
 c --- include file for netCDF declarations 
 c --- (obtained from NetCDF distribution)
@@ -2485,7 +3909,9 @@ cSAP090903
 c------------------------------------------
 c     allocate pointers tem1
 c-------------------------------------------
-      allocate( tem1(1:n1n2),STAT=istat)
+      IF (.NOT. ALLOCATED(tem1)) then
+        allocate( tem1(1:n1n2),STAT=istat)
+      endif
       call bcast(tem1,0.d0,SIZE(tem1))
 c----------------------------------------------
  
@@ -4328,7 +5754,7 @@ c      integer n1n2
 c      parameter (n1n2=2*nrelta*nfreqa)
 c      real*8 tem1(n1n2) 
       integer n1n2
-      real*8, pointer :: tem1(:)      !(n1n2)
+      real*8, ALLOCATABLE :: tem1(:)      !(n1n2)
  
       integer ncid,vid,istatus,ncvdef2,ncdid2,ncddef2
 
@@ -4381,7 +5807,9 @@ c      write(*,*)'nfreq_id,nfreq',nfreq_id,nfreq
      
 c-----allocate tem1
       n1n2=nrelta*nfreq
-      allocate( tem1(1:n1n2),STAT=istat)
+      IF (.NOT. ALLOCATED(tem1)) then
+        allocate( tem1(1:n1n2),STAT=istat)
+      endif
       call bcast(tem1,0.d0,SIZE(tem1))
 c--------------------------------------
       neltmax_initial_mesh_dim=ncdid2(ncid,'neltmax_emis_initial_mesh',
@@ -4956,7 +6384,7 @@ c     +                k,R_loc,Z_loc,w_dens_vs_r_nc(i,k)
       return
       end
 
-                           
+c-----------------------------------------------------------------------                           
       subroutine wrtnetcdf_one_ray_point(kopt,is0,nray0)            
       implicit none
 c
@@ -5501,7 +6929,7 @@ c      write(*,*)'before ncvdef2(sbtot)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,23,
      +           'Magnetic field strength',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(cene)'
 
@@ -5543,7 +6971,7 @@ c      write(*,*)'before ncvdef2(sb_r)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,28,
      +           'B_r magnetic field component',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(sb_z)'
 
@@ -5551,7 +6979,7 @@ c      write(*,*)'before ncvdef2(sb_z)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,28,
      +           'B_z magnetic field component',istatus) 
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(sb_phi)'
 
@@ -5559,7 +6987,7 @@ c      write(*,*)'before ncvdef2(sb_phi)'
       call ncaptc2(ncid,vid,'long_name',NCCHAR,30,
      +           'B_phi magnetic field component',istatus)
       call ncaptc2(ncid,vid,'units',NCCHAR,5,
-     +           'guass',istatus)
+     +           'Gauss',istatus)
 
 c      write(*,*)'before ncvdef2(wn_r)'
 
@@ -6367,9 +7795,7 @@ c---- some stuff for netCDF file ---
       integer nraysid,nfreqdim
       integer ray_dims(2),start(2),ray_count(2)
 c-----local
-      integer, pointer :: item2(:) !(nraya_nfreqa)
-c      real*8, pointer :: tem2(:) !(nraya_nfreqa)
-c      real*8,  pointer :: r_iray_status_nc(:,:)
+      integer, ALLOCATABLE :: item2(:) !(nraya_nfreqa)
 
       integer nraya_nfreqa,iray,ifreq
 
@@ -6384,15 +7810,10 @@ c----------------------------------------------------------
 
       nraya_nfreqa=nrayl*nfreq
 
-      allocate( item2(1:nraya_nfreqa),STAT=istatus)
-      call ibcast(item2,0,SIZE(item2))
-
-c      allocate( tem2(1:nraya_nfreqa),STAT=istatus)
-c      call bcast(tem2,0.d0,SIZE(tem2))
-
-c      allocate(r_iray_status_nc(1:nrayl,1:nfreq),STAT=istatus)
-c      call bcast(r_iray_status_nc,0.d0,SIZE(r_iray_status_nc))
-      
+      IF (.NOT. ALLOCATED(item2)) then
+        allocate( item2(1:nraya_nfreqa),STAT=istatus)
+      endif
+      call ibcast(item2,0,SIZE(item2))      
 
       write(*,*)'after allocate item2 istatus=',istatus
 c.......................................................................
@@ -6497,7 +7918,7 @@ c    &        'type of stopping of each ray:
       call ncaptc2(ncid,vid,'long_name10',NCCHAR,54,
      &'  The ray is close to upper hybrid resonance.         ', istatus)
       call ncaptc2(ncid,vid,'long_name11',NCCHAR,54,
-     &'  It can be Xmode to close to the UH resonance.       ', istatus)
+     &'  It can be Xmode too close to the UH resonance.      ', istatus)
       call ncaptc2(ncid,vid,'long_name12',NCCHAR,54,
      &' =8  if ((vgrmods.gt.1.1).and. ((id.ne.10).and.       ', istatus)
       call ncaptc2(ncid,vid,'long_name13',NCCHAR,54,
@@ -6581,7 +8002,7 @@ cPrint out to screen the defn of iray_status_nc, for convenience:
       write(*,*) 
      &  "      The ray is close to upper hybrid resonance.         "
       write(*,*) 
-     &  "      It can be Xmode to close to the UH resonance.       "
+     &  "      It can be Xmode too close to the UH resonance.      "
       write(*,*) 
      &  "iray_status_nc: =8 if ((vgrmods.gt.1.1).and. ((id.ne.10)"
       write(*,*) 
@@ -6766,6 +8187,14 @@ cl    create netCDF filename (Entering define mode.)
       return 
       end
 
+      subroutine ncvpt_real(NCID, vid, START, COUNTS,  DVALS, istatus)
+      INCLUDE 'netcdf.inc'
+      INTEGER istatus,vid,NCID, START(*), COUNTS(*)
+      REAL*4 DVALS(*)
+      istatus= NF_PUT_VARA_REAL(NCID, vid, START, COUNTS, DVALS)
+      return 
+      end
+
       subroutine ncvpt_int2(NCID, vid, START, COUNTS,  IVALS, istatus)
       INCLUDE 'netcdf.inc'
       INTEGER istatus,vid,NCID, START(*), COUNTS(*)
@@ -6834,3 +8263,1090 @@ c     end the define-mode and start the data-mode
       end
 
          
+
+
+
+c======================================================================
+c======================================================================
+      subroutine density_zrp_profile_read(nbulk,dendsk) !for model_rho_dens.eq.7
+
+!     YuP[2024-08-14]
+!     Read the density profile(z,r,phi) data from file
+!-------------------------------------------------------------------!
+! Read 3D density profile from file.
+! Assumed: uniform (z,r,phi)-grids,
+! Density profile is a function of (z,r,phi).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! dendsk="19846_0_25densf.dat"   (example)
+! Check that the data in file is in these units: 10^19 [m^-3]
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      include 'fourb.i' !grids zden,rden,phiden and dengrid_zrp saved here
+      include 'ions_nml.i'
+      integer nbulk !IN
+      character*512 dendsk !IN
+
+!---- local: 
+      integer i,j,k,isp, lx,ly,mxa,mxb,mya,myb,nfx,nfy,nxy, kode
+      integer isp_in,isp_code,nbulk_in
+      real*8 dmas_in(nbulk)
+      integer length_char !external function
+     
+!     Data from /plasma/  namelist were read
+!     in genray.f using read_all_namelists
+      
+      ! den_unit= 1.0d19 ! [m^-3] 
+      ! Check that the data in file is in these units !
+      
+! Read the dendsk file
+      WRITE(*,*)' density_zrp_profile_read: dendsk=',
+     & trim(dendsk)
+!---------------------------------------------------------
+      open(30,file=dendsk,status='old',iostat=kode)
+      if (kode.ne.0) then
+         WRITE(*,*)'density_zrp_profile_read:',dendsk,' NOT FOUND'
+         STOP 'Specify proper dendsk= '
+      endif
+      
+! Read the dimensions of z-grid,r-grid,phi-grid:
+      read(30,2) nzden,nrden,nphiden,nbulk_in
+2     format(4i4)
+      WRITE(*,*) 'nzden,nrden,nphiden,nbulk_in=',
+     &            nzden,nrden,nphiden,nbulk_in
+      if(nbulk_in.ne.nbulk)then
+        WRITE(*,*) 'nbulk_in=',nbulk_in,"  nbulk in genray",nbulk
+        STOP 'nbulk_in and nbulk should be same'
+      endif
+     
+      if(.NOT.associated(zden))then
+        allocate(zden(nzden))
+      endif
+      if(.NOT.associated(rden))then
+        allocate(rden(nrden))
+      endif
+      if(.NOT.associated(phiden))then
+        allocate(phiden(nphiden))
+      endif
+      if(.NOT.associated(dengrid_zrp))then
+        allocate(dengrid_zrp(nzden,nrden,nphiden,nbulk))
+        allocate(dnzrp_dz(nzden,nrden,nphiden,nbulk))
+        allocate(dnzrp_dr(nzden,nrden,nphiden,nbulk))
+        allocate(dnzrp_dphi(nzden,nrden,nphiden,nbulk))
+      endif
+
+! Read the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)
+      read(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m;rad]
+3     format(1p6e14.7)
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, rdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+
+! Read the profile of density on the (z,r,phi)-grid:
+      do isp_in=1,nbulk !index for data
+      read(30,'(1pe14.7)') dmas_in(isp_in) ![2024-08-12] added, to ID species
+      ![2024-08-12] Scan all species in genray.in list, 
+      !try to match it with species from data
+      isp=0
+      do isp_code=1,nbulk  !index for code (GENRAY)
+        if(abs(dmas_in(isp_in)-dmas(isp_code)) .lt.
+     &    0.1*(dmas_in(isp_in)+dmas(isp_code))      )then 
+          !Same species within accuracy
+          ! (should be a unique pair isp_in <--> isp_code)
+          isp=isp_code
+        WRITE(*,*)'isp_code=',isp_code,' is matched with isp_in=',isp_in
+        endif !dmas_in(isp_in)=dmas(isp_code)
+      enddo !isp_code
+      if(isp>0)then
+        read(30,4) (((dengrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                  k=1,nphiden)
+        denmax=MAXVAL(dengrid_zrp(:,:,:,isp))
+        WRITE(*,*) '  n_max for this isp_code:',denmax
+      else
+        STOP 'Match isp_code=isp_in is not found'
+      endif
+      enddo !isp_in
+      !dengrid_zrp is saved in single precision - could be a huge array.
+4     format(1p5e14.7) ! Note: data is recorded in 5 columns !
+      close(30)
+
+      WRITE(*,*) 'The units in file should be [10^19 m^-3]'
+      WRITE(*,*) ' '
+
+!----- GENERATE GRIDS -----------------------------------------
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      do i=1,nzden
+        zden(i)= zdenmin+dzden*(i-1) ! [zdenmin; zdenmax]
+      enddo
+ 
+      drden= (rdenmax-rdenmin)/(nrden-1)
+      do j=1,nrden
+        rden(j)= rdenmin+drden*(j-1) ! [rdenmin; rdenmax]
+      enddo
+      
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+        do k=1,nphiden
+          phiden(k)= phidenmin+dphiden*(k-1) ! [phidenmin; phidenmax]
+        enddo
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+        phiden(1)= phidenmin
+      endif
+      
+!----- GENERATE/Save derivatives of dengrid_zrp(:,:,:)
+! dnzrp_dz()   = d(dengrid_zrp)/dz
+! dnzrp_dr()   = d(dengrid_zrp)/dr
+! dnzrp_dphi() = d(dengrid_zrp)/dphi
+      dnzrp_dz=0.d0
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=1,nrden
+      do i=2,nzden-1
+       dnzrp_dz(i,j,k,isp)= dengrid_zrp(i+1,j,k,isp)
+     &                     -dengrid_zrp(i-1,j,k,isp)
+      !The edge points are not defined, but not likely to be used.
+      enddo
+      enddo
+      enddo
+      enddo
+      dnzrp_dz(:,:,:,:)= dnzrp_dz(:,:,:,:)/(2*dzden)
+      
+      dnzrp_dr=0.d0
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=2,nrden-1
+      do i=1,nzden
+       dnzrp_dr(i,j,k,isp)= dengrid_zrp(i,j+1,k,isp)
+     &                     -dengrid_zrp(i,j-1,k,isp)
+      enddo
+      enddo
+      enddo
+      enddo
+      dnzrp_dr(:,:,:,:)= dnzrp_dr(:,:,:,:)/(2*drden)
+
+      dnzrp_dphi=0.d0
+      
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+          do isp=1,nbulk
+          do k=2,nphiden-1
+          do j=1,nrden
+          do i=1,nzden
+           dnzrp_dphi(i,j,k,isp)= dengrid_zrp(i,j,k+1,isp)
+     &                           -dengrid_zrp(i,j,k-1,isp)
+          enddo
+          enddo
+          enddo
+          k=1 !Assume periodicity in phi, k=1 and k=nphiden are same points
+          do j=1,nrden
+          do i=1,nzden
+           dnzrp_dphi(i,j,1,isp)= dengrid_zrp(i,j,2,isp)
+     &                           -dengrid_zrp(i,j,nphiden-1,isp)
+           dnzrp_dphi(i,j,nphiden,isp)=dnzrp_dphi(i,j,1,isp)
+          enddo
+          enddo
+          enddo !isp
+          dnzrp_dphi(:,:,:,:)= dnzrp_dphi(:,:,:,:)/(2*dphiden)
+      !else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+      !Remains zero, as initialized above.
+      endif
+
+      return
+      end subroutine density_zrp_profile_read
+
+c======================================================================
+c======================================================================
+      subroutine density_zrp_profile_write(nbulk,dendsk) !for model_rho_dens.eq.7
+!     YuP[2024-08-14]
+!     Write the density profile(z,r,phi,isp) data to file
+!-------------------------------------------------------------------!
+! Assumed: uniform (z,r,phi)-grids,
+! Density profile is a function of (z,r,phi,species).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! dendsk="19846_0_25densf.dat"   (example)
+! Check that the data in file is in these units: 10^19 [m^-3],
+! should contain data for all species.
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      !include 'one.i' ![2024-08-08] Only need nbulk,dendsk which are INPUT now
+      include 'ions_nml.i'
+      integer nbulk !IN
+      character*512 dendsk !IN
+      include 'fourb.i' !grids zden,rden,phiden and dengrid_zrp saved here
+      real*8 dense !function, to get values of density
+!---- local: 
+      real*8 x,y,z, r,phi
+      integer i,j,k, isp, istat
+      integer length_char !external function
+
+      !Data is written into dendsk file (specify in namelist &plasma)
+      WRITE(*,*)' density_zrp_profile_write: dendsk=',
+     & trim(dendsk) 
+      WRITE(*,*) 'nzden,nrden,nphiden=',nzden,nrden,nphiden
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, zdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+           
+      ! den_unit= 1.0d19 ! [m^-3] 
+      ! Check that the data in file is in these units !
+      if(.NOT.associated(dengrid_zrp))then
+        allocate(dengrid_zrp(nzden,nrden,nphiden,nbulk),STAT=istat) !in fourb.i
+        WRITE(*,*)' istat(allocation of dengrid_zrp)=',istat
+        WRITE(*,*)' shape(dengrid_zrp)=',shape(dengrid_zrp)
+      endif
+      
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      drden= (rdenmax-rdenmin)/(nrden-1)
+
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+      endif
+
+      do isp=1,nbulk !All species
+      do k=1,nphiden
+        phi= phidenmin+dphiden*(k-1) ! [phidenmin; phidenmax]
+      do j=1,nrden
+        r= rdenmin+drden*(j-1) ! [rdenmin; rdenmax]
+        !x=r*cos(phi)
+        !y=r*sin(phi)
+      do i=1,nzden
+        z= zdenmin+dzden*(i-1) ! [zdenmin; zdenmax]
+        dengrid_zrp(i,j,k,isp)= dense(z,r,phi,isp) !each species isp
+      enddo
+      enddo
+      enddo
+      enddo
+      
+      denmin=MINVAL(dengrid_zrp)
+      denmax=MAXVAL(dengrid_zrp)
+      WRITE(*,*)'dengrid_zrp min/max [saved into file]:',denmin,denmax
+      WRITE(*,*)'The units in file should be [10^19 m^-3 = 10^13 cm^-3]'
+      WRITE(*,*) ' '
+      
+      open(30,file=dendsk)
+! WRITE the dimensions of x-grid,y-grid,z-grid:
+      WRITE(30,2) nzden,nrden,nphiden,nbulk !saved into fourb.i
+2     format(4i4)
+! WRITE the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)  (Saved into fourb.i)
+      WRITE(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m;rad]
+3     format(1p6e14.7)
+! WRITE the profile of density over the (z,r,phi)-grid:
+      do isp=1,nbulk
+      WRITE(30,'(1pe14.7)') dmas(isp) ![2024-08-12] added, to ID species
+      WRITE(30,4) (((dengrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                 k=1,nphiden)
+      enddo
+4     format(1p5e14.7)
+! Note: data is recorded in 5 columns !
+      close(30)
+
+      return
+      end subroutine density_zrp_profile_write
+c======================================================================
+c======================================================================
+
+c======================================================================
+c======================================================================
+      subroutine temperature_zrp_profile_read(nbulk,tempdsk) !for model_rho_dens.eq.7
+!     YuP[2024-08-14]
+!     Read the temperature profile tempgrid_zrp(z,r,phi) data from file,
+!     for each species.
+!     It uses same (z,r,phi)-grids as dengrid_zrp()
+!-------------------------------------------------------------------!
+! Read a general T(z,r,phi) temperature profile from file, 
+! for each species (see isp=1,nbulk loop below).
+! Assumed: uniform (z,r,phi)-grids (same grids as for density).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! tempdsk="19846_0_25tempf.dat"   (example)
+! Check that the data in file is in these units: [keV]
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      !include 'one.i' ![2024-08-08] Only need nbulk,dendsk which are INPUT now
+      include 'ions_nml.i'
+      integer nbulk !IN
+      character*512 tempdsk !IN
+      include 'fourb.i' !tempgrid_zrp saved here
+
+!---- local: 
+      integer i,j,k,isp, lx,ly,mxa,mxb,mya,myb,nfx,nfy,nxy, kode
+      integer isp_in,isp_code,nbulk_in
+      real*8 dmas_in(nbulk)
+     
+!     Data from /plasma/  namelist were read
+!     in genray.f using read_all_namelists
+      
+! Read the tempdsk file
+      WRITE(*,*) ' temperature_zrp_profile_read: tempdsk=',
+     & trim(tempdsk)
+!---------------------------------------------------------
+      open(30,file=tempdsk,status='old',iostat=kode)
+      if (kode.ne.0) then
+         WRITE(*,*)'temperature_zrp_profile_read:',tempdsk,' NOT FOUND'
+         STOP 'Specify proper tempdsk= '
+      endif
+      
+! Read the dimensions of x-grid,y-grid,z-grid:
+      !These should be exactly same as for dengrid_zrp
+      read(30,2) nzden,nrden,nphiden,nbulk_in
+2     format(4i4)
+      WRITE(*,*) 'nzden,nrden,nphiden,nbulk_in=',
+     &            nzden,nrden,nphiden,nbulk_in
+      if(nbulk_in.ne.nbulk)then
+        WRITE(*,*) 'nbulk_in=',nbulk_in,"  nbulk in genray",nbulk
+        STOP 'nbulk_in and nbulk should be same'
+      endif
+     
+      if(.NOT.associated(zden))then
+        allocate(zden(nzden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(rden))then
+        allocate(rden(nrden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(phiden))then
+        allocate(phiden(nphiden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(tempgrid_zrp))then
+        allocate(tempgrid_zrp(nzden,nrden,nphiden,nbulk))
+        allocate(dtzrp_dz(nzden,nrden,nphiden,nbulk))
+        allocate(dtzrp_dr(nzden,nrden,nphiden,nbulk))
+        allocate(dtzrp_dphi(nzden,nrden,nphiden,nbulk))
+      endif
+
+! Read the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)
+      !These should be exactly same as for dengrid_zrp
+      read(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m,rad]
+3     format(1p6e14.7)
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, rdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+
+! Read the profile of T on the (z,r,phi)-grid:
+      do isp_in=1,nbulk !index for data
+      read(30,'(1pe14.7)') dmas_in(isp_in) ![2024-08-12] added, to ID species
+      ![2024-08-12] Scan all species in genray.in list, 
+      !try to match it with species from data
+      isp=0
+      do isp_code=1,nbulk  !index for code (GENRAY)
+        if(abs(dmas_in(isp_in)-dmas(isp_code)) .lt.
+     &    0.1*(dmas_in(isp_in)+dmas(isp_code))      )then 
+          !Same species within accuracy
+          ! (should be a unique pair isp_in <--> isp_code)
+          isp=isp_code
+        WRITE(*,*)'isp_code=',isp_code,' is matched with isp_in=',isp_in
+        endif !dmas_in(isp_in)=dmas(isp_code)
+      enddo !isp_code
+      if(isp>0)then
+        read(30,4) (((tempgrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                   k=1,nphiden)
+        tempmax=MAXVAL(tempgrid_zrp(:,:,:,isp))
+        WRITE(*,*) '  Tmax for this isp_code:',tempmax
+      else
+        STOP 'Match isp_code=isp_in is not found'
+      endif
+      enddo !isp_in
+      !tempgrid_zrp is saved in single precision - could be a huge array.
+4     format(1p5e14.7) ! Note: data is recorded in 5 columns !
+      close(30)
+            
+      WRITE(*,*) 'tempgrid_zrp: The units in file should be [keV]'
+      WRITE(*,*) ' '
+
+!----- GENERATE GRIDS -----------------------------------------
+!These grids should be already setup in density_zrp_profile_read:
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      do k=1,nzden
+        zden(k)= zdenmin+dzden*(k-1) ! [zdenmin; zdenmax]
+      enddo
+      
+      drden= (rdenmax-rdenmin)/(nrden-1)
+      do i=1,nrden
+        rden(i)= rdenmin+drden*(i-1) ! [rdenmin; rdenmax]
+      enddo
+ 
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+      endif
+      
+      do j=1,nphiden
+        phiden(j)= phidenmin+dphiden*(j-1) ! [phidenmin; phidenmax]
+      enddo
+      
+      
+!----- GENERATE/Save derivatives of tempgrid_zrp(:,:,:)
+! dtzrp_dz() =   d(tempgrid_zrp)/dz
+! dtzrp_dr() =   d(tempgrid_zrp)/dr
+! dtzrp_dphi() = d(tempgrid_zrp)/dphi
+      dtzrp_dz=0.d0
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=1,nrden
+      do i=2,nzden-1
+       dtzrp_dz(i,j,k,isp)= tempgrid_zrp(i+1,j,k,isp)
+     &                     -tempgrid_zrp(i-1,j,k,isp)
+      !The edge points are not defined, but not likely to be used.
+      enddo
+      enddo
+      enddo
+      enddo
+      dtzrp_dz(:,:,:,:)= dtzrp_dz(:,:,:,:)/(2*dzden)
+      
+      dtzrp_dr=0.d0
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=2,nrden-1
+      do i=1,nzden
+       dtzrp_dr(i,j,k,isp)= tempgrid_zrp(i,j+1,k,isp)
+     &                     -tempgrid_zrp(i,j-1,k,isp)
+      enddo
+      enddo
+      enddo
+      enddo
+      dtzrp_dr(:,:,:,:)= dtzrp_dr(:,:,:,:)/(2*drden)
+
+      dtzrp_dphi=0.d0
+
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+          do isp=1,nbulk
+          do k=2,nphiden-1
+          do j=1,nrden
+          do i=1,nzden
+           dtzrp_dphi(i,j,k,isp)= tempgrid_zrp(i,j,k+1,isp)
+     &                           -tempgrid_zrp(i,j,k-1,isp)
+          enddo
+          enddo
+          enddo
+          k=1 !Assume periodicity in phi, k=1 and k=nphiden are same points
+          do j=1,nrden
+          do i=1,nzden
+           dtzrp_dphi(i,j,1,isp)= tempgrid_zrp(i,j,2,isp)
+     &                           -tempgrid_zrp(i,j,nphiden-1,isp)
+           dtzrp_dphi(i,j,nphiden,isp)=dtzrp_dphi(i,j,1,isp)
+          enddo
+          enddo
+          enddo !isp
+          dtzrp_dphi(:,:,:,:)= dtzrp_dphi(:,:,:,:)/(2*dphiden)
+      !else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+      !Remains zero, as initialized above.
+      endif
+
+      return
+      end subroutine temperature_zrp_profile_read
+      
+
+c======================================================================
+c======================================================================
+      subroutine temperature_zrp_profile_write(nbulk,tempdsk) !for model_rho_dens.eq.7
+!     YuP[2024-08-14]
+!     Write the temperature profile(z,r,phi,isp) data to file
+!-------------------------------------------------------------------!
+! Assumed: uniform (z,r,phi)-grids,
+! T profile is a function of (z,r,phi,species).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! tempdsk="19846_0_25tempf.dat"   (example)
+! Check that the data in file is in these units: [keV],
+! should contain data for all species.
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      !include 'one.i'
+      include 'ions_nml.i'
+      include 'fourb.i' !tempgrid_zrp saved here
+      integer nbulk !IN
+      character*512 tempdsk !IN
+      real*8 tempe !function, to get T values
+!---- local: 
+      real*8 x,y,z, r,phi 
+      integer i,j,k, isp, istat
+
+      !Data is written into tempdsk file (specify in namelist &plasma)
+      WRITE(*,*) ' temperature_zrp_profile_write: tempdsk=',
+     & trim(tempdsk)
+      WRITE(*,*) 'nzden,nrden,nphiden=',nzden,nrden,nphiden !same as for density
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, rdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+           
+      ! Check that the data in file is in keV !
+      if(.NOT.associated(tempgrid_zrp))then
+        allocate(tempgrid_zrp(nzden,nrden,nphiden,nbulk),STAT=istat) !in fourb.i
+        WRITE(*,*)' istat(allocation of tempgrid_zrp)=',istat
+        WRITE(*,*)' shape(tempgrid_zrp)=',shape(tempgrid_zrp)
+      endif
+      
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      drden= (rdenmax-rdenmin)/(nrden-1) !same grids as for density
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+      endif
+      
+      do isp=1,nbulk !All species
+      do k=1,nphiden
+        phi= phidenmin+dphiden*(k-1) ! [phidenmin; phidenmax]
+      do j=1,nrden
+        r= rdenmin+drden*(j-1) ! [rdenmin; rdenmax]
+        !x=r*cos(phi)
+        !y=r*sin(phi)
+      do i=1,nzden
+        z= zdenmin+dzden*(i-1) ! [zdenmin; zdenmax]
+        tempgrid_zrp(i,j,k,isp)= tempe(z,r,phi,isp) !each species isp
+      enddo
+      enddo
+      enddo
+      enddo
+      
+      tempmin=MINVAL(tempgrid_zrp)
+      tempmax=MAXVAL(tempgrid_zrp)
+      WRITE(*,*)'tempgrid_zrp min/max [saved into file]',tempmin,tempmax
+      WRITE(*,*)'The units in file should be [keV]'
+      WRITE(*,*) ' '
+      
+      open(30,file=tempdsk)
+! WRITE the dimensions of x-grid,y-grid,z-grid (same as for density):
+      WRITE(30,2) nzden,nrden,nphiden,nbulk !saved into fourb.i
+2     format(4i4)
+! WRITE the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)  (Saved into fourb.i)
+      WRITE(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m;rad]
+3     format(1p6e14.7)
+! WRITE the profile of T over the (z,r,phi)-grid:
+      do isp=1,nbulk
+      WRITE(30,'(1pe14.7)') dmas(isp) ![2024-08-12] added, to ID species
+      WRITE(30,4) (((tempgrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                 k=1,nphiden)
+      enddo
+4     format(1p5e14.7)
+! Note: data is recorded in 5 columns !
+      close(30)
+
+      return
+      end subroutine temperature_zrp_profile_write
+      
+
+c======================================================================
+c======================================================================
+      subroutine tpop_zrp_profile_read(nbulk,tpopdsk) !for model_rho_dens.eq.7
+!     YuP[2024-08-14]
+!     Read Tpop=T_perp/T_parallel profile tpopgrid_zrp(z,r,phi) data from file,
+!     for each species.
+!     It uses same (z,r,phi)-grids as dengrid_zrp()
+!-------------------------------------------------------------------!
+! Read a general 3D profile for Tpop=T_perp/T_parallel from file, 
+! for each species (see isp=1,nbulk loop below).
+! Assumed: uniform (z,r,phi)-grids (same grids as for density).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! tpopdsk="tpop_zr.dat"   (example)
+! units: none (it is a ratio)
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      !include 'one.i' ![2024-08-08] Only need nbulk,tpopdsk which are INPUT now
+      include 'ions_nml.i'
+      integer nbulk !IN
+      character*512 tpopdsk !IN
+      include 'fourb.i' !tpopgrid_zrp saved here
+
+!---- local: 
+      integer i,j,k,isp, lx,ly,mxa,mxb,mya,myb,nfx,nfy,nxy, kode
+      integer isp_in,isp_code,nbulk_in
+      real*8 dmas_in(nbulk)
+     
+!     Data from /plasma/  namelist were read
+!     in genray.f using read_all_namelists
+      
+! Read the tpopdsk file
+      WRITE(*,*) ' Tpop_zrp_profile_read: tpopdsk=',
+     & trim(tpopdsk)
+!---------------------------------------------------------
+      open(30,file=tpopdsk,status='old',iostat=kode)
+      if (kode.ne.0) then
+         WRITE(*,*)'tpop_zrp_profile_read:',tpopdsk,' NOT FOUND'
+         STOP 'Specify proper tpopdsk= '
+      endif
+      
+! Read the dimensions of x-grid,y-grid,z-grid:
+      !These should be exactly same as for dengrid_zrp
+      read(30,2) nzden,nrden,nphiden,nbulk_in
+2     format(4i4)
+      WRITE(*,*) 'nzden,nrden,nphiden,nbulk_in=',
+     &            nzden,nrden,nphiden,nbulk_in
+      if(nbulk_in.ne.nbulk)then
+        WRITE(*,*) 'nbulk_in=',nbulk_in,"  nbulk in genray",nbulk
+        STOP 'nbulk_in and nbulk should be same'
+      endif
+     
+      if(.NOT.associated(zden))then
+        allocate(zden(nzden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(rden))then
+        allocate(rden(nrden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(phiden))then
+        allocate(phiden(nphiden)) !could be already allocated in density_zrp_profile_read
+      endif
+      if(.NOT.associated(tpopgrid_zrp))then
+        allocate(tpopgrid_zrp(nzden,nrden,nphiden,nbulk))
+        allocate(dtpopzrp_dz(nzden,nrden,nphiden,nbulk))
+        allocate(dtpopzrp_dr(nzden,nrden,nphiden,nbulk))
+        allocate(dtpopzrp_dphi(nzden,nrden,nphiden,nbulk))
+      endif
+
+! Read the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)
+      !These should be exactly same as for dengrid_zrp
+      read(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m,rad]
+3     format(1p6e14.7)
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, rdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+
+! Read the profile of T on the (z,r,phi)-grid:
+      do isp_in=1,nbulk !index for data
+      read(30,'(1pe14.7)') dmas_in(isp_in) ![2024-08-12] added, to ID species
+      ![2024-08-12] Scan all species in genray.in list, 
+      !try to match it with species from data
+      isp=0
+      do isp_code=1,nbulk  !index for code (GENRAY)
+        if(abs(dmas_in(isp_in)-dmas(isp_code)) .lt.
+     &    0.1*(dmas_in(isp_in)+dmas(isp_code))      )then 
+          !Same species within accuracy
+          ! (should be a unique pair isp_in <--> isp_code)
+          isp=isp_code
+        WRITE(*,*)'isp_code=',isp_code,' is matched with isp_in=',isp_in
+        endif !dmas_in(isp_in)=dmas(isp_code)
+      enddo !isp_code
+      if(isp>0)then
+        read(30,4) (((tpopgrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                   k=1,nphiden)
+        tpopmax=MAXVAL(tpopgrid_zrp(:,:,:,isp))
+        WRITE(*,*) '  Tpop_max for this isp_code:',tpopmax
+      else
+        STOP 'Match isp_code=isp_in is not found'
+      endif
+      enddo !isp_in
+      !tpopgrid_zrp is saved in single precision - could be a huge array.
+4     format(1p5e14.7) ! Note: data is recorded in 5 columns !
+      close(30)
+            
+      WRITE(*,*) ' '
+
+!----- GENERATE GRIDS -----------------------------------------
+!These grids should be already setup in density_zrp_profile_read:
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      do k=1,nzden
+        zden(k)= zdenmin+dzden*(k-1) ! [zdenmin; zdenmax]
+      enddo
+      
+      drden= (rdenmax-rdenmin)/(nrden-1)
+      do i=1,nrden
+        rden(i)= rdenmin+drden*(i-1) ! [rdenmin; rdenmax]
+      enddo
+ 
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+      endif
+      
+      do j=1,nphiden
+        phiden(j)= phidenmin+dphiden*(j-1) ! [phidenmin; phidenmax]
+      enddo
+      
+      
+!----- GENERATE/Save derivatives of tpopgrid_zrp(:,:,:) [2024-08-14]
+! dtpopzrp_dz() =   d(tpopgrid_zrp)/dz
+! dtpopzrp_dr() =   d(tpopgrid_zrp)/dr
+! dtpopzrp_dphi() = d(tpopgrid_zrp)/dphi
+      dtpopzrp_dz=0.d0 
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=1,nrden
+      do i=2,nzden-1
+       dtpopzrp_dz(i,j,k,isp)= tpopgrid_zrp(i+1,j,k,isp)
+     &                        -tpopgrid_zrp(i-1,j,k,isp)
+      !The edge points are not defined, but not likely to be used.
+      enddo
+      enddo
+      enddo
+      enddo
+      dtpopzrp_dz(:,:,:,:)= dtpopzrp_dz(:,:,:,:)/(2*dzden)
+      
+      dtpopzrp_dr=0.d0
+      do isp=1,nbulk
+      do k=1,nphiden
+      do j=2,nrden-1
+      do i=1,nzden
+       dtpopzrp_dr(i,j,k,isp)= tpopgrid_zrp(i,j+1,k,isp)
+     &                        -tpopgrid_zrp(i,j-1,k,isp)
+      enddo
+      enddo
+      enddo
+      enddo
+      dtpopzrp_dr(:,:,:,:)= dtpopzrp_dr(:,:,:,:)/(2*drden)
+
+      dtpopzrp_dphi=0.d0
+
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+          do isp=1,nbulk
+          do k=2,nphiden-1
+          do j=1,nrden
+          do i=1,nzden
+           dtpopzrp_dphi(i,j,k,isp)= tpopgrid_zrp(i,j,k+1,isp)
+     &                              -tpopgrid_zrp(i,j,k-1,isp)
+          enddo
+          enddo
+          enddo
+          k=1 !Assume periodicity in phi, k=1 and k=nphiden are same points
+          do j=1,nrden
+          do i=1,nzden
+           dtpopzrp_dphi(i,j,1,isp)= tpopgrid_zrp(i,j,2,isp)
+     &                              -tpopgrid_zrp(i,j,nphiden-1,isp)
+           dtpopzrp_dphi(i,j,nphiden,isp)=dtpopzrp_dphi(i,j,1,isp)
+          enddo
+          enddo
+          enddo !isp
+          dtpopzrp_dphi(:,:,:,:)= dtpopzrp_dphi(:,:,:,:)/(2*dphiden)
+      !else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+      !Remains zero, as initialized above.
+      endif
+
+      return
+      end subroutine tpop_zrp_profile_read
+      
+c======================================================================
+c======================================================================
+      subroutine tpop_zrp_profile_write(nbulk,tpopdsk) !for model_rho_dens.eq.7
+!     YuP[2024-08-14]
+!     Write profile of Tpar/Tperp(z,r,phi,isp) data to file
+!-------------------------------------------------------------------!
+! Assumed: uniform (z,r,phi)-grids,
+! Tpop profile is a function of (z,r,phi,species).
+!===> NEED TO SPECIFY THE NAME OF INPUT FILE in genray.in:
+! tpopdsk="tpop_zr.dat"   (example)
+! should contain data for all species.
+!-------------------------------------------------------------------!
+      implicit none 
+      include 'param.i'
+      !include 'one.i'
+      include 'ions_nml.i'
+      include 'fourb.i' !tpopgrid_zrp saved here
+      integer nbulk !IN
+      character*512 tpopdsk !IN
+      real*8 tpop_zrp !function, to get Tpop values
+!---- local: 
+      real*8 x,y,z, r,phi 
+      integer i,j,k, isp, istat
+
+      !Data is written into tpopdsk file (specify in namelist &plasma)
+      WRITE(*,*) ' tpop_zrp_profile_write: tpopdsk=',
+     & trim(tpopdsk)
+      WRITE(*,*) 'nzden,nrden,nphiden=',nzden,nrden,nphiden !same as for density
+      WRITE(*,*) 'zdenmin, zdenmax [m]=',zdenmin,zdenmax
+      WRITE(*,*) 'rdenmin, rdenmax [m]=',rdenmin,rdenmax
+      WRITE(*,*) 'phidenmin, phidenmax [rad]=',phidenmin,phidenmax
+           
+      if(.NOT.associated(tpopgrid_zrp))then
+        allocate(tpopgrid_zrp(nzden,nrden,nphiden,nbulk),STAT=istat) !in fourb.i
+        WRITE(*,*)' istat(allocation of tpopgrid_zrp)=',istat
+        WRITE(*,*)' shape(tpopgrid_zrp)=',shape(tpopgrid_zrp)
+      endif
+      
+      dzden= (zdenmax-zdenmin)/(nzden-1)
+      drden= (rdenmax-rdenmin)/(nrden-1) !same grids as for density
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+        dphiden= (phidenmax-phidenmin)/(nphiden-1)
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+        dphiden=0.d0
+      endif
+      
+      do isp=1,nbulk !All species
+      do k=1,nphiden
+        phi= phidenmin+dphiden*(k-1) ! [phidenmin; phidenmax]
+      do j=1,nrden
+        r= rdenmin+drden*(j-1) ! [rdenmin; rdenmax]
+        x=r*cos(phi)
+        y=r*sin(phi)
+      do i=1,nzden
+        z= zdenmin+dzden*(i-1) ! [zdenmin; zdenmax]
+        tpopgrid_zrp(i,j,k,isp)= tpop_zrp(z,r,phi,isp) !each species isp
+      enddo
+      enddo
+      enddo
+      enddo
+      
+      tpopmin=MINVAL(tpopgrid_zrp)
+      tpopmax=MAXVAL(tpopgrid_zrp)
+      WRITE(*,*)'tpopgrid_zrp min/max [saved into file]',tpopmin,tpopmax
+      WRITE(*,*) ' '
+      
+      open(30,file=tpopdsk)
+! WRITE the dimensions of x-grid,y-grid,z-grid (same as for density):
+      WRITE(30,2) nzden,nrden,nphiden,nbulk !saved into fourb.i
+2     format(4i4)
+! WRITE the min/max values for the z-grid, r-grid, phi-grid:
+! (We assume that the grids are uniform)  (Saved into fourb.i)
+      WRITE(30,3) zdenmin,zdenmax, rdenmin,rdenmax, phidenmin,phidenmax ![m;rad]
+3     format(1p6e14.7)
+! WRITE the profile of Tpop over the (z,r,phi)-grid:
+      do isp=1,nbulk
+      WRITE(30,'(1pe14.7)') dmas(isp) ![2024-08-12] added, to ID species
+      WRITE(30,4) (((tpopgrid_zrp(i,j,k,isp),i=1,nzden),j=1,nrden),
+     &                                                 k=1,nphiden)
+      enddo
+4     format(1p5e14.7)
+! Note: data is recorded in 5 columns !
+      close(30)
+
+      return
+      end subroutine tpop_zrp_profile_write
+
+c======================================================================
+c======================================================================
+      subroutine interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype)
+      !subr. interp_zrp()  - for model_rho_dens.eq.7  [2024-08-14]
+      !Interpolate from grid values to local point (z,r,phi)
+      !Assumed: each of these grids is uniform 
+      !zden(:)   !(nzden)   !grid in Z
+      !rden(:)   !(nrden)   !grid in R
+      !phiden(:) !(nphiden) !grid in phi
+      !dzden,drden,dphiden  !corresponding grid spacings
+      implicit none
+      include 'param.i'
+      include 'one.i'
+      include 'fourb.i' !grids,dengrid_zrp,tempgrid_zrp saved here
+      real*8  z,r,phi !INPUT: local point (at ray element)
+      integer isp   !INPUT: Species number
+      integer itype !INPUT: itype=1 for density; itype=2 for temperature,
+                    !itype=3 for Tpop=T_perp/T_parallel
+      
+      integer iz,iz1,iz2, ir,ir1,ir2, iphi,iphi1,iphi2 !local
+      real*8 zn,rn,phin, dzn,drn,dphin !local
+      real*8 da111,da211,da121,da221,da112,da212,da122,da222,dasum !local
+      
+      real*8 val !OUTPUT: interpolated value at (z,r,phi) 
+      real*8 dvalz,dvalr,dvalphi !OUTPUT: corresponding derivatives at (z,r,phi)
+
+         !Find the cell in (xden,yden,zden) grid that contains (z,r,phi):
+         zn= (z-zdenmin)/dzden  ! normalized Z coordinate
+         rn= (r-rdenmin)/drden  ! normalized R coordinate
+         
+         iz=  zn    ! lower integer: can be from 0 to nzden-2
+         iz=  max(iz,0) !just in case
+         iz=  min(iz,nzden-2)
+         iz1= iz+1
+         iz2= iz+2  ! zn is between iz1 and iz2 nodes of zden() grid
+         
+         ir=  rn    ! lower integer: can be from 0 to nrden-2
+         ir=  max(ir,0) !just in case
+         ir=  min(ir,nrden-2)
+         ir1= ir+1
+         ir2= ir+2  ! rn is between ir1 and ir2 nodes of rden() grid
+         
+         ! In normalized units:
+         ! distance between (z,r,phi) point and left-bottom-corner:
+         dzn= zn-iz 
+         drn= rn-ir  
+         
+         !In case z is outside of [zdenmin;zdenmax], use values from borders: 
+         if(z.le.zdenmin)then
+         iz1=1
+         iz2=1
+         dzn=1.d0 !non-zero areas are da11* and da12* (only)
+         endif
+         if(z.ge.zdenmax)then
+         iz1=nzden
+         iz2=nzden
+         dzn=0.d0 !non-zero areas are da21* and da22* (only)
+         endif
+         
+         !In case r is outside of [rdenmin;rdenmax], use values from borders: 
+         if(r.le.rdenmin)then
+         ir1=1
+         ir2=1
+         drn=1.d0 !non-zero areas are da11* and da21* (only)
+         endif
+         if(r.ge.rdenmax)then
+         ir1=nrden
+         ir2=nrden
+         drn=0.d0 !non-zero areas are da12* and da22* (only)
+         endif
+         
+      if(nphiden>1)then !YuP[2024-08-05] case of no phi-symmetry
+         phin= (phi-phidenmin)/dphiden  ! normalized phi coordinate
+         iphi=  phin ! lower integer: can be from [0 to nphiden-2]
+         iphi=  max(iphi,0) !just in case
+         iphi=  min(iphi,nphiden-2)
+         iphi1= iphi+1 ![1;nphiden-1]
+         iphi2= iphi+2 ![2;nphiden] 
+         !phin is between iphi1 and iphi2 nodes of phiden() grid
+         dphin= phin-iphi  
+      else !nphiden=1 (YuP[2024-08-05] case of phi-symmetry)
+         phin=0.d0
+         iphi1= 1
+         iphi2= 1 
+         dphin=0.d0
+      endif
+         
+         
+         !In a cube at {iz1;ir1,iphi1}, there are 8 corners.
+         !Calculate volumes that are span over each corner 
+         !and the (z,r,phi) point
+         !-1-> Low phi level [use bi-linear form in (z,r)]:
+         da111= dzn*drn*dphin               ! lowZ   -lowR   -lowPHI
+         da211= (1.d0-dzn)*drn*dphin        ! upperZ -lowR   -lowPHI
+         da121= dzn*(1.d0-drn)*dphin        ! lowZ   -upperR -lowPHI
+         da221= (1.d0-dzn)*(1.d0-drn)*dphin ! upperZ -upperR -lowPHI
+         !-2-> Upper phi level [use bi-linear form in (z,r)]:
+         da112= dzn*drn*(1.d0-dphin)               ! lowZ   -lowR   -upperPHI
+         da212= (1.d0-dzn)*drn*(1.d0-dphin)        ! upperZ -lowR   -upperPHI
+         da122= dzn*(1.d0-drn)*(1.d0-dphin)        ! lowZ   -upperR -upperPHI
+         da222= (1.d0-dzn)*(1.d0-drn)*(1.d0-dphin) ! upperZ -upperR -upperPHI
+                  
+         dasum=da111+da211+da121+da221 +da112+da212+da122+da222
+         if( dabs(dasum-1.d0) .gt. 1.d-8 )then
+          write(*,*) 'interp_zrp: dasum=',dasum 
+          stop 'interp_zrp: dasum .ne. 1'
+         endif
+         
+      if(itype.eq.1)then !density
+         !Weight factors are volumes opposite to the corresponding corner.
+         !The value itself:
+         val=
+     &     dengrid_zrp(iz1,ir1,iphi1,isp)*da222 +
+     &     dengrid_zrp(iz2,ir1,iphi1,isp)*da122 +
+     &     dengrid_zrp(iz2,ir2,iphi1,isp)*da112 +
+     &     dengrid_zrp(iz1,ir2,iphi1,isp)*da212 +
+     &     dengrid_zrp(iz1,ir1,iphi2,isp)*da221 +
+     &     dengrid_zrp(iz2,ir1,iphi2,isp)*da121 +
+     &     dengrid_zrp(iz2,ir2,iphi2,isp)*da111 +
+     &     dengrid_zrp(iz1,ir2,iphi2,isp)*da211 
+
+         !Also, derivatives dval/dz, dval/dr, dval/dphi
+         dvalz=
+     &     dnzrp_dz(iz1,ir1,iphi1,isp)*da222 +
+     &     dnzrp_dz(iz2,ir1,iphi1,isp)*da122 +
+     &     dnzrp_dz(iz2,ir2,iphi1,isp)*da112 +
+     &     dnzrp_dz(iz1,ir2,iphi1,isp)*da212 +
+     &     dnzrp_dz(iz1,ir1,iphi2,isp)*da221 +
+     &     dnzrp_dz(iz2,ir1,iphi2,isp)*da121 +
+     &     dnzrp_dz(iz2,ir2,iphi2,isp)*da111 +
+     &     dnzrp_dz(iz1,ir2,iphi2,isp)*da211 
+         dvalr=
+     &     dnzrp_dr(iz1,ir1,iphi1,isp)*da222 +
+     &     dnzrp_dr(iz2,ir1,iphi1,isp)*da122 +
+     &     dnzrp_dr(iz2,ir2,iphi1,isp)*da112 +
+     &     dnzrp_dr(iz1,ir2,iphi1,isp)*da212 +
+     &     dnzrp_dr(iz1,ir1,iphi2,isp)*da221 +
+     &     dnzrp_dr(iz2,ir1,iphi2,isp)*da121 +
+     &     dnzrp_dr(iz2,ir2,iphi2,isp)*da111 +
+     &     dnzrp_dr(iz1,ir2,iphi2,isp)*da211 
+         dvalphi=
+     &     dnzrp_dphi(iz1,ir1,iphi1,isp)*da222 +
+     &     dnzrp_dphi(iz2,ir1,iphi1,isp)*da122 +
+     &     dnzrp_dphi(iz2,ir2,iphi1,isp)*da112 +
+     &     dnzrp_dphi(iz1,ir2,iphi1,isp)*da212 +
+     &     dnzrp_dphi(iz1,ir1,iphi2,isp)*da221 +
+     &     dnzrp_dphi(iz2,ir1,iphi2,isp)*da121 +
+     &     dnzrp_dphi(iz2,ir2,iphi2,isp)*da111 +
+     &     dnzrp_dphi(iz1,ir2,iphi2,isp)*da211 
+      endif !itype=1 (density)
+
+      if(itype.eq.2)then !temperature
+         !Weight factors are volumes opposite to the corresponding corner.
+         !The value itself:
+         val=
+     &     tempgrid_zrp(iz1,ir1,iphi1,isp)*da222 +
+     &     tempgrid_zrp(iz2,ir1,iphi1,isp)*da122 +
+     &     tempgrid_zrp(iz2,ir2,iphi1,isp)*da112 +
+     &     tempgrid_zrp(iz1,ir2,iphi1,isp)*da212 +
+     &     tempgrid_zrp(iz1,ir1,iphi2,isp)*da221 +
+     &     tempgrid_zrp(iz2,ir1,iphi2,isp)*da121 +
+     &     tempgrid_zrp(iz2,ir2,iphi2,isp)*da111 +
+     &     tempgrid_zrp(iz1,ir2,iphi2,isp)*da211 
+
+         !Also, derivatives dval/dz, dval/dr, dval/dphi
+         dvalz=
+     &     dtzrp_dz(iz1,ir1,iphi1,isp)*da222 +
+     &     dtzrp_dz(iz2,ir1,iphi1,isp)*da122 +
+     &     dtzrp_dz(iz2,ir2,iphi1,isp)*da112 +
+     &     dtzrp_dz(iz1,ir2,iphi1,isp)*da212 +
+     &     dtzrp_dz(iz1,ir1,iphi2,isp)*da221 +
+     &     dtzrp_dz(iz2,ir1,iphi2,isp)*da121 +
+     &     dtzrp_dz(iz2,ir2,iphi2,isp)*da111 +
+     &     dtzrp_dz(iz1,ir2,iphi2,isp)*da211 
+         dvalr=
+     &     dtzrp_dr(iz1,ir1,iphi1,isp)*da222 +
+     &     dtzrp_dr(iz2,ir1,iphi1,isp)*da122 +
+     &     dtzrp_dr(iz2,ir2,iphi1,isp)*da112 +
+     &     dtzrp_dr(iz1,ir2,iphi1,isp)*da212 +
+     &     dtzrp_dr(iz1,ir1,iphi2,isp)*da221 +
+     &     dtzrp_dr(iz2,ir1,iphi2,isp)*da121 +
+     &     dtzrp_dr(iz2,ir2,iphi2,isp)*da111 +
+     &     dtzrp_dr(iz1,ir2,iphi2,isp)*da211 
+         dvalphi=
+     &     dtzrp_dphi(iz1,ir1,iphi1,isp)*da222 +
+     &     dtzrp_dphi(iz2,ir1,iphi1,isp)*da122 +
+     &     dtzrp_dphi(iz2,ir2,iphi1,isp)*da112 +
+     &     dtzrp_dphi(iz1,ir2,iphi1,isp)*da212 +
+     &     dtzrp_dphi(iz1,ir1,iphi2,isp)*da221 +
+     &     dtzrp_dphi(iz2,ir1,iphi2,isp)*da121 +
+     &     dtzrp_dphi(iz2,ir2,iphi2,isp)*da111 +
+     &     dtzrp_dphi(iz1,ir2,iphi2,isp)*da211 
+      endif !itype=2 (temperature) 
+      
+      !Tpop=T_perp/T_parallel
+      if(itype.eq.3)then !Tpop=T_perp/T_parallel
+         !Weight factors are volumes opposite to the corresponding corner.
+         !The value itself:
+         val=
+     &     tpopgrid_zrp(iz1,ir1,iphi1,isp)*da222 +
+     &     tpopgrid_zrp(iz2,ir1,iphi1,isp)*da122 +
+     &     tpopgrid_zrp(iz2,ir2,iphi1,isp)*da112 +
+     &     tpopgrid_zrp(iz1,ir2,iphi1,isp)*da212 +
+     &     tpopgrid_zrp(iz1,ir1,iphi2,isp)*da221 +
+     &     tpopgrid_zrp(iz2,ir1,iphi2,isp)*da121 +
+     &     tpopgrid_zrp(iz2,ir2,iphi2,isp)*da111 +
+     &     tpopgrid_zrp(iz1,ir2,iphi2,isp)*da211 
+
+         !Also, derivatives dval/dz, dval/dr, dval/dphi
+         dvalz=
+     &     dtpopzrp_dz(iz1,ir1,iphi1,isp)*da222 +
+     &     dtpopzrp_dz(iz2,ir1,iphi1,isp)*da122 +
+     &     dtpopzrp_dz(iz2,ir2,iphi1,isp)*da112 +
+     &     dtpopzrp_dz(iz1,ir2,iphi1,isp)*da212 +
+     &     dtpopzrp_dz(iz1,ir1,iphi2,isp)*da221 +
+     &     dtpopzrp_dz(iz2,ir1,iphi2,isp)*da121 +
+     &     dtpopzrp_dz(iz2,ir2,iphi2,isp)*da111 +
+     &     dtpopzrp_dz(iz1,ir2,iphi2,isp)*da211 
+         dvalr=
+     &     dtpopzrp_dr(iz1,ir1,iphi1,isp)*da222 +
+     &     dtpopzrp_dr(iz2,ir1,iphi1,isp)*da122 +
+     &     dtpopzrp_dr(iz2,ir2,iphi1,isp)*da112 +
+     &     dtpopzrp_dr(iz1,ir2,iphi1,isp)*da212 +
+     &     dtpopzrp_dr(iz1,ir1,iphi2,isp)*da221 +
+     &     dtpopzrp_dr(iz2,ir1,iphi2,isp)*da121 +
+     &     dtpopzrp_dr(iz2,ir2,iphi2,isp)*da111 +
+     &     dtpopzrp_dr(iz1,ir2,iphi2,isp)*da211 
+         dvalphi=
+     &     dtpopzrp_dphi(iz1,ir1,iphi1,isp)*da222 +
+     &     dtpopzrp_dphi(iz2,ir1,iphi1,isp)*da122 +
+     &     dtpopzrp_dphi(iz2,ir2,iphi1,isp)*da112 +
+     &     dtpopzrp_dphi(iz1,ir2,iphi1,isp)*da212 +
+     &     dtpopzrp_dphi(iz1,ir1,iphi2,isp)*da221 +
+     &     dtpopzrp_dphi(iz2,ir1,iphi2,isp)*da121 +
+     &     dtpopzrp_dphi(iz2,ir2,iphi2,isp)*da111 +
+     &     dtpopzrp_dphi(iz1,ir2,iphi2,isp)*da211 
+      endif !itype=3 (Tpop) 
+           
+      end subroutine interp_zrp
+

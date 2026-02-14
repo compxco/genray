@@ -48,7 +48,7 @@ c----calulated using dinit_nml.i data-------------------------------------
 c-------------------------------------------------------------------------
 c  ndensa is the max number of points in arrays with the plasma density,
 c           temperature and zeff.
-c	ndens4a is the max number of points in the arrays for the spline
+c  ndens4=ndens+4 is the number of points in the arrays for the spline
 c           approximation of the plasma density, temperature and zeff
 c  nbulka  is the max number of plasma component =1 for the electron plasma 
 c           must be .ge. nbulk

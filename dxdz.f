@@ -21,7 +21,7 @@ c          psilim, psimag            from common 'three'
 c          functions psif, drhopsi, ddnsdrho
 c          d_density_r_z_i_d_z      !density derivative from RZ spline
 c----------------------------------------------------------------------
-      double precision FUNCTION dxdz(z,r,phi,i)
+      real*8 FUNCTION dxdz(z,r,phi,i)
 c      IMPLICIT double precision (a-h,o-z)
       implicit none
       include 'param.i'
@@ -36,10 +36,29 @@ c-----locals
      &  dens_rho_theta,d_dens_rho_theta_d_rho,
      &  d_dens_rho_theta_d_theta,
      &  den,dn_drho,dro_dpsi,psi_xr,drhopsi
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
 c-----externals
       real*8 thetapol,drhodz,dthetadz,psif,dvarddz,vardens,
      & ddnsrho,densrho,
      & d_density_r_z_i_d_z !spline art RZ mesh
+     
+     
+![called by many...  - dddrz1, rside, transmit_coef_ox,
+!find_rho_X, reflect, bound, boundc, plasmray, hotdervs]
+      if((model_rho_dens.eq.7).and.(dens_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from dengrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi).
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=1 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dn/d*
+         !dxdr=   v(i)*dvalr
+         !dxdphi= v(i)*dvalphi
+         dxdz=   v(i)*dvalz !Here: in func dxdz(z,r,phi,i)
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(dens_read.eq.'enabled'))
+     
 cSAP090228
 c      if(iboundb.ge.1)then
       if (rho.gt.1.d0-1.d-10) then

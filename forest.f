@@ -390,15 +390,15 @@ c-----vflow = flow velocity of electrons
       ! it would not be absorbed anyway, 
       ! so just pass through such B=0 point, using nmax harmonics.
       if (abs(Y).lt. 1.d0/dfloat(nmax-4)) then 
-         !YuP120430 omega/omega_ce > nmax   Need more harmonics
+         !YuP120430 omega/omega_c > nmax   Need more harmonics
          !omega=2*pi*60.d9
          !rho_larm= vte/(Yc*omega) ! [cm] Larmor radius of ion species
          lambda= 0.5d0*tpop*nps*(beta/Yc)**2 ! 0.5 k_perp^2 * rho_gyro^2
-         write(*,'(a,3e12.3)')
-     +    'DHOT_s: wce/w, lambda, 1/(nmax-4) =', 
-     +     Yc, lambda, 1.d0/dfloat(nmax-4)
-         write(*,*)'DHOT_s: omega/omega_ce >nmax-4  Need more harmonics'
-         write(*,*)'DHOT_s: POSSIBLE B~0 POINT. ADJUSTING Y to 1/nmax'
+         write(*,'(a,1p4e10.3)')
+     +    'DHOT_s: mass, wc/w, lambda, 1/(nmax-4) =', 
+     +     mass, Yc, lambda, 1.d0/dfloat(nmax-4)
+         write(*,*)'DHOT_s: omega/omega_c >nmax-4  Need more harmonics'
+         write(*,*)'DHOT_s: ADJUSTING Y to 1/nmax'
          !stop 'DHOT_s:  Increase nmax'
          !write(*,*)'in DHOT_s before Y-adjusted:   Y,nmax=',Y,nmax
          Y= dsign(1.d0/dfloat(nmax-4), Y)
@@ -2114,6 +2114,10 @@ c-----uses
      .temperho,tpoprho,vflowrho,
      .dxdz,dxdr,dxdphi,dydz,dydr,dydphi,
      .dtempdz,dtempdr,dtpopdz,dtpopdr,dvflowdz,dvflowdr
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
+      real*8 dtempdphi, dtpopdphi !YuP[2024-08-14]
+      external dtempdphi, dtpopdphi !YuP[2024-08-14]
 
 c-----locals
 
@@ -2279,7 +2283,7 @@ cSm000324
           if(i.eq.1) y_ar(1)=-y_ar(1)
           t_keV=tempe(z,r,phi,i)   !keV averaged temperature
           t_av_ar(i)=t_keV*1.d3    !eV
-          tpop_ar(i)=tpoprho(rholoc,i)
+          tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rholoc,i)
 	  vflow_ar(i)=vflowrho(rholoc,i) !cm/sec
 	
 	enddo
@@ -2352,11 +2356,11 @@ c      write(*,*)'dnlldcnz,dnlldcnr,dnlldcm',dnlldcnz,dnlldcnr,dnlldcm
 
         dtempdze=dtempdz(z,r,phi,i)
         dtempdre=dtempdr(z,r,phi,i)
-        dtempdpe=0.d0			      !d(T_average)/d(phi)
+        dtempdpe=dtempdphi(z,r,phi,i) !YuP[2024-08-14] was 0.d0 !dT/d(phi)
 
         dtpopdze=dtpopdz(z,r,phi,i)
         dtpopdre=dtpopdr(z,r,phi,i)
-        dtpopdpe=0.d0				  !d(tpop)/d(phi)
+        dtpopdpe=dtpopdphi(z,r,phi,i) !YuP[2024-08-14] was 0.d0 !d(tpop)/d(phi)
 
         dvflowze=dvflowdz(z,r,phi,i)
         dvflowre=dvflowdr(z,r,phi,i)
@@ -2843,8 +2847,10 @@ c-----external
       double complex hotnp
       double precision b,x,y,tempe,tpoprho,vflowrho
       external hotnp,b,x,y,tempe,tpoprho,vflowrho
-c-----local  
-     
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
+
+c-----local       
       double precision mass_ar(nbulka),x_ar(nbulka),y_ar(nbulka),
      .t_av_ar(nbulka),tpop_ar(nbulka),vflow_ar(nbulka)
       integer j,id_old
@@ -2917,9 +2923,9 @@ c      write(*,*)'hotnperp before loop j nbulk=',nbuklk
         xc(j)=x(z,r,phi,j)
         yc(j)=y(z,r,phi,j)
 cSm000324
-        if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_ce/omega) for electrons
+        if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_c/omega) for electrons
         tec(j)=tempe(z,r,phi,j)*1.d+3 !(eV) averaged temperature
-        tpopc(j)=tpoprho(rho,j)
+        tpopc(j)=tpop_zrp(z,r,phi,j) !YuP[2024-08-14] was tpoprho(rho,j)
         vflowc(j)=vflowrho(rho,j)         
       enddo
 
@@ -3454,6 +3460,9 @@ c-----input
       double precision dmas(*) 
 c-----externals
       double precision x,y,tempe,tpoprho,vflowrho,fpsi,rhopsi
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
+
 c-----output the data for common block 
       include 'param.i' 
       include 'nperpcom.i'
@@ -3478,9 +3487,9 @@ c-----local
          massc(j)=dmas(j)
          xc(j)=x(z,r,phi,j)
          yc(j)=y(z,r,phi,j)
-         if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_ce/omega) for electrons
+         if(j.eq.1) yc(1)=-yc(1) ! negative Y=(omega_c/omega) for electrons
          tec(j)=tempe(z,r,phi,j)*1.d+3 !(eV) averaged temperature
-         tpopc(j)=tpoprho(rho,j)
+         tpopc(j)=tpop_zrp(z,r,phi,j) !YuP[2024-08-14] was tpoprho(rho,j)
          vflowc(j)=vflowrho(rho,j)         
        enddo
       
@@ -4627,6 +4636,8 @@ c     The hot plasma complex dielectric tensor reps(3,3) will be in eps.i
       include 'eps.i'   
 c-----external b
       double precision b,x,y,tempe,tpoprho,vflowrho
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 c-----------------------
      
       double precision wp(nbulka),vp(nbulka)
@@ -4664,7 +4675,7 @@ c----for the dielectric tensor calculations
          if(i.eq.1) y_ar_plus(1)=-y_ar_plus(1)
          t_keV=tempe(z,r,phi,i)   !keV averaged temperature
          t_av_ar(i)=t_keV*1.d3    !eV
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
 	 vflow_ar(i)=vflowrho(rho,i) !cm/sec
       enddo
 c************************************************
@@ -4746,7 +4757,7 @@ c-----It will be in 'eps.i'
          if(i.eq.1) y_ar(1)=-y_ar(1)
          t_keV=tempe(z,r,phi,i)   !keV averaged temperature
          t_av_ar(i)=t_keV*1.d3    !eV
-         tpop_ar(i)=tpoprho(rho,i)
+         tpop_ar(i)=tpop_zrp(z,r,phi,i) !YuP[2024-08-14] was tpoprho(rho,i)
 	 vflow_ar(i)=vflowrho(rho,i) !cm/sec
       enddo
  
@@ -4841,7 +4852,8 @@ c-----------------------------------------------------------
 
 c-----external 
       double precision rtbis
-      double complex dhot_sum,d_hot_nper
+      double complex dhot_sum ![2026-01-14] was here: ,d_hot_nper
+      double precision d_hot_nper ![2026-01-14]
       external d_hot_nper
 c-----locals
       integer i,k1,k2
@@ -5006,6 +5018,9 @@ c-----output
 
 c-----externals
       double precision b,x,y,tempe,tpoprho,vflowrho
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
+
 c-----locals
       integer j
       double precision x_ar(nbulka),y_ar(nbulka),T_ar_ev(nbulka),     
@@ -5022,7 +5037,7 @@ c-----locals
         if(j.eq.1) y_ar(1)=-y_ar(1) ! negative Y=(omega_ce/omega)
                                     ! for electrons
         T_ar_ev(j)=tempe(z,r,phi,j)*1.d+3 !(eV) averaged temperature
-        tpop_ar(j)=tpoprho(rho,j)
+        tpop_ar(j)=tpop_zrp(z,r,phi,j) !YuP[2024-08-14] was tpoprho(rho,j)
         vflow_ar(j)=vflowrho(rho,j)         
       enddo
 
@@ -5150,6 +5165,8 @@ c-----output
 
 c-----external
       double precision psi_rho,b,x,y,tempe,tpoprho,vflowrho,psif,rhopsi
+      real*8 tpop_zrp   !external func
+      external tpop_zrp !external func
 
 c-----local
       double precision x_ar(nbulka),y_ar(nbulka),T_ar_ev(nbulka),     
@@ -5226,7 +5243,7 @@ c      write(*,*)'forest.f  rho_loc= ',rho_loc
         if(j.eq.1) y_ar(1)=-y_ar(1) ! negative Y=(omega_ce/omega)
                                     ! for electrons
         T_ar_ev(j)=tempe(z,r,phi_edge,j)*1.d+3 !(eV) averaged temperature
-        tpop_ar(j)=tpoprho(rho,j)
+        tpop_ar(j)=tpop_zrp(z,r,phi_edge,j) !YuP[2024-08-14] was tpoprho(rho,j)
         vflow_ar(j)=vflowrho(rho,j)         
       enddo
 

@@ -3,8 +3,10 @@
 
 c************************************************************
       character version*64
-      parameter(version="genray_v11.0_210212")
-      ! previous: genray_v10.15_201206 genray_v10.14_200831
+      parameter(version="genray_v12.1_260114")
+      !previous:  genray_v12.0_251217
+      !previous:  genray_v11.2_240814, genray_v11.1_240725
+      ! genray_v11.0_210212, genray_v10.15_201206 genray_v10.14_200831
       ! genray_v10.13_200117 genray_v10.12_180912 
       ! genray_v10.12_180529 
 c************************************************************
@@ -12,7 +14,8 @@ c************************************************************
 c************************************************************
 c number of rays in common/cone/ EC-cone
        integer nraymax
-       parameter(nraymax=240)
+       parameter(nraymax=400)
+cyup       parameter(nraymax=240)
 c nraymax must be greater than or equal to nray 
 c (nray is calculated)
 
@@ -29,7 +32,9 @@ c     for common/five/
 c      parameter (nxeqda=201,nyeqda=201,nlimit=101)
 c      parameter (nxeqda=129,nyeqda=257,nlimit=101)
 c      parameter (nxeqda=136,nyeqda=257,nlimit=101)
-      parameter (nxeqda=257,nyeqda=257,nlimit=101)
+!      parameter (nxeqda=257,nyeqda=257,nlimit=101)
+      parameter (nxeqda=900,nyeqda=900,nlimit=101)
+!      parameter (nxeqda=152,nyeqda=152,nlimit=101)
       !parameter (nxeqda=257,nyeqda=257,nlimit=501) !YuP[2020-03] Increased nlimit
       !However, it slightly changes the results,
       !probably because of accuracy for tracing surfaces in subr.gr2new.
@@ -43,7 +48,7 @@ c************************************************************
 c     for common/fourb/
       integer nves
       parameter (nves=202) !YuP[2020-03] Increased nves; was (nves=62)
-      !parameter (nves=502) !YuP[2020-03] Increased nves; was (nves=62)
+!      parameter (nves=502) !YuP[2020-03] Increased nves; was (nves=62)
 c************************************************************
 c     for common gr.i
       INTEGER NL,NP,nteta,npsi,nteta1
@@ -120,11 +125,11 @@ c nzy=max(npsi,nteta1)+4
       parameter(nzy=nteta1+4)
 c************************************************************
 c     for common/six/ and /lsc_approach_nml/
-      integer ndensa,ndens4a
+      integer ndensa
       parameter (ndensa=201)
 c      parameter (ndensa=51)
 c      parameter (ndensa=101)
-      parameter (ndens4a=ndensa+4)
+      !YuP/not used: parameter (ndens4a=ndensa+4) !ndens+4 is used
 c ndensa is the max number of points in arrays with the 
 c plasma density, temperature, zeff. tpop, and vflow
 c************************************************************
@@ -134,7 +139,7 @@ cBH130508:  Restore nraya,nfreqa for limited purpose of MPI subs
 cBH130508:  senddata/recvdata.  Compiler does not permit equivencing
 cBH130508:  with variable dimension specification.
       integer nraya,nfreqa
-      parameter (nraya=300)
+      parameter (nraya=500)
       parameter (nfreqa=51)
 
       integer nrelta

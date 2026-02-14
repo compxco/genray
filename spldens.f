@@ -1,17 +1,17 @@
 c*************************spldens**************************************
 c  creation of arrays for density spline coefficients		      *
-c  trdens(ndens4a),cxdens(ndens4a)                  		      *
-c  creation of arrays for temperatutre zeff,tpop,vflow                *
+c  trdens(ndens4),cxdens(ndens4)                  		      *
+c  creation of arrays for temperature, zeff,tpop,vflow                *
 c  spline coefficients	                                              *
 c                                                                     *
-c  thise program uses the following subroutines:  		      *
+c  this program uses the following subroutines:  		      *
 c								      *
 c  iac1r(rhom,ip,ip4,denm,lx,mxa,fxa,mxb,fxb,trdens,cxdens)	      *
 c  -calculates the spline coefficients for 1d function		      *
 c								      *
 c**********************************************************************
-c  input data from common 'six.i' and 'one'			      *
-c  output data  for GENRAY are in files: spldens .dat     	      *
+c  input data from common 'six.i' and 'one.i'			      *
+c  output data  for GENRAY are in files: spldens.dat     	      *
 c**********************************************************************
 
       subroutine spldens1
@@ -34,7 +34,7 @@ cSm061205 to use spline functions coeff1
 
 c-----externals
       real*8 ias1r,
-     &temperho,tpoprho,vflowrho,densrho
+     & temperho,tpoprho,vflowrho,densrho
 
       if(nbulka.lt.nbulk) then
         write(*,*)'nbulka is given in param.i=',nbulka
@@ -281,7 +281,7 @@ c
 	   write(*,*)'after temperho i,j,temp1(j,i),stemp'
 	   write(*,*) i,j,temp1(j,i),stemp
 c           write(*,*)'dtempa,dtemp',dtempa,dtemp
-           stpop=tpoprho(rhoj,i)
+           stpop=tpoprho(rhoj,i) !Using rhoj=rhom(j) here
 c           dtpop=dtpoprho(rhoj,i)
 c           write(*,*)'tpop,dtpop',stpop,dtpop
            write(*,*)'i,j,tpop1(j,i),stpop'
@@ -340,16 +340,14 @@ c end test
       return
       end
 
-
+!=======================================================================
       real*8 FUNCTION temperho(rho_small,i)
 c-------------------------------------------------------
 c     temperature on radius (from spline)
 c     i=species (1,electrons)
 c-------------------------------------------------------
       implicit none
-c      IMPLICIT double precision (a-h,o-z)
       include 'param.i'
-
 cSm030226
       include 'one.i'
       include 'six.i'
@@ -366,8 +364,6 @@ cSm061206
       integer itabl(3),idx,j,k,ndens4
 
 c-----externals
-cSAP090304
-c      double precision ias1r
       real*8 ias1r
 
 c      write(*,*)'spldens.f in temperho rho_small',rho_small
@@ -431,11 +427,12 @@ c-------------------------------------------------------------
          temperho=tabl(1)
 c         write(*,*)'  temperho',temperho
 c--------------------------------------------------------------
-      endif
+      endif !rho_small range
 
       return
 
-      END
+      END FUNCTION temperho
+!=======================================================================
 
 
       real*8 FUNCTION zeffrho(rho_small)
@@ -512,8 +509,6 @@ cSAP090204
 c-----input
       real*8 rho_small ! small radius normalized
       integer i        ! number of plasma species
-
-cSm061205
       real*8 tabl(3),d2_dens_drho(ndensa),
      &rhoedg,densedg,
      &densedge_e,dens_ratio
@@ -522,8 +517,6 @@ cSm061205
      & ndens4,idx,j,k
 
 c-----externals
-cSAP090304
-c      double precision ias1r
       real*8 ias1r
 cSm030226
       ndens4=ndens+4
@@ -610,7 +603,11 @@ c	 write(*,*)'in densrho terp1: rho_small,densrho',rho_small,
 c     &   densrho
       endif
       return
-      END
+      END FUNCTION densrho
+
+
+
+!=======================================================================
 
       real*8 FUNCTION tpoprho(rho_small,i)
 c-------------------------------------------------------
@@ -686,7 +683,7 @@ c         write(*,*)'spldens.f in tpoprho rhoedg,tpoprho',rhoedg,tpoprho
 c--------------------------------------------------------------------------
 
       else
-         goto20
+         goto 20
          tpoprho=ias1r(trtpop,ndens,ndens4,cxtpop,idx,rho_small) !old spline
 
 cSm061206 new spline: coeff1 terp1      
@@ -783,6 +780,9 @@ c--------------------------------------------------------------------------
       return
       END
 
+
+
+
       real*8 FUNCTION ddnsrho(rho_small,i)
 c-------------------------------------------------------
 c     derivative density by radius (from spline)
@@ -793,7 +793,6 @@ c      IMPLICIT double precision (a-h,o-z)
 cSm030226      
       include 'one.i'
       include 'six.i'
-
 cSAP090304
       include 'edge_prof_nml.i'
 c-----input
@@ -908,6 +907,9 @@ c----------------------------------------------------------------
 c      write(*,*)'ddnsrho',ddnsrho
       return
       END
+
+
+
 
       real*8 FUNCTION dtemdrho(rho_small,i)
 c-------------------------------------------------------
@@ -1506,6 +1508,8 @@ c     derivative temperature by r (from spline) T-Kev
 c-------------------------------------------------------
 c     b(z,r,phi) should be run before this function
       implicit none
+      include 'param.i'
+      include 'one.i'
 c     input
       double precision z,r,phi
       integer i
@@ -1513,12 +1517,30 @@ c     external rhof,dtemdrho,drgodr
       double precision rhof,dtemdrho,drhodr
 c     local
       double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+      
+![called by forest.f/hotdervs and ono_disp.f]
+      if((model_rho_dens.eq.7).and.(temp_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tempgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=2 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dT/d*
+         dtempdr=   dvalr !Here: in func dtempdr(z,r,phi,i)
+         !dtempdphi= dvalphi
+         !dtempdz=   dvalz 
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(temp_read.eq.'enabled'))
 
       rholoc=rhof(z,r,phi)
       dtempdr=dtemdrho(rholoc,i)*drhodr(z,r,phi)
       
       return
-      end
+      end FUNCTION dtempdr
+!====================================================================
+!====================================================================
 
       real*8 FUNCTION dtempdz(z,r,phi,i)
 c-------------------------------------------------------
@@ -1526,6 +1548,8 @@ c     derivative temperature by z (from spline) T-Kev
 c-------------------------------------------------------
 c     b(z,r,phi) should be run before this function
       implicit none
+      include 'param.i'
+      include 'one.i'
 c     input
       double precision z,r,phi
       integer i
@@ -1533,12 +1557,71 @@ c     external rhof,dtemdrho,drhodz
       double precision rhof,dtemdrho,drhodz
 c     local
       double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by forest.f/hotdervs and ono_disp.f]
+      if((model_rho_dens.eq.7).and.(temp_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tempgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=2 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dT/d*
+         !dtempdr=   dvalr 
+         !dtempdphi= dvalphi
+         dtempdz=   dvalz !Here: in func dtempdz(z,r,phi,i)
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(temp_read.eq.'enabled'))
 
       rholoc=rhof(z,r,phi)
       dtempdz=dtemdrho(rholoc,i)*drhodz(z,r,phi)
       
       return
-      end
+      end FUNCTION dtempdz
+
+!====================================================================
+!====================================================================
+      real*8 FUNCTION dtempdphi(z,r,phi,i)
+c-------------------------------------------------------
+c     derivative temperature by phi (from spline) T-Kev
+c-------------------------------------------------------
+c     b(z,r,phi) should be run before this function
+      implicit none
+      include 'param.i'
+      include 'one.i'
+c     input
+      double precision z,r,phi
+      integer i
+c     external rhof,dtemdrho,drhodz
+      double precision rhof,dtemdrho,drhodz
+c     local
+      double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by forest.f/hotdervs and ono_disp.f]
+      if((model_rho_dens.eq.7).and.(temp_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tempgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=2 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dT/d*
+         !dtempdr=   dvalr 
+         dtempdphi= dvalphi !Here: in func dtempdphi(z,r,phi,i)
+         !dtempdz=   dvalz 
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(dtemp_read.eq.'enabled'))
+
+      !rholoc=rhof(z,r,phi)
+      dtempdphi=0.d0 !assumed symmetry in phi
+      return
+      end FUNCTION dtempdphi
+
+!====================================================================
+!====================================================================
+
 
 
       real*8 FUNCTION dvflowdz(z,r,phi,i)
@@ -1581,6 +1664,9 @@ c     local
       return
       end
 
+!====================================================================
+!====================================================================
+
       real*8 FUNCTION dtpopdz(z,r,phi,i)
 c-------------------------------------------------------
 c     derivative tpop by z (from spline) 
@@ -1588,6 +1674,8 @@ c     i is the number of the plasma component
 c-------------------------------------------------------
 c     b(z,r,phi) should be run before this function
       implicit none
+      include 'param.i'
+      include 'one.i'
 c     input
       double precision z,r,phi
       integer i
@@ -1595,12 +1683,30 @@ c     external rhof,dtpoprho,drhodz
       double precision rhof,dtpoprho,drhodz
 c     local
       double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by forest.f/hotdervs]
+      if((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tpopgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=3 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dTpop/d*
+         !dtpopdr=   dvalr 
+         !dtpopdphi= dvalphi 
+         dtpopdz=   dvalz !Here: in func dtpopdz(z,r,phi,i)
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled'))
 
       rholoc=rhof(z,r,phi)
       dtpopdz=dtpoprho(rholoc,i)*drhodz(z,r,phi)
       
       return
-      end
+      end FUNCTION dtpopdz
+!====================================================================
+!====================================================================
 
       real*8 FUNCTION dtpopdr(z,r,phi,i)
 c-------------------------------------------------------
@@ -1609,6 +1715,8 @@ c     i is the number of the plasma component
 c-------------------------------------------------------
 c     b(z,r,phi) should be run before this function
       implicit none
+      include 'param.i'
+      include 'one.i'
 c     input
       double precision z,r,phi
       integer i
@@ -1616,11 +1724,68 @@ c     external rhof,dtpoprho,drhodr
       double precision rhof,dtpoprho,drhodr
 c     local
       double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by forest.f/hotdervs]
+      if((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tpopgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=3 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dTpop/d*
+         dtpopdr=   dvalr !Here: in func dtpopdr(z,r,phi,i)
+         !dtpopdphi= dvalphi 
+         !dtpopdz=   dvalz 
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled'))
 
       rholoc=rhof(z,r,phi)
       dtpopdr=dtpoprho(rholoc,i)*drhodr(z,r,phi)
       
       return
-      end
+      end FUNCTION dtpopdr
+!====================================================================
+!====================================================================
+
+      real*8 FUNCTION dtpopdphi(z,r,phi,i)
+c-------------------------------------------------------
+c     derivative tpop by phi (from spline) 
+c     i is the number of the plasma component
+c-------------------------------------------------------
+c     b(z,r,phi) should be run before this function
+      implicit none
+      include 'param.i'
+      include 'one.i'
+c     input
+      double precision z,r,phi
+      integer i
+c     external rhof,dtpoprho,drhodr
+      double precision rhof,dtpoprho,drhodr
+c     local
+      double precision rholoc
+      integer isp,itype !local
+      real*8 val,dvalz,dvalr,dvalphi !local
+
+![called by forest.f/hotdervs]
+      if((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled')) then 
+         ![2024-08-14] Interpolate from tpopgrid_zrp(iz,ir,iphi) points
+         !that are adjacent to the given point (z,r,phi),
+         !Also - interpolate derivatives from grid points to (z,r,phi)
+         itype=3 !=1 for density(and derivs); =2 for T; =3 for tpop
+         isp=i !species number
+         call interp_zrp(z,r,phi, val,dvalz,dvalr,dvalphi, isp,itype) !dTpop/d*
+         !dtpopdr=   dvalr
+         dtpopdphi= dvalphi  !Here: in func dtpopdphi(z,r,phi,i)
+         !dtpopdz=   dvalz 
+         return !Done here
+      endif !((model_rho_dens.eq.7).and.(tpop_read.eq.'enabled'))
+
+      !rholoc=rhof(z,r,phi)
+      dtpopdphi=0.d0
+      
+      return
+      end FUNCTION dtpopdphi
 
 
